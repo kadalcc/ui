@@ -1,0 +1,107 @@
+---
+title: Expanding and tree data
+description: Nested rows from getSubRows, the expander column, indentation by depth, expand and collapse all, and how selection, filtering and paging treat sub-rows.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+Rows can have rows. Tell the grid where a row's children are and it renders them indented under
+their parent, behind a chevron.
+
+<Demo name="data-grid-tree" />
+
+## Use it
+
+Two things: `getSubRows`, so the grid knows where the children live, and `col.expander()`, the
+column that holds the chevron.
+
+```tsx
+const columns = col.columns([
+  col.expander(),
+  col.select(),
+  col.text("name", { header: "Name" }),
+  col.text("team", { header: "Team" }),
+])
+
+<DataGrid
+  data={data}
+  columns={columns}
+  getRowId={(row) => row.id}
+  getSubRows={(row) => row.subRows}
+  initialState={{ expanded: { p00000: true } }}
+/>
+```
+
+- `getSubRows` returns the array of children for a row, or `undefined` for a leaf. Any depth works.
+- `col.expander()` renders a chevron for rows that have children and a blank space of the same
+  width for rows that don't, so the columns after it stay aligned. Each level indents the chevron a
+  further 16 px. Put it first.
+- The expander's header is an **Expand all** / **Collapse all** button. It renders only when at least
+  one row can expand.
+- `initialState.expanded` is a map of row id to `true` (the ids `getRowId` returns), or `true` to
+  start with everything open.
+
+From code: `row.toggleExpanded()`, `row.getIsExpanded()`, `table.toggleAllRowsExpanded()`,
+`table.setExpanded(...)`, `table.resetExpanded()`.
+
+## How it behaves
+
+- **Ids.** With `getRowId`, the keys in `expanded` are your ids. Without it, TanStack numbers rows by
+  their path (`"0"`, `"0.2"`), which changes as data changes; give the grid stable ids.
+- **Paging counts top-level rows.** Expanded children are not paginated separately
+  (`paginateExpandedRows: false`): they render on their parent's page, so a page can show more rows
+  than its page size.
+- **Selection follows the tree.** Selecting a parent selects its children; a parent with some children
+  selected shows an indeterminate checkbox. <kbd>Space</kbd> on a focused cell selects the row with
+  its children. Turn it off with `selection={{ subRows: false }}`.
+- **Sorting** runs at every level: children are sorted within their parent.
+- **Filtering** tests the parents first. A parent that fails is removed with its children; a parent
+  that passes keeps only the children that pass. To keep a parent whenever any descendant matches,
+  pass `table={{ filterFromLeafRows: true }}`.
+- **Expanded state survives data changes** (`autoResetExpanded: false`): refetching the rows does not
+  fold the tree.
+- **Export** writes the rows as they are expanded. Collapsed children are not exported.
+- **Grouping** uses the same machinery: a group row is an expandable row whose children are the
+  group's members. See [Grouping and aggregation](/docs/data-grid/grouping/).
+- **Server-side trees.** With `server={{ expanding: true }}` the grid stops expanding locally and you
+  deliver the expanded rows yourself. See [Server-side data](/docs/data-grid/server-side/).
+
+## Keyboard
+
+| Key | Does |
+| --- | --- |
+| <kbd>Enter</kbd> on a focused cell | Toggles the row's children, when the cell is not editable. |
+| <kbd>Space</kbd> | Selects the row and its children. |
+| <kbd>Tab</kbd> to the chevron, <kbd>Enter</kbd> | The chevron is a button: it toggles the row. |
+
+Every row carries `aria-level` (its depth, from 1) and, when it has children, `aria-expanded`. The
+chevron is labelled **Expand** or **Collapse**; the header button **Expand all** or **Collapse all**.
+All four strings are in `labels`.
+
+## Options
+
+Grid options:
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `getSubRows` | `(row) => TData[]` | | Where a row's children are; return `undefined` for a leaf. Without it no row can expand. |
+| `initialState.expanded` | `ExpandedState` | `{}` | Which rows start open, as `{ [rowId]: true }`; `true` opens them all. |
+| `selection.subRows` | `boolean` | `true` | Whether selecting a parent selects its children. |
+| `table.getRowCanExpand` | `(row) => boolean` | | Override the default (has sub-rows). Useful for lazy children: expand first, load later. |
+| `table.filterFromLeafRows` | `boolean` | `false` | Keep a parent whenever any descendant passes the filter. |
+| `table.paginateExpandedRows` | `boolean` | `false` | `true` lets children spill across pages. |
+
+Column helper:
+
+| Helper | What it does |
+| --- | --- |
+| `col.expander(options?)` | The chevron column: id `"expander"`, 40 px fixed, no sorting, filtering, hiding or grouping. `options` merge over the defaults. |
+
+Cells exported for your own columns: `DataGridExpanderCell`, `DataGridExpanderHeader`.
+
+## See also
+
+- [Grouping and aggregation](/docs/data-grid/grouping/): group rows expand the same way.
+- [Row selection and bulk actions](/docs/data-grid/selection/).
+- [Server-side data](/docs/data-grid/server-side/): lazy or manual expansion.

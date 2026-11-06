@@ -1,0 +1,102 @@
+---
+title: Column pinning
+description: Pin columns to the start or end of the grid so they stay in view while the rest scrolls sideways, from the column menu or from initialState.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+Pin a column and it stays in view while the rest of the grid scrolls sideways. The checkbox and the
+row-actions menu are the usual candidates: one at the start, one at the end.
+
+<Demo name="data-grid-pinning" />
+
+## Use it
+
+Open a column's menu (the <kbd>⋯</kbd> button at the right of its header, shown on hover and focus,
+or right-click the header) and choose **Pin to start** or **Pin to end**. A pinned header shows a pin
+icon, and so does its row in the **View** popover. **Unpin** sends it back.
+
+To start pinned, set `initialState.columnPinning`:
+
+```tsx
+<DataGrid
+  data={data}
+  columns={columns}
+  initialState={{ columnPinning: { start: ["name"], end: ["actions"] } }}
+/>
+```
+
+If the grid has a checkbox column, pin it too (`start: ["select", "name"]`); otherwise the pinned
+`name` moves ahead of it.
+
+From code, the TanStack API is one call away:
+
+```ts
+grid.table.getColumn("name")?.pin("start")      // or "end", or false to unpin
+grid.table.setColumnPinning({ start: ["name"], end: [] })
+grid.table.resetColumnPinning()
+```
+
+## How it behaves
+
+- **Start and end, not left and right.** TanStack Table v9 pins to logical regions. In a
+  left-to-right layout `start` is the left edge; under `dir="rtl"` it is the right edge. The grid
+  positions pinned cells with `inset-inline-start` and `inset-inline-end`, so a pinned column lands
+  on the correct side in both directions with nothing extra from you.
+- **Sticky, not split.** The grid is one `<table>`. A pinned column's header and cells get
+  `position: sticky` with an offset equal to the widths of the pinned columns before it
+  (`column.getStart("start")` on the start side, `column.getAfter("end")` on the end side). Nothing
+  is cloned into a second table, so sorting, filtering, selection, keyboard navigation and editing
+  work in a pinned column exactly as in any other. `getPinningStyles(column, { header })` and
+  `pinningClasses(column)` are exported if you render cells of your own.
+- **Order.** Start-pinned columns come first, in the order they were pinned; then the unpinned
+  ("centre") columns in their [column order](/docs/data-grid/reordering/); then the end-pinned
+  columns. Pinning appends the column to its region; unpinning returns it to its place in the centre
+  order. Exports and the clipboard follow this on-screen order.
+- **The edge.** The last start-pinned column and the first end-pinned column draw a one-pixel,
+  border-coloured inset shadow on their inner edge, and every pinned cell has an opaque background,
+  so scrolling columns pass behind them rather than through them.
+- **Pinned columns don't drag.** Drag-to-reorder works within the centre region. A pinned header has
+  no drag handle and its menu hides **Move left** and **Move right**; unpin it to move it.
+- **Resizing** a pinned column shifts the offsets of the pinned columns after it. The footer row,
+  when a column defines a `footer`, is pinned the same way.
+- **Hiding** a pinned column keeps it in the pinning state; show it again and it comes back pinned.
+- **Group headers** (`col.group`) pin all of their leaf columns together.
+- **Persistence.** `columnPinning` is part of the view the grid [remembers](/docs/data-grid/persistence/)
+  with `persist`, and of every saved view. **Reset view** in the View popover clears it.
+
+<Aside type="note" title="Utility columns can be pinned">
+  `col.select()`, `col.expander()`, `col.rowNumber()` and `col.actions()` have no menu of their own,
+  so pin them from `initialState` or from code. They accept pinning (`enablePinning: true`) but not
+  sorting, filtering or hiding.
+</Aside>
+
+## Options
+
+Column options (any column builder, or `columnDef`):
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `enablePinning` | `boolean` | `true` | `false` removes the pin items from this column's menu (`column.getCanPin()` is false). |
+
+Grid options:
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `initialState.columnPinning` | `ColumnPinningState` | empty | Which columns start pinned, by id, in order. A persisted view wins over it. |
+| `table.enableColumnPinning` | `boolean` | `true` | Turns the feature off for every column (through the `table` escape hatch). |
+| `table.state.columnPinning` | `ColumnPinningState` | | Control the slice yourself, paired with `table.onColumnPinningChange`. |
+
+Helpers exported from the grid:
+
+| Export | What it does |
+| --- | --- |
+| `getPinningStyles(column, options?)` | The width, sticky position, inline inset and z-index for a cell of that column; pass `{ header: true }` for a header cell. |
+| `pinningClasses(column)` | The opaque background and the edge shadow classes for a pinned cell. |
+
+## See also
+
+- [Column reordering](/docs/data-grid/reordering/): why pinned columns don't drag.
+- [Row pinning](/docs/data-grid/row-pinning/): the same idea for rows.
+- [Saved views and persistence](/docs/data-grid/persistence/): remembering what the user pinned.

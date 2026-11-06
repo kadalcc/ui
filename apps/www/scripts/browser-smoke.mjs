@@ -12,7 +12,8 @@ import { chromium } from "@playwright/test";
 
 const args = Object.fromEntries(
   process.argv.slice(2).reduce((acc, a, i, all) => {
-    if (a.startsWith("--")) acc.push([a.slice(2), all[i + 1]?.startsWith("--") ? true : all[i + 1]]);
+    if (a.startsWith("--"))
+      acc.push([a.slice(2), all[i + 1]?.startsWith("--") ? true : all[i + 1]]);
     return acc;
   }, []),
 );
@@ -24,7 +25,8 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
 const problems = [];
 page.on("console", (m) => {
-  if (m.type() === "error" || m.type() === "warning") problems.push(`[console.${m.type()}] ${m.text()}`);
+  if (m.type() === "error" || m.type() === "warning")
+    problems.push(`[console.${m.type()}] ${m.text()}`);
 });
 page.on("pageerror", (e) => problems.push(`[pageerror] ${e.message}`));
 
@@ -52,7 +54,8 @@ await page.goto(url, { waitUntil: "networkidle" });
 await page.waitForSelector("[data-slot=data-grid-table] tbody tr", { timeout: 20000 });
 await snap("loaded");
 
-const rowsVisible = async () => page.locator("[data-slot=data-grid-table] tbody tr[data-row-id]").count();
+const rowsVisible = async () =>
+  page.locator("[data-slot=data-grid-table] tbody tr[data-row-id]").count();
 console.log("rows rendered:", await rowsVisible());
 
 await step("sort-name", async () => {
@@ -60,12 +63,16 @@ await step("sort-name", async () => {
   await page.waitForSelector('[aria-sort="ascending"]');
 });
 await step("multi-sort-team-shift", async () => {
-  await page.getByRole("columnheader", { name: /^Team/ }).getByRole("button").first().click({ modifiers: ["Shift"] });
+  await page
+    .getByRole("columnheader", { name: /^Team/ })
+    .getByRole("button")
+    .first()
+    .click({ modifiers: ["Shift"] });
 });
 await step("column-menu", async () => {
   const head = page.getByRole("columnheader", { name: /^Plan/ });
   await head.hover();
-  await head.getByRole("button", { name: /Row actions/ }).click();
+  await head.getByRole("button", { name: /Column menu/ }).click();
   await page.getByRole("menuitem", { name: /Pin to start/ }).waitFor();
 });
 await step("pin-plan-start", async () => {
@@ -79,7 +86,10 @@ await step("filter-status-open", async () => {
   await page.getByPlaceholder("Search values…").waitFor();
 });
 await step("filter-status-active", async () => {
-  await page.getByRole("option", { name: /Active/ }).getByRole("checkbox").click();
+  await page
+    .getByRole("option", { name: /Active/ })
+    .getByRole("checkbox")
+    .click();
   await page.waitForSelector("[data-slot=data-grid-filter-chips]");
   await page.keyboard.press("Escape");
 });
@@ -138,8 +148,11 @@ await step("drag-reorder", async () => {
   await page.waitForTimeout(150);
   await page.mouse.up();
   await page.waitForTimeout(300);
-  const order = await page.locator("thead th[data-column-id]").evaluateAll((els) => els.map((e) => e.dataset.columnId));
-  if (order.indexOf("role") > order.indexOf("team")) throw new Error(`order unchanged: ${order.join(",")}`);
+  const order = await page
+    .locator("thead th[data-column-id]")
+    .evaluateAll((els) => els.map((e) => e.dataset.columnId));
+  if (order.indexOf("role") > order.indexOf("team"))
+    throw new Error(`order unchanged: ${order.join(",")}`);
 });
 await step("group-by-team", async () => {
   await page.getByRole("button", { name: /^Group/ }).click();

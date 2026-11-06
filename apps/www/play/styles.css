@@ -1,0 +1,5 @@
+/* The playground's stylesheet: the site's theme and every utility the grid and the primitives use,
+   compiled once at build (scripts/build-playground.ts) into public/play/styles.css. */
+@import "../src/styles/global.css";
+@source "../src/components/ui";
+@source "../registry";

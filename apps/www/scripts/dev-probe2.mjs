@@ -2,19 +2,37 @@ import { chromium } from "@playwright/test";
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
 const logs = [];
-page.on("console", (m) => { if (m.type() === "error") logs.push(`[error] ${m.text().slice(0, 300)}`); });
+page.on("console", (m) => {
+  if (m.type() === "error") logs.push(`[error] ${m.text().slice(0, 300)}`);
+});
 page.on("pageerror", (e) => logs.push(`[pageerror] ${e.message}`));
 await page.goto("http://127.0.0.1:5400/dev/grid/", { waitUntil: "networkidle" });
 await page.waitForSelector("tbody tr[data-row-id]");
 const state = (k) => page.evaluate((k) => JSON.stringify(window.__grid.table.store.state[k]), k);
-console.log("viewport height:", await page.locator("[data-slot=data-grid-viewport]").evaluate((e) => e.getBoundingClientRect().height));
+console.log(
+  "viewport height:",
+  await page
+    .locator("[data-slot=data-grid-viewport]")
+    .evaluate((e) => e.getBoundingClientRect().height),
+);
 const box = page.locator("tbody [role=checkbox]").first();
-console.log("checkbox tag:", await box.evaluate((e) => e.tagName + " aria-checked=" + e.getAttribute("aria-checked")));
+console.log(
+  "checkbox tag:",
+  await box.evaluate((e) => e.tagName + " aria-checked=" + e.getAttribute("aria-checked")),
+);
 await box.click();
 await page.waitForTimeout(200);
-console.log("rowSelection after click:", await state("rowSelection"), "selected rows:", await page.locator("tr[data-state=selected]").count());
+console.log(
+  "rowSelection after click:",
+  await state("rowSelection"),
+  "selected rows:",
+  await page.locator("tr[data-state=selected]").count(),
+);
 console.log("bulk bar:", await page.locator("[data-slot=data-grid-bulk-actions]").count());
-await page.locator("tbody [role=checkbox]").nth(3).click({ modifiers: ["Shift"] });
+await page
+  .locator("tbody [role=checkbox]")
+  .nth(3)
+  .click({ modifiers: ["Shift"] });
 await page.waitForTimeout(200);
 console.log("rowSelection after shift:", await state("rowSelection"));
 // resize

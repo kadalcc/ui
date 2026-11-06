@@ -1,0 +1,92 @@
+---
+/** A one-line shell command with a copy button, in the reader's package manager. */
+import Icon from "./Icon.astro";
+
+interface Props {
+  /** The npx form; pnpm/yarn/bun forms are derived. */
+  command: string;
+  class?: string;
+  id?: string;
+}
+const { command, class: className, id } = Astro.props;
+const forms = {
+  npm: command,
+  pnpm: command.replace(/^npx /, "pnpm dlx "),
+  yarn: command.replace(/^npx /, "yarn dlx "),
+  bun: command.replace(/^npx /, "bunx --bun "),
+};
+---
+
+<div
+  class:list={[
+    "group flex items-center gap-2 rounded-xl border border-border bg-muted/40 py-2 pr-2 pl-4 font-mono text-sm",
+    className,
+  ]}
+  data-copy-command
+  id={id}
+>
+  <span class="select-none text-muted-foreground" aria-hidden="true">$</span>
+  <code class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap" data-cmd data-forms={JSON.stringify(forms)}>{command}</code>
+  <div class="hidden items-center gap-0.5 rounded-md border border-border bg-background p-0.5 text-[11px] sm:flex" role="group" aria-label="Package manager">
+    {
+      (["npm", "pnpm", "yarn", "bun"] as const).map((pm) => (
+        <button
+          type="button"
+          data-pm={pm}
+          class="rounded px-1.5 py-0.5 font-sans text-muted-foreground hover:text-foreground aria-pressed:bg-muted aria-pressed:text-foreground"
+          aria-pressed={pm === "npm"}
+        >
+          {pm}
+        </button>
+      ))
+    }
+  </div>
+  <button
+    type="button"
+    class="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+    aria-label="Copy command"
+    data-copy
+  >
+    <Icon name="copy" size={15} class="[[data-copied]_&]:hidden" />
+    <Icon name="check" size={15} class="hidden text-emerald-600 [[data-copied]_&]:block" />
+  </button>
+</div>
+
+<script>
+  const KEY = "kadal-ui:pm";
+  const all = document.querySelectorAll<HTMLElement>("[data-copy-command]");
+  const apply = (pm: string) => {
+    for (const box of all) {
+      const code = box.querySelector<HTMLElement>("[data-cmd]")!;
+      const forms = JSON.parse(code.dataset.forms ?? "{}") as Record<string, string>;
+      code.textContent = forms[pm] ?? forms.npm ?? code.textContent;
+      for (const b of box.querySelectorAll<HTMLButtonElement>("[data-pm]")) {
+        b.setAttribute("aria-pressed", String(b.dataset.pm === pm));
+      }
+    }
+  };
+  let saved = "npm";
+  try {
+    saved = localStorage.getItem(KEY) || "npm";
+  } catch {}
+  apply(saved);
+  for (const box of all) {
+    for (const b of box.querySelectorAll<HTMLButtonElement>("[data-pm]")) {
+      b.addEventListener("click", () => {
+        const pm = b.dataset.pm ?? "npm";
+        try {
+          localStorage.setItem(KEY, pm);
+        } catch {}
+        apply(pm);
+      });
+    }
+    box.querySelector<HTMLButtonElement>("[data-copy]")?.addEventListener("click", async () => {
+      const text = box.querySelector("[data-cmd]")?.textContent ?? "";
+      try {
+        await navigator.clipboard.writeText(text);
+        box.dataset.copied = "";
+        setTimeout(() => delete box.dataset.copied, 1500);
+      } catch {}
+    });
+  }
+</script>

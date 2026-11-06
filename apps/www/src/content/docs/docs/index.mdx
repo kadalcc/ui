@@ -1,6 +1,48 @@
 ---
 title: Introduction
-description: Kadal UI is a set of power-user React components, starting with a data grid, that you install into your own source code with the shadcn CLI.
+description: Kadal UI is a set of open-source React components for power users, starting with a data grid on TanStack Table v9 and shadcn/ui. One command copies the source into your project.
 ---
 
-Placeholder: the docs are written after the component.
+import Demo from "../../../components/docs/Demo.astro";
+
+Kadal UI is a set of open-source React components for the parts of an app where people spend their
+day: the screens with real data on them. The first component is a **data grid**: sorting, faceted
+filters, fuzzy search, grouping with aggregation, 50,000 virtualized rows, inline editing,
+spreadsheet-style keyboard ranges and clipboard, export, saved views, and more, typed end to end.
+
+It is not an npm dependency you configure from the outside. It is a
+[shadcn registry](https://ui.shadcn.com/docs/registry): `npx shadcn@latest add @kadal/data-grid`
+copies the TypeScript source into your project, where it is yours to read, change and delete. The
+`@kadal/ui` package on npm is only the CLI that makes that one command shorter.
+
+<Demo name="data-grid-basic" />
+
+## What it is built on
+
+| | |
+| --- | --- |
+| [TanStack Table v9](https://tanstack.com/table/latest) | The headless core: row models, state in a TanStack Store, feature-typed APIs, tree-shaken to the features the grid registers. |
+| [shadcn/ui](https://ui.shadcn.com) on [Base UI](https://base-ui.com) | The menus, popovers, selects, checkboxes and buttons, in the flavour shadcn now ships by default. |
+| [TanStack Virtual](https://tanstack.com/virtual/latest) | Only the rows in view are in the DOM once the row count passes a threshold. |
+| [dnd kit](https://dndkit.com) (`@dnd-kit/react`) | Dragging headers to reorder columns. |
+| Tailwind CSS v4 | Styling through your own theme tokens: the grid looks like the rest of your app because it *is* the rest of your app. |
+
+## Who it is for
+
+- Teams on shadcn/ui who need more than the data-table recipe and don't want a 200 kB vendor grid with a licence key.
+- Admin consoles, back offices, analytics and ops tools, where the same grid is open all day and every shortcut saves a minute.
+- Anyone who has fought a grid's prop API to change one label.
+
+## Where to go next
+
+- [Installation](/docs/installation/): the one command, and what it does to your project.
+- [Your first grid in 5 minutes](/docs/quick-start/): columns, data, a page with a grid on it.
+- [Data grid](/docs/data-grid/): every feature, one page each, with a live example and its code.
+- [Type safety](/docs/type-safety/): how the column builder and TanStack v9's features keep everything typed.
+- [Playground](/playground/): edit the examples in the browser.
+
+## Licence and support
+
+MIT. Report bugs and request features on [GitHub](https://github.com/kadalcc/ui/issues), ask in
+[Discussions](https://github.com/kadalcc/ui/discussions) or the [Kadal Discord](https://discord.gg/pdWcSbxNKa),
+and if the grid saves you a week, consider [sponsoring](/sponsor/) the time that keeps it maintained.

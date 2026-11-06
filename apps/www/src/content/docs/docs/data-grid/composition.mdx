@@ -1,0 +1,142 @@
+---
+title: Composition and custom layouts
+description: Build the grid from its parts with useDataGrid and DataGridRoot, every exported part and its props, and how to write a part of your own with useDataGridContext.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+`<DataGrid>` is a toolbar, a table and a pager in a sensible order. When the order, or the toolbar,
+isn't yours, build the same grid from the same parts.
+
+<Demo name="data-grid-composed" />
+
+## Shape the all-in-one first
+
+Most layouts don't need composition. `<DataGrid>` takes the options of `useDataGrid` plus these
+presentation props:
+
+| Prop | What it does |
+| --- | --- |
+| `toolbar` | `false` hides the toolbar, a node replaces it, a `DataGridToolbarProps` object configures it (`{ density: false, views: false }`). |
+| `toolbarActions` | Your controls inside the built-in toolbar, before its menus. |
+| `pager` | `false` hides the pager (rows still page unless `pagination: false`); a `DataGridPaginationProps` object configures it. |
+| `bulkActions` | `(rows, api) => ReactNode`, rendered in the bar that appears while rows are selected. |
+| `height`, `fillHeight`, `stickyHeader`, `striped`, `getRowClassName`, `onRowClick`, `tableClassName` | Passed to the table (below). |
+| `loading`, `error`, `onRetry`, `emptyState` | The [states](/docs/data-grid/states/). |
+| `fullscreen`, `onFullscreenChange` | Control the fullscreen toggle. |
+| `grid` | A `DataGridApi` from `useDataGrid`, when you need the api outside the component. |
+
+```tsx
+const grid = useDataGrid({ data, columns, getRowId: (r) => r.id })
+
+<DataGrid grid={grid} toolbar={{ views: false }} toolbarActions={<Button>New</Button>} striped height={520} />
+<p>{grid.table.getFilteredRowModel().rows.length} match</p>
+```
+
+## Compose it
+
+`useDataGrid(options)` builds the table and everything the parts need. `<DataGridRoot grid={grid}>`
+provides it to whatever you render inside, and gives the grid its frame: the `--dg-row-height`
+variable, `data-density`, the fullscreen box, the tooltip provider and a live region for screen
+reader announcements. Inside, place the parts in any order:
+
+```tsx
+import {
+  DataGridBulkActions, DataGridDensityMenu, DataGridExportMenu, DataGridFilterChips,
+  DataGridPagination, DataGridRoot, DataGridSearch, DataGridTable, DataGridViewOptions,
+  useDataGrid,
+} from "@/components/ui/data-grid"
+
+const grid = useDataGrid<Person>({ key: "customers", data, columns, getRowId: (r) => r.id })
+
+<DataGridRoot grid={grid} loading={isFetching}>
+  <div className="flex items-center justify-between gap-2">
+    <div className="flex items-center gap-2">
+      <h2 className="text-base font-semibold">Customers</h2>
+      <DataGridSearch className="max-w-56" />
+      <DataGridFilterChips />
+    </div>
+    <div className="flex items-center gap-2">
+      <DataGridViewOptions />
+      <DataGridDensityMenu />
+      <DataGridExportMenu filename="customers" />
+      <Button size="sm">New customer</Button>
+    </div>
+  </div>
+  <DataGridBulkActions>{(rows) => <Button size="sm">Export {rows.length}</Button>}</DataGridBulkActions>
+  <DataGridPagination />
+  <DataGridTable height={420} striped />
+</DataGridRoot>
+```
+
+Every part reads the grid from context, so there is nothing to pass between them. A part that has
+nothing to show renders nothing: the grouping bar with no grouping, the bulk bar with no selection,
+the views menu without `persist`, the pager with `pagination: false`.
+
+### The parts
+
+| Part | Props | Renders |
+| --- | --- | --- |
+| `DataGridRoot` | `grid`, `className`, `loading`, `error`, `onRetry`, `emptyState`, `fullscreen`, `onFullscreenChange` | The provider and frame. Everything else goes inside it. |
+| `DataGridToolbar` | `className`, `start`, `children`, `search`, `filters`, `columns`, `grouping`, `density`, `export`, `views`, `fullscreen` (all `true`), `exportFilename` | Search, filter chips and the grouping bar on the left; `children` then the menus on the right. `start` goes after the search. |
+| `DataGridSearch` | `className` | The debounced search box. Nothing when `globalFilter: false`. |
+| `DataGridFilterChips` | `className` | One chip per active column filter, each removable, and a Clear. |
+| `DataGridGroupingBar` | `className` | The grouped columns as chips. |
+| `DataGridViewOptions` | `className` | The **View** popover: column visibility, with search, Show all and Reset view. |
+| `DataGridGroupMenu` | `className` | The **Group** menu. Nothing when `grouping: false` or no column is groupable. |
+| `DataGridDensityMenu` | `className` | Compact / Comfortable / Spacious. |
+| `DataGridExportMenu` | `className`, `filename` | CSV, JSON, copy to clipboard, selected rows only. |
+| `DataGridViewsMenu` | `className` | Saved views. Nothing unless the grid persists with `savedViews`. |
+| `DataGridFullscreenToggle` | `className` | Fullscreen on and off. |
+| `DataGridTable` | `className`, `height`, `fillHeight`, `stickyHeader` (`true`), `striped`, `getRowClassName`, `onRowClick` | The table: header, body (virtualized when large), footer and the state overlays. |
+| `DataGridPagination` | `className`, `showSelection`, `showGoTo` | Rows per page, page x of y, first / previous / next / last. `showGoTo` defaults to on past 5 pages, `showSelection` to whether selection is on. |
+| `DataGridBulkActions` | `className`, `children: (rows, api) => ReactNode` | The bar while rows are selected: the count, Clear selection, your actions. |
+
+Table props worth knowing:
+
+- `height` is a number of pixels or any CSS length. `fillHeight` measures from the grid's top edge to
+  the bottom of its nearest scrolling ancestor (minus that ancestor's bottom padding), never less than
+  240 px, and re-measures on resize, so a console page gets one scrollbar, inside the grid.
+- `striped` tints every other row. `getRowClassName(row)` adds classes to a row; the row is a
+  TanStack `Row`, so `row.original` is your data.
+- `onRowClick(row, event)` runs before the grid's own row click. When the grid has no checkbox
+  column and cell selection is off, a click toggles the row's selection; call
+  `event.preventDefault()` in your handler to stop that.
+
+Lower-level exports for custom columns: `DataGridDefaultCell`, `DataGridGroupCell`,
+`DataGridAggregatedCell`, `DataGridSelectCell`, `DataGridSelectHeader`, `DataGridExpanderCell`,
+`DataGridExpanderHeader`, `DataGridColumnHeader`, `DataGridColumnFilter`, `DataGridCellEditor`.
+
+## A part of your own
+
+Any component rendered inside `DataGridRoot` can call `useDataGridContext<TData>()` and get the
+`DataGridApi`: `table` (the TanStack instance, with `table.state`), `labels`, `locale`, `density` and
+`setDensity`, `rowHeight`, `pagination`, `isServer`, `views`, `editing`, `exportCsv`, `exportJson`,
+`copyToClipboard`, `exportTable`, `metaFor(columnId)` and `labelFor(columnId)`. It throws outside a
+grid; `useOptionalDataGridContext()` returns `null` instead, for a part that can stand alone.
+
+Here is a toolbar part that resets every slice of state, placed in the built-in toolbar through
+`children`:
+
+<Demo name="data-grid-custom-part" />
+
+It reads `table.state` to decide whether anything is dirty, and calls TanStack's `reset*` methods
+with `true` so each slice goes back to its default rather than to `initialState`. If the grid
+persists, `grid.views.reset()` is the one call that restores the default view and clears the active
+saved view.
+
+`useDataGridUi()` is the second context: `rootRef` (the grid's root element), `fullscreen` and
+`setFullscreen`, `loading`, `error`, `onRetry`, `emptyState`, and `announce(message)`, which speaks
+through the grid's live region. Say what your part did: `announce("Reset")`.
+
+<Aside type="tip" title="Several grids on a page">
+  Give each `useDataGrid` its own `name`. It names the grid in the TanStack devtools and is the default
+  storage key for `persist`; two grids with the same key would share a saved view.
+</Aside>
+
+## See also
+
+- [Loading and empty states](/docs/data-grid/states/): the props on `DataGridRoot`.
+- [Saved views and persistence](/docs/data-grid/persistence/): what `views.reset()` restores.
+- [API reference](/docs/data-grid/api/): every option of `useDataGrid` and every field of the api.

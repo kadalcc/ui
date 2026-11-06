@@ -1,0 +1,94 @@
+---
+title: Accessibility
+description: The ARIA roles and attributes the Kadal UI data grid emits, what it announces, how far the keyboard reaches, reduced motion and contrast, and the gaps that remain.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+The grid renders a real `<table>` with the ARIA grid pattern on top: `role="grid"`, one tab stop in
+the body, `aria-sort` on headers, `aria-selected` on rows and cells, and a polite live region for
+what the keyboard just did. This page lists what it emits and, as plainly, what it does not do yet.
+
+## Roles and attributes
+
+| Element | Attributes |
+| --- | --- |
+| scroll container (`<div>`) | `role="grid"`, `aria-rowcount` (data rows + 1 header row), `aria-colcount` (visible leaf columns), `aria-multiselectable` when multi-row selection is on, `aria-busy` while loading. Receives the keyboard model. |
+| `<thead>`, `<tbody>` | `role="rowgroup"` |
+| header `<tr>` | `role="row"`, `aria-rowindex="1"` |
+| header `<th>` | `role="columnheader"`, `scope="col"`, `aria-colindex`, `aria-sort="ascending" \| "descending" \| "none"` on sortable columns (absent on the checkbox and actions columns). Group headers use `scope="colgroup"`. |
+| sort button | a `<button>` with the column title; `title` says “Drag to reorder column” when it is draggable |
+| filter and menu buttons | `aria-label` “Filter: Name” and “Name: Column menu” |
+| resize handle | `role="separator"`, `aria-orientation="vertical"`, `aria-label` “Resize column” |
+| body `<tr>` | `role="row"`, `aria-rowindex` (position in the full data set plus header rows; pinned rows count first), `aria-selected` when row selection is on, `aria-expanded` on rows that can expand, `aria-level` (tree depth + 1) |
+| body `<td>` | `role="gridcell"`, `aria-colindex`, `aria-selected` when cell selection is on, `aria-readonly="true"` on cells that cannot be edited once any column is editable, `tabindex` `0` on the focused cell and `-1` elsewhere |
+| footer `<td>` | `role="gridcell"` |
+| row checkbox | `aria-label` “Select row”; the header checkbox “Select all”, `indeterminate` for a partial page |
+| expander | `aria-expanded`, `aria-label` “Expand” / “Collapse”; header “Expand all” / “Collapse all” |
+| boolean cell | the icon has `aria-label` “Yes” / “No” |
+| cell editor | `aria-label` “Edit: Name”, `aria-invalid` and `title` with the message when rejected |
+| loading bar | `role="progressbar"`, `aria-label` “Loading…” |
+| bulk-actions bar | `role="toolbar"`, `aria-label` “3 selected” |
+| toolbar menus | shadcn/Base UI menus, popovers, dialogs and selects, with their own roles and focus handling |
+| live region | `aria-live="polite"`, `aria-atomic="true"`, visually hidden, inside the grid root |
+
+Every label above comes from [`labels`](/docs/data-grid/i18n/), so a translated grid is translated
+for assistive technology too.
+
+## Announcements
+
+The live region speaks after a sort toggled from the header (“Name: Sort ascending”), after
+<kbd>Space</kbd> or <kbd>⌘</kbd><kbd>A</kbd> (“3 selected”), and after a copy (“Copied 12
+cells”). Identical messages are re-announced. Your own parts can use it through
+`useDataGridUi().announce(message)`.
+
+## Keyboard
+
+Everything the pointer can do has a keyboard route except dragging a header, which has **Move
+left** / **Move right** in the column menu instead. The complete table is on the
+[keyboard page](/docs/data-grid/keyboard/). In short: <kbd>Tab</kbd> to a header, an arrow to drop
+into the body, arrows to move, <kbd>Shift</kbd>+arrows for a range, <kbd>Enter</kbd> to edit,
+<kbd>Space</kbd> to select the row, <kbd>Esc</kbd> to back out, and ordinary menu keys everywhere
+else.
+
+## Touch
+
+Rows are 32, 40 or 48 px tall by [density](/docs/data-grid/density/); toolbar controls are 32 px
+and the header's filter and menu buttons 24 px, which is under the 44 px many guidelines ask for.
+Resize handles respond to touch. Prefer the spacious density on touch-first screens, and give
+primary actions a toolbar button rather than relying on the header menus.
+
+## Motion
+
+The grid's only animations are Tailwind transitions (`transition-colors` on rows, `transition-opacity`
+on header icons) and `animate-pulse` on the loading bar. It does not add `motion-reduce:` variants
+itself. Since the source is yours, add `motion-reduce:transition-none motion-reduce:animate-none`
+where you want them, or disable transitions globally under `@media (prefers-reduced-motion: reduce)`.
+
+## Colour and contrast
+
+Every colour is a theme token (`background`, `foreground`, `muted-foreground`, `primary`,
+`border`, `ring`, `destructive`): the grid is exactly as high-contrast as your theme. Check
+`muted-foreground` on `background` and `primary` on `background` against your target ratio; the
+grid uses them for secondary text and for the focus ring. The focus ring is a 2 px inset ring in
+`primary`, and the selected-row tint is `primary` at 5 %, so neither depends on hue alone: the
+focused cell also has `tabindex="0"` and selected rows have `aria-selected`.
+
+## Known gaps
+
+<Aside type="caution">
+  Honest list, tracked on [GitHub](https://github.com/kadalcc/ui/issues). Pull requests welcome.
+</Aside>
+
+- **Dragging** a header to reorder it has no keyboard equivalent beyond Move left / Move right in
+  the column menu; the drag itself is pointer-only.
+- **Cell ranges** are not described to a screen reader beyond `aria-selected` per cell; the live
+  region gives a count only on select-all and on copy, not while a range grows.
+- **Virtualized grids** render only the rows in view, so a screen reader's table navigation sees
+  the rendered window; `aria-rowcount` and `aria-rowindex` keep the position honest.
+
+## See also
+
+- [Keyboard navigation](/docs/data-grid/keyboard/)
+- [Internationalisation](/docs/data-grid/i18n/): the labels assistive technology reads.
+- [Theming](/docs/theming/): the tokens the contrast depends on.

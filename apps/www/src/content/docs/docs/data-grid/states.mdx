@@ -1,0 +1,103 @@
+---
+title: Loading and empty states
+description: The loading bar and spinner, the error state with Retry, the empty and filtered-empty states with Clear, and how to replace them with your own.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+A grid is not always full of rows. Three props cover the rest: `loading`, `error` and `emptyState`.
+The grid picks the right presentation for each from whether it has rows.
+
+<Demo name="data-grid-states" />
+
+## Use it
+
+Wire the three props to your data source. With TanStack Query:
+
+```tsx
+<DataGrid
+  data={query.data?.rows ?? []}
+  columns={columns}
+  loading={query.isFetching}
+  error={query.error ? query.error.message : null}
+  onRetry={() => query.refetch()}
+  height={480}
+/>
+```
+
+What shows, in order of precedence:
+
+| Condition | What the grid shows |
+| --- | --- |
+| `error` set | The error state over everything, rows or not: a warning icon, **Something went wrong.**, your `error` as the description, and a **Retry** button when `onRetry` is given. |
+| `loading` and no rows | A spinner with **Loading…** below the header; the overlay does not take pointer events. |
+| `loading` with rows | A thin animated bar along the top edge (`role="progressbar"`). The rows stay in place and usable, which is what you want on a refetch. |
+| No rows, a filter or search active | **No rows match the current filters.** with a **Clear** button that resets every column filter and the search. |
+| No rows | An inbox icon and **No records found.** |
+
+While `loading` is true the grid also carries `aria-busy`.
+
+### Your own empty state
+
+`emptyState` replaces the default, for both the empty and the filtered-empty case:
+
+```tsx
+<DataGrid
+  data={customers}
+  columns={columns}
+  emptyState={
+    <Empty className="border-0">
+      <EmptyHeader>
+        <EmptyMedia variant="icon"><UsersIcon /></EmptyMedia>
+        <EmptyTitle>No customers yet</EmptyTitle>
+        <EmptyDescription>Import a CSV or add one by hand.</EmptyDescription>
+      </EmptyHeader>
+      <Button size="sm">Add customer</Button>
+    </Empty>
+  }
+/>
+```
+
+It renders inside the grid, so a component you pass can call `useDataGridContext()` to know whether
+filters are active and offer its own Clear (`table.resetColumnFilters(); table.resetGlobalFilter(true)`).
+
+## How it behaves
+
+- **The overlay sits below the header.** The header row stays visible and usable in every state, so
+  a filter that emptied the grid can be cleared from the header that set it.
+- **Give it room.** The states centre themselves in the scroll area. With no `height` an empty or
+  loading grid grows to a minimum of 12rem so the message fits under the header; set `height` or
+  `fillHeight` for a steadier frame, as the demo does.
+- **Refetch, don't flash.** Keep the previous rows while the next page loads
+  (`placeholderData: keepPreviousData` in TanStack Query) and `loading={isFetching}` shows the bar
+  rather than swapping the rows for a spinner. The [server-side example](/docs/data-grid/server-side/)
+  does exactly this.
+- **Error wins.** An error is shown even when rows are present, over them. Clear `error` when the
+  next request succeeds.
+- **Strings.** `loading`, `empty`, `emptyFiltered`, `error`, `retry` and `clearFilters` in `labels`
+  change the wording; see [Internationalisation](/docs/data-grid/i18n/).
+
+<Aside type="tip" title="Skeleton rows">
+  The grid has no built-in skeleton; the spinner is the first-load state. If your design calls for
+  skeleton rows, render placeholder rows with `loading` on (you get the bar) and a `cell` that returns
+  a `<Skeleton />` when the row is a placeholder. The empty and error states still work as above.
+</Aside>
+
+## Options
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `loading` | `boolean` | `false` | The bar with rows, the spinner without. |
+| `error` | `React.ReactNode` | `null` | Any node; a string is the common case. Truthy shows the error state. |
+| `onRetry` | `() => void` | | Adds the Retry button to the error state. |
+| `emptyState` | `React.ReactNode` | | Replaces both empty states. |
+| `height` / `fillHeight` | | | Not state props, but the states need the room. |
+
+The same four props exist on `DataGridRoot` for [composed layouts](/docs/data-grid/composition/).
+
+## See also
+
+- [Server-side data](/docs/data-grid/server-side/): `loading`, `error` and `onRetry` from a query.
+- [Filtering](/docs/data-grid/filtering/): what Clear resets.
+- [Internationalisation](/docs/data-grid/i18n/).

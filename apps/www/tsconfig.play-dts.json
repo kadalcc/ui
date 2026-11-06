@@ -1,0 +1,17 @@
+{
+  // Declaration-only emit for the playground's editor types (scripts/build-playground.ts). Never used
+  // for type-checking; tsconfig.json is.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationMap": false,
+    "rootDir": ".",
+    "outDir": "play/.dts",
+    "skipLibCheck": true
+  },
+  "include": ["registry/kadal/ui/**/*", "registry/kadal/lib/**/*", "registry/kadal/hooks/**/*", "src/lib/utils.ts"],
+  // The docs site's code block (shiki) is not something the playground imports.
+  "exclude": ["registry/kadal/ui/code-block.tsx", "registry/kadal/hooks/use-highlighted-code.ts"]
+}

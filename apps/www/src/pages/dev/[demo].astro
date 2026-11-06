@@ -1,0 +1,41 @@
+---
+// One bare page per example, for the browser smoke runs and the e2e suite: /dev/<name>/
+import "../../styles/global.css";
+import DataGridDemo from "@/registry/kadal/examples/data-grid-demo";
+import DataGridBasic from "@/registry/kadal/examples/data-grid-basic";
+import DataGridVirtualized from "@/registry/kadal/examples/data-grid-virtualized";
+import DataGridTree from "@/registry/kadal/examples/data-grid-tree";
+import DataGridServer from "@/registry/kadal/examples/data-grid-server";
+import DataGridComposed from "@/registry/kadal/examples/data-grid-composed";
+import DataGridUrlState from "@/registry/kadal/examples/data-grid-url-state";
+
+export function getStaticPaths() {
+  return ["grid", "basic", "virtualized", "tree", "server", "composed", "url-state"].map((demo) => ({
+    params: { demo },
+  }));
+}
+const { demo } = Astro.params;
+const rows = Number(Astro.url.searchParams.get("rows") ?? 0) || undefined;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Data grid · {demo}</title>
+    <meta name="robots" content="noindex" />
+  </head>
+  <body class="p-6">
+    <main class="mx-auto flex max-w-[1400px] flex-col gap-4">
+      <h1 class="text-lg font-semibold">Data grid · {demo}</h1>
+      {demo === "grid" && <DataGridDemo client:only="react" rows={rows ?? 500} />}
+      {demo === "basic" && <DataGridBasic client:only="react" />}
+      {demo === "virtualized" && <DataGridVirtualized client:only="react" rows={rows ?? 50_000} />}
+      {demo === "tree" && <DataGridTree client:only="react" />}
+      {demo === "server" && <DataGridServer client:only="react" />}
+      {demo === "composed" && <DataGridComposed client:only="react" />}
+      {demo === "url-state" && <DataGridUrlState client:only="react" />}
+    </main>
+  </body>
+</html>

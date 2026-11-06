@@ -1,0 +1,294 @@
+---
+import Base from "../layouts/Base.astro";
+import Icon from "../components/Icon.astro";
+import { SITE } from "../data/site";
+import { PAID_PRODUCTS, linkTo, type KadalSite } from "../data/network";
+import { SPONSORS, SPONSOR_URL, TIERS, tierUrl, type Tier } from "../data/sponsors";
+
+/** A product's tagline as a parenthetical: "the AI presentation app", no capital, no full stop. */
+const blurb = (p: KadalSite) => (p.tagline ?? p.line).replace(/\.$/, "").replace(/^./, (c) => c.toLowerCase());
+
+const monthly = (who: Tier["for"]) => TIERS.filter((t) => !t.oneTime && t.for === who);
+const once = TIERS.filter((t) => t.oneTime);
+const COMPANY_TIERS = new Set(["gold", "silver", "bronze"]);
+const companies = SPONSORS.filter((s) => COMPANY_TIERS.has(s.tier));
+const people = SPONSORS.filter((s) => !COMPANY_TIERS.has(s.tier));
+const logoWidth: Record<string, number> = { gold: 160, silver: 120, bronze: 90 };
+
+const FAQ: { q: string; a: string }[] = [
+  {
+    q: "How does paying work?",
+    a: "Through GitHub Sponsors, on the same bill as anything else you pay GitHub for. Sponsorships from a personal account reach us in full; GitHub charges organisations up to 6%, or 3% when they pay by invoice. You can change your tier or stop at any time on GitHub. Until Kadal's GitHub organisation can receive sponsorships, the Sponsors page is the maintainer's account.",
+  },
+  {
+    q: "Can I sponsor without being listed?",
+    a: "Yes. Choose a private sponsorship on GitHub and we never show your name, avatar or logo anywhere, whatever the tier.",
+  },
+  {
+    q: "Does sponsoring buy support?",
+    a: "Not as a contract. Gold sponsors get priority on their issues and a monthly call; every other tier is a thank-you. There is no SLA, no promised fix and no private channel. If you need work done to a deadline, write to us and the studio can quote for it.",
+  },
+  {
+    q: "Is a sponsorship tax-deductible?",
+    a: "No. Kadal is a business in India, not a charity, so a sponsorship is a payment for the perks of its tier rather than a donation.",
+  },
+  {
+    q: "We use the grid in a product. Do we owe anything?",
+    a: "No. Kadal UI is MIT: use it in commercial products, change it, ship it, with no fee and no attribution beyond the licence notice that is already in the copied files. Sponsoring is a choice, and the surest way to keep the project maintained for the day you need a fix.",
+  },
+  {
+    q: "Will there ever be a paid tier?",
+    a: "No. Everything in the registry is MIT and stays that way. Sponsorships and Kadal's paid products fund the hours; the code never gains features only sponsors can use.",
+  },
+];
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQ.map((f) => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: { "@type": "Answer", text: f.a },
+  })),
+};
+
+const eyebrow = "font-mono text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase";
+const btnPink =
+  "inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-pink-600 px-4 text-sm font-medium text-white transition-colors hover:bg-pink-700";
+const btnGhost =
+  "inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 text-sm font-medium transition-colors hover:bg-muted";
+---
+
+<Base
+  title="Sponsor"
+  description="Sponsor Kadal UI on GitHub: tiers from $3 a month for individuals and $100 for companies, with your name, avatar or logo in the README of kadalcc/ui and on ui.kadal.cc. MIT, no paid tier."
+  og="/og/sponsor.png"
+  schema={schema}
+>
+  <!-- Head -->
+  <section class="relative overflow-hidden">
+    <div
+      class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_50%_at_50%_0%,color-mix(in_oklch,var(--color-pink-500)_10%,transparent),transparent_70%)]"
+    >
+    </div>
+    <div class="mx-auto max-w-7xl px-4 pt-16 pb-12 sm:px-6 sm:pt-24">
+      <div class="max-w-3xl">
+        <p class={eyebrow}>Sponsor</p>
+        <h1 class="mt-3 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">Keep it free and maintained</h1>
+        <p class="mt-5 text-lg text-pretty text-muted-foreground">
+          Kadal UI is MIT. There is no paid tier and there won't be one. Sponsorships pay for time: on issues, on the
+          docs, on the next power-user components after the grid, and on the features you ask for.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={SPONSOR_URL} rel="noopener" class={btnPink}><Icon name="heart" size={16} /> Sponsor on GitHub</a>
+          <a href={SITE.repo} rel="noopener" class={btnGhost}><Icon name="github" size={16} /> Star the repo</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tiers -->
+  <section class="border-t border-border bg-muted/20" aria-labelledby="for-people">
+    <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <h2 id="for-people" class="flex flex-wrap items-baseline gap-x-3 text-2xl font-semibold tracking-tight">
+        For individuals <span class="font-mono text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">a month</span>
+      </h2>
+      <ul class="mt-6 grid gap-4 md:grid-cols-3">
+        {
+          monthly("individual").map((t) => (
+            <li>
+              <article class="flex h-full flex-col gap-4 rounded-xl border border-border bg-card p-6">
+                <h3 class="text-lg font-semibold tracking-tight">{t.name}</h3>
+                <p class="text-sm text-muted-foreground">
+                  <span class="text-4xl font-semibold tracking-tight text-foreground">${t.price}</span> / month
+                </p>
+                <ul class="flex flex-1 flex-col gap-2 text-sm">
+                  {t.perks.map((p) => (
+                    <li class="flex gap-2">
+                      <Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" /> {p}
+                    </li>
+                  ))}
+                </ul>
+                <a href={tierUrl(t)} rel="noopener" class:list={[btnGhost, "self-start"]}>
+                  Sponsor at ${t.price}
+                </a>
+              </article>
+            </li>
+          ))
+        }
+      </ul>
+
+      <h2 id="for-companies" class="mt-14 flex flex-wrap items-baseline gap-x-3 text-2xl font-semibold tracking-tight">
+        For companies <span class="font-mono text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">a month</span>
+      </h2>
+      <ul class="mt-6 grid gap-4 md:grid-cols-3">
+        {
+          monthly("company").map((t) => (
+            <li>
+              <article
+                class:list={[
+                  "flex h-full flex-col gap-4 rounded-xl border bg-card p-6",
+                  t.id === "gold" ? "border-pink-500/60 ring-1 ring-pink-500/60" : "border-border",
+                ]}
+              >
+                <h3 class="flex items-center justify-between gap-2 text-lg font-semibold tracking-tight">
+                  {t.name}
+                  {t.id === "gold" && (
+                    <span class="rounded-full bg-pink-500/15 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-pink-700 uppercase dark:text-pink-300">
+                      Priority on issues
+                    </span>
+                  )}
+                </h3>
+                <p class="text-sm text-muted-foreground">
+                  <span class="text-4xl font-semibold tracking-tight text-foreground">${t.price}</span> / month
+                </p>
+                <ul class="flex flex-1 flex-col gap-2 text-sm">
+                  {t.perks.map((p) => (
+                    <li class="flex gap-2">
+                      <Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" /> {p}
+                    </li>
+                  ))}
+                </ul>
+                <a href={tierUrl(t)} rel="noopener" class:list={[t.id === "gold" ? btnPink : btnGhost, "self-start"]}>
+                  Sponsor at ${t.price}
+                </a>
+              </article>
+            </li>
+          ))
+        }
+      </ul>
+
+      <p class="mt-8 text-sm text-muted-foreground">
+        Once, instead:
+        {
+          /* On one line each: a line break inside the fragment would become a space before the punctuation. */
+          once.map((t, i) => (
+            <>{i > 0 && " or "}<a href={tierUrl(t)} rel="noopener" class="font-medium text-foreground underline-offset-4 hover:underline">${t.price}</a> ({t.name.toLowerCase()})</>
+          ))
+        }. Companies can pay
+        <a
+          href="https://docs.github.com/en/sponsors/sponsoring-open-source-contributors/paying-for-github-sponsors-by-invoice"
+          rel="noopener"
+          class="underline underline-offset-4 hover:text-foreground">by invoice</a
+        >. Or <a href={SPONSOR_URL} rel="noopener" class="underline underline-offset-4 hover:text-foreground">choose your own amount on GitHub</a>.
+      </p>
+    </div>
+  </section>
+
+  <!-- Sponsors -->
+  <section class="border-t border-border" aria-labelledby="sponsors-heading">
+    <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <p class={eyebrow}>Sponsors</p>
+      <h2 id="sponsors-heading" class="mt-3 text-3xl font-semibold tracking-tight">Who keeps it going</h2>
+      {
+        SPONSORS.length === 0 ? (
+          <div class="mt-6 max-w-2xl rounded-xl border border-dashed border-border bg-muted/30 p-6 text-muted-foreground">
+            No public sponsors yet. <a href={SPONSOR_URL} rel="noopener" class="font-medium text-foreground underline-offset-4 hover:underline">Be the first</a>, and your name or logo goes here and in the README.
+          </div>
+        ) : (
+          <>
+            {companies.length > 0 && (
+              <ul class="mt-8 flex flex-wrap items-center gap-x-10 gap-y-6">
+                {companies.map((s) => (
+                  <li>
+                    <a href={s.href} rel="noopener sponsored" class="font-medium underline-offset-4 hover:underline">
+                      {s.logo ? <img src={s.logo} alt={s.name} width={logoWidth[s.tier]} /> : s.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {people.length > 0 && (
+              <ul class="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                {people.map((s) => (
+                  <li>
+                    <a href={s.href} rel="noopener" class="underline-offset-4 hover:underline">
+                      {s.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )
+      }
+      <p class="mt-5 text-sm text-muted-foreground">
+        Also on <a href={`${SITE.repo}/blob/main/BACKERS.md`} rel="noopener" class="underline underline-offset-4 hover:text-foreground">BACKERS.md</a>.
+        Private sponsorships are never listed.
+      </p>
+    </div>
+  </section>
+
+  <!-- Other ways -->
+  <section class="border-t border-border bg-muted/20" aria-labelledby="help-heading">
+    <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <p class={eyebrow}>Not ready to pay?</p>
+      <h2 id="help-heading" class="mt-3 text-3xl font-semibold tracking-tight">Other ways to help</h2>
+      <ul class="mt-6 grid max-w-4xl gap-3 text-sm sm:grid-cols-2">
+        <li class="flex gap-2">
+          <Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" />
+          <span><a href={SITE.repo} rel="noopener" class="underline underline-offset-4">Star the repository</a>: it is how most people find it.</span>
+        </li>
+        <li class="flex gap-2">
+          <Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" />
+          <span><a href={SITE.newBug} rel="noopener" class="underline underline-offset-4">Report a bug</a> with a small reproduction, or answer someone else's issue.</span>
+        </li>
+        <li class="flex gap-2">
+          <Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" />
+          <span>Fix or extend a <a href="/docs/" class="underline underline-offset-4">docs page</a>; every page has an edit link.</span>
+        </li>
+        <li class="flex gap-2">
+          <Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" />
+          <span>Ship it in your product and tell people; a post or a talk counts.</span>
+        </li>
+        <li class="flex gap-2">
+          <Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" />
+          <span>Propose the next component in <a href={SITE.discussions} rel="noopener" class="underline underline-offset-4">Discussions</a>, or build it with us. See <a href="/docs/contributing/" class="underline underline-offset-4">Contributing</a>.</span>
+        </li>
+        <li class="flex gap-2">
+          <Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" />
+          <span>Buy one of Kadal's paid products below: the same hours pay for this.</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="border-t border-border" aria-labelledby="faq-heading">
+    <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <p class={eyebrow}>Questions</p>
+      <h2 id="faq-heading" class="mt-3 text-3xl font-semibold tracking-tight">About sponsoring</h2>
+      <div class="mt-6 grid max-w-3xl gap-3">
+        {
+          FAQ.map((f) => (
+            <details class="group rounded-xl border border-border bg-card px-5">
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 py-4 font-medium [&::-webkit-details-marker]:hidden">
+                {f.q}
+                <Icon name="plus" size={18} class="shrink-0 text-muted-foreground group-open:hidden" />
+                <Icon name="minus" size={18} class="hidden shrink-0 text-muted-foreground group-open:block" />
+              </summary>
+              <p class="pb-5 text-sm text-muted-foreground">{f.a}</p>
+            </details>
+          ))
+        }
+      </div>
+      <p class="mt-5 text-sm text-muted-foreground">
+        Something else? <a href={`mailto:${SITE.email}`} class="underline underline-offset-4 hover:text-foreground">{SITE.email}</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- Also funded by -->
+  <section class="border-t border-border bg-muted/20">
+    <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6">
+      <p class="max-w-3xl text-muted-foreground">
+        Sponsorships are one of the two things that pay for Kadal UI. The other is Kadal's paid products:
+        {
+          PAID_PRODUCTS.map((p, i) => (
+            <>{i > 0 && " and "}<a href={linkTo(p)} rel="noopener" class="font-medium text-foreground underline-offset-4 hover:underline">{p.name}</a> ({blurb(p)})</>
+          ))
+        }. Buying either funds the same hours.
+      </p>
+    </div>
+  </section>
+</Base>

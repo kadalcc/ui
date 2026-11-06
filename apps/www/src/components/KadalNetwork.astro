@@ -1,0 +1,56 @@
+---
+/**
+ * The rest of Kadal, above the footer: the paid products first (the free, open-source site is the
+ * one place to tell people what pays for it), then the rest.
+ */
+import { SITES, linkTo } from "../data/network";
+
+const products = SITES.filter((s) => s.paid);
+const rest = SITES.filter((s) => !s.paid);
+---
+
+<section class="border-t border-border" aria-labelledby="network-heading">
+  <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6">
+    <h2 id="network-heading" class="mb-4 font-mono text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">
+      Also from Kadal
+    </h2>
+    <ul class="grid gap-3 md:grid-cols-2">
+      {
+        products.map((s) => (
+          <li>
+            <a
+              href={linkTo(s)}
+              rel="noopener"
+              class="flex h-full flex-col gap-1 rounded-xl border border-border bg-card p-4 transition-colors hover:border-foreground/30"
+            >
+              <span class="flex items-center gap-2">
+                <strong class="text-sm">{s.name}</strong>
+                <span class="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-700 uppercase dark:text-amber-300">
+                  Paid · funds this
+                </span>
+              </span>
+              {s.tagline && <span class="text-sm font-medium">{s.tagline}</span>}
+              <span class="text-sm text-muted-foreground">{s.line}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <ul class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      {
+        rest.map((s) => (
+          <li>
+            <a
+              href={linkTo(s)}
+              rel="noopener"
+              class="flex h-full flex-col gap-1 rounded-xl border border-border p-4 transition-colors hover:border-foreground/30"
+            >
+              <strong class="text-sm">{s.name}</strong>
+              <span class="text-xs text-muted-foreground">{s.line}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>

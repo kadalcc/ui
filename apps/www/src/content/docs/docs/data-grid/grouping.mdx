@@ -1,0 +1,163 @@
+---
+title: Grouping and aggregation
+description: Group rows by one or more columns from the toolbar or a header, with group rows that carry a count and each column's aggregate, and footers for grand totals.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+Group rows by a column and each group becomes an expandable row with a count and, in every other
+column, an aggregate of its members: a sum of amounts, a range of dates, a count of distinct values.
+Each column kind brings a sensible aggregation; a footer can show the grand total.
+
+<Demo name="data-grid-grouping" />
+
+## Use it
+
+Three ways in, all equivalent:
+
+- The **Group** button in the toolbar lists every groupable column with a checkbox, plus
+  **Clear grouping** once something is grouped.
+- A column's menu has **Group by Team** (or **Ungroup** when it already is).
+- The **grouping bar** on the left of the toolbar shows the grouped columns as chips, in order;
+  the <kbd>×</kbd> on a chip ungroups that column.
+
+To start grouped, set `initialState.grouping`. Group rows have the id `columnId:value` (nested
+groups join with `>`), so you can open one from `initialState.expanded` too:
+
+```tsx
+<DataGrid
+  data={data}
+  columns={columns}
+  initialState={{ grouping: ["team"], expanded: { "team:Platform": true } }}
+/>
+```
+
+### Choosing an aggregation
+
+Every column kind has a default:
+
+| Kind | Default `aggregationFn` | Shown in the group row as |
+| --- | --- | --- |
+| `number`, `currency` | `sum` | The total, formatted like the column. |
+| `percent` | `mean` | The average, as a percentage. |
+| `date`, `datetime` | `extent` | The earliest and latest, `12 Jan 2024 – 3 Mar 2026`. |
+| `boolean` | `count` | How many rows. |
+| `enum`, `text`, `link`, `tags` | `uniqueCount` | How many distinct values. |
+| `custom`, `col.display` | none | Nothing, until you set one. |
+
+Pick another by name. The names the grid registers are `sum`, `min`, `max`, `extent`, `mean`,
+`median`, `unique`, `uniqueCount`, `count`, `first` and `last`, plus `"auto"` (sum for numbers,
+extent for dates):
+
+```tsx
+col.number("seats", { header: "Seats", aggregationFn: "max" })
+```
+
+Or write your own. An aggregation is an object with an `aggregate` function that receives the
+group's rows and a `getValue` for the column; `constructAggregationFn` only types it:
+
+```tsx
+import { constructAggregationFn, type DataGridFeatures } from "@/components/ui/data-grid"
+
+const weightedUsage = constructAggregationFn<DataGridFeatures, Person, number, number>({
+  aggregate: ({ rows, getValue }) => {
+    const seats = rows.reduce((n, r) => n + r.original.seats, 0)
+    return seats ? rows.reduce((n, r) => n + getValue(r) * r.original.seats, 0) / seats : 0
+  },
+})
+
+col.percent("usage", { header: "Usage", aggregationFn: weightedUsage })
+```
+
+### Rendering the aggregate
+
+The default `aggregatedCell` formats the value the way the column formats its cells (currency as
+currency, dates as dates), renders an `extent` as `min – max`, a `count` as a plain number and a
+`unique` list as the values or `N values`, and names the aggregation in the cell's tooltip. Give the
+column its own `aggregatedCell` to render it differently; `getValue()` is the aggregate:
+
+```tsx
+col.enum("status", {
+  header: "Status",
+  options: STATUS_OPTIONS,
+  aggregatedCell: ({ getValue }) => <span className="text-muted-foreground">{String(getValue())} distinct</span>,
+})
+```
+
+### Footers and grand totals
+
+A column with a `footer` gets a footer row, pinned to the bottom of the grid.
+`column.getAggregationValue()` runs the column's aggregation over every row that passes the current
+filters, on every page, grouped or not, so it is the grand total rather than the page total:
+
+```tsx
+col.currency("mrr", {
+  header: "MRR",
+  currency: "USD",
+  footer: ({ column }) => usd.format(column.getAggregationValue<number>() ?? 0),
+})
+```
+
+The result's type is whatever the aggregation returns (`number` for `sum`, a `[min, max]` pair for
+`extent`), so pass it as the generic. The footer renders only when some column defines one.
+
+## How it behaves
+
+- **Group rows.** The grouped column's cell shows a chevron, the formatted group value and the number
+  of leaf rows in parentheses. Click it, or press <kbd>Enter</kbd> on a focused cell of the row, to
+  open or close the group. Group rows are tinted and bold and carry `data-grouped`.
+- **Several columns** nest: `grouping: ["team", "plan"]` groups by team, then by plan inside each
+  team. The chips show the order; the Group menu toggles membership.
+- **Grouped columns move to the front** (`groupedColumnMode: "reorder"`), in grouping order, and lose
+  their drag handle while grouped. Pass `table={{ groupedColumnMode: false }}` to leave them where
+  they are, or `"remove"` to hide them (the value is in the group row anyway).
+- **Sorting** runs after grouping: group rows are ordered by the sorted column's value (the group
+  value, or the aggregate for other columns) and the rows inside each group are sorted too.
+- **Filtering** runs before grouping, so counts and aggregates describe the filtered rows.
+- **Paging** counts group rows; the members of an open group render on the same page.
+- **Selection.** Ticking a group row selects every row in it; some selected shows indeterminate.
+- **Editing** is off on group rows.
+- **Export** skips group rows and writes the leaf rows in their grouped, sorted order.
+- **Tags columns** are not groupable by default: a row has several tags, and a group per array
+  would be meaningless.
+- **Persistence.** `grouping` is part of the view the grid [remembers](/docs/data-grid/persistence/)
+  and of saved views. [URL state](/docs/data-grid/url-state/) can own it too.
+- **Server-side.** `server={{ grouping: true }}` stops local grouping; you deliver the group rows.
+  Aggregates computed by `getAggregationValue()` still run over the rows the grid has, which is
+  the current page. See [Server-side data](/docs/data-grid/server-side/).
+
+<Aside type="note" title="Several aggregations on one column">
+  `aggregationFn` also takes an array (`["sum", "mean"]`), in which case the aggregate is an object
+  keyed by name. The default `aggregatedCell` does not know how to show that, so pair it with an
+  `aggregatedCell` of your own.
+</Aside>
+
+## Options
+
+Column options:
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `aggregationFn` | name, definition or array | by kind | How the column aggregates in a group row and in `getAggregationValue()`. Defaults are in the table above. |
+| `aggregatedCell` | render function | built in | Renders the aggregate in a group row; `ctx.getValue()` is the aggregate. |
+| `footer` | string or render function | | Adds the footer row; use `ctx.column.getAggregationValue()` for a total. |
+| `groupable` | `boolean` | `true` | `false` keeps the column out of the Group menu and its header menu. `tags` columns default to `false`. |
+| `enableGrouping` | `boolean` | `true` | TanStack's switch; `groupable: false` is the one the menus read, so prefer it. |
+| `getGroupingValue` | `(row) => unknown` | the cell value | Group by something derived, such as the month of a date. |
+| `maxAggregationDepth` | `number` | `0` | For tree data: `1` aggregates over direct children instead of root rows. |
+
+Grid options:
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `grouping` | `boolean` | `true` | `false` removes the Group menu, the chips and the header items. |
+| `initialState.grouping` | `string[]` | `[]` | Column ids to group by, in order. |
+| `table.groupedColumnMode` | `false \| "reorder" \| "remove"` | `"reorder"` | Where grouped columns go. |
+| `server.grouping` | `boolean` | `false` | `true` makes grouping the server's job. |
+
+## See also
+
+- [Expanding and tree data](/docs/data-grid/expanding/): the expanding behind group rows.
+- [Columns](/docs/data-grid/columns/): kinds and their defaults.
+- [Export](/docs/data-grid/export/): what a grouped grid exports.

@@ -1,4 +1,106 @@
 ---
+/**
+ * Starlight's page footer, with "Something wrong or missing?" above its edit link and pagination,
+ * and one quiet line to the rest of Kadal below, since docs pages don't get the site's own footer.
+ */
 import Default from "@astrojs/starlight/components/Footer.astro";
+import { SITE } from "../../data/site";
+import { SITES, linkTo } from "../../data/network";
+const bugUrl = `${SITE.newBug}&title=${encodeURIComponent(`[docs] ${Astro.url.pathname}`)}`;
 ---
+
+<aside class="kd-fb not-content" aria-label="Feedback on this page" data-testid="docs-feedback">
+  <span class="kd-fb-q">Something wrong or missing?</span>
+  <span class="kd-fb-actions">
+    <a href={bugUrl} rel="noopener">Report a bug</a>
+    <a href={SITE.newFeature} rel="noopener">Request a feature</a>
+    <a href={SITE.feedback} rel="noopener">Send feedback</a>
+    <a href={SITE.discord} rel="noopener">Discord</a>
+  </span>
+</aside>
 <Default />
+<nav class="kd-more not-content" aria-label="More from Kadal">
+  <span class="kd-more-h">More from Kadal</span>
+  <ul>
+    {SITES.map((s) => (
+      <li>
+        <a href={linkTo(s)} title={s.line} rel="noopener">{s.name}</a>
+      </li>
+    ))}
+  </ul>
+</nav>
+
+<style>
+  .kd-fb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    margin-top: 3rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.6rem;
+    background: var(--sl-color-bg-nav);
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-2);
+  }
+  .kd-fb-q {
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+  .kd-fb-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  .kd-fb-actions a {
+    padding: 0.3rem 0.6rem;
+    border-radius: 0.4rem;
+    color: var(--sl-color-gray-2);
+    text-decoration: none;
+  }
+  .kd-fb-actions a:hover {
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-white);
+  }
+  .kd-more {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--sl-color-hairline);
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-3);
+  }
+  .kd-more-h {
+    font-weight: 600;
+    color: var(--sl-color-gray-2);
+  }
+  .kd-more ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.9rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .kd-more a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .kd-more a:hover {
+    color: var(--sl-color-white);
+    text-decoration: underline;
+  }
+  @media (pointer: coarse) {
+    .kd-more a,
+    .kd-fb-actions a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+    }
+  }
+</style>

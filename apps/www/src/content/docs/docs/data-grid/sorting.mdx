@@ -1,0 +1,133 @@
+---
+title: Sorting
+description: Click a header to sort and shift-click to add a second key; the sort functions, per-column options, an initial sort and server-side sorting.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+Every data column sorts by default, with a function that suits its kind. Click a header to sort by
+it; shift-click another header to sort by both.
+
+<Demo name="data-grid-sorting" />
+
+## Use it
+
+There is nothing to turn on. Sorting is on for every column with an accessor, and the kind picks
+the function: `basic` for numbers, currencies, percentages and booleans, `datetime` for dates,
+`alphanumeric` for everything else.
+
+### From the header
+
+Click the title to cycle through the directions. The first direction depends on the column:
+text starts ascending, numbers and dates start descending (TanStack's auto direction, which
+`sortDescFirst` overrides). The second click flips it, the third clears it.
+
+Shift-click a header to add it to the current sort instead of replacing it. With more than one
+column sorted, each header shows a small badge with its position in the order. Shift-clicking a
+sorted column cycles it in place and, at the end of the cycle, drops it from the order.
+
+The arrow beside the title shows the direction; an up-down chevron appears on hover when the column
+is sortable but not sorted. The header is a button, so Enter or Space sorts it from the keyboard and
+Shift+Enter adds it to a multi-sort. Each change is announced to screen readers and `aria-sort` is
+kept on the header.
+
+### From the column menu
+
+The ⋮ menu (or a right-click on the header) has **Sort ascending**, **Sort descending** and, once
+the column is sorted, **Clear sort**. The two sort items set the column as the only sort, replacing
+a multi-sort; the one in effect is marked "applied".
+
+### Start sorted
+
+```tsx
+<DataGrid data={data} columns={columns} initialState={{ sorting: [{ id: "mrr", desc: true }] }} />
+```
+
+`sorting` is a list of `{ id, desc }` in priority order, so two entries start a multi-sort. With
+`persist` on, the user's last sort wins over `initialState`.
+
+### Per column
+
+```tsx
+col.text("notes", { enableSorting: false })          // not sortable
+col.number("seats", { sortDescFirst: false })        // first click sorts ascending
+col.text("name", { sortFn: "textCaseSensitive" })    // a different built-in
+col.number("rank", { invertSorting: true })          // 1st, 2nd, 3rd: lower is better
+col.date("closedAt", { sortUndefined: "last" })      // blanks at the end either way
+```
+
+A custom `sortFn` gets the two rows and the column id and returns a number, like `Array.sort`:
+
+```tsx
+col.text("email", {
+  sortFn: (a, b, id) => a.getValue<string>(id).length - b.getValue<string>(id).length,
+})
+```
+
+## How it behaves
+
+- Sorting runs on the filtered rows, before grouping and pagination, so a sort reorders the whole
+  result and the pager goes back to page 1.
+- With [grouping](/docs/data-grid/grouping/) on, the grouped column moves to the front and sorting
+  it orders the groups; sorting another column orders the rows inside each group.
+- Sorting sees the raw value, not the formatted one: a `currency` column sorts numerically, a
+  `date` column by time, an `enum` column by its value rather than its label. Give the column a
+  `sortFn` when the label order is the one people expect.
+- `sortUndefined` defaults to `1`: blank values go last in an ascending sort and first in a
+  descending one.
+- `enableSortingRemoval` is on, so the cycle always has a "no sort" step. Set
+  `table={{ enableSortingRemoval: false }}` to keep a column sorted once it is clicked, or
+  `table={{ enableMultiSort: false }}` to make shift-click behave like a click.
+- The sort state lives in `grid.table.state.sorting`; `grid.table.setSorting(...)` and
+  `column.toggleSorting(desc, multi)` change it from your own controls.
+
+<Aside type="note" title="Server-side sorting">
+  With `server: { rowCount }` the grid sets `manualSorting` and leaves the rows in the order you
+  pass them; read `state.sorting` (or `onSortingChange` through the `state` adapter) and ask the
+  server. Set `server: { sorting: false }` to sort the current page locally instead. See
+  [server-side data](/docs/data-grid/server-side/).
+</Aside>
+
+## Keyboard
+
+| Key | On a header | What it does |
+| --- | --- | --- |
+| <kbd>Enter</kbd> / <kbd>Space</kbd> | | Cycle the sort |
+| <kbd>Shift</kbd> + <kbd>Enter</kbd> | | Add the column to the sort, or cycle it in place |
+| <kbd>Shift</kbd> + click | | The same with the pointer |
+
+## Options
+
+### Column options
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `enableSorting` | `boolean` | `true` | `false` removes the sort from the header, the menu and the keyboard. |
+| `sortFn` | string or function | by kind | How two rows compare: `"alphanumeric"`, `"alphanumericCaseSensitive"`, `"text"`, `"textCaseSensitive"`, `"datetime"`, `"basic"`, or `(rowA, rowB, columnId) => number`. `alphanumeric` splits digits from letters and compares numbers numerically; `text` is a plain string compare; `basic` compares the raw values; `datetime` compares times. |
+| `sortDescFirst` | `boolean` | auto: `true` for non-string values | The direction of the first click. |
+| `sortUndefined` | `false`, `-1`, `1`, `"first"` or `"last"` | `1` | Where blanks go. `false` passes them to the sort function. |
+| `invertSorting` | `boolean` | `false` | Flip the result, for scales where lower is better. |
+| `enableMultiSort` | `boolean` | `true` | `false` keeps this column out of a multi-sort. |
+
+### Grid options
+
+Set these through the `table` escape hatch, `table={{ ... }}` on `<DataGrid>` or `table: { ... }`
+on `useDataGrid`.
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `enableSorting` | `boolean` | `true` | Sorting for the whole grid. |
+| `enableMultiSort` | `boolean` | `true` | Shift-click adds a key. |
+| `enableSortingRemoval` | `boolean` | `true` | The cycle includes "no sort". |
+| `enableMultiRemove` | `boolean` | `true` | A shift-click cycle can drop the column. |
+| `maxMultiSortColCount` | `number` | unlimited | Cap on sort keys. |
+| `sortDescFirst` | `boolean` | auto | The first direction for every column. |
+| `isMultiSortEvent` | `(e) => boolean` | `e.shiftKey` | Which click or key adds a key. |
+| `initialState.sorting` | `{ id: string; desc: boolean }[]` | `[]` | The starting sort. |
+
+## See also
+
+- [Grouping and aggregation](/docs/data-grid/grouping/): how a sort orders groups.
+- [URL state](/docs/data-grid/url-state/): keep the sort in the address bar.
+- [Server-side data](/docs/data-grid/server-side/): let the server sort.

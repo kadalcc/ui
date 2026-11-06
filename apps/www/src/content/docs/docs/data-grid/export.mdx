@@ -1,0 +1,119 @@
+---
+title: Export
+description: Download the Kadal UI data grid as CSV or JSON, or copy it as TSV, from the toolbar menu or the api, with formatted or raw values and selected rows only.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+What you export is what you are looking at: the filtered, sorted rows, the visible columns in their
+order, the values formatted as the cells show them. The Export menu in the toolbar does it in one
+click; the api does the same from your own button, with raw values if you prefer.
+
+<Demo name="data-grid-export" />
+
+## Use it
+
+The toolbar has the Export menu by default (the download icon):
+
+| Item | Does |
+| --- | --- |
+| Download CSV | `grid.exportCsv(filename)` |
+| Download JSON | `grid.exportJson(filename)` |
+| Copy to clipboard | `grid.copyToClipboard()`: tab-separated, with a header row; announces “Copied n cells” with the row count |
+| Selected rows only | A toggle, shown when [row selection](/docs/data-grid/selection/) is on, disabled while nothing is selected. It applies to the three items above. |
+
+Name the files with `exportFilename` on the toolbar (`toolbar={{ exportFilename: "customers" }}`),
+or `filename` on `<DataGridExportMenu>` in a [composed layout](/docs/data-grid/composition/). Hide
+the menu with `toolbar={{ export: false }}`.
+
+From your own code:
+
+```tsx
+const grid = useDataGrid({ data, columns })
+
+grid.exportCsv("customers")                                  // customers.csv
+grid.exportJson("customers", { selectedOnly: true })         // the selected rows
+grid.exportCsv("customers-raw", { formatted: false })        // raw values, not display strings
+await grid.copyToClipboard({ visibleOnly: false })           // every exportable column, hidden too
+const table = grid.exportTable()                             // { headers, rows } for your own writer
+```
+
+## What goes in
+
+**Rows.** Every row that passes the filters and the search, in the current sort order, across all
+pages; paging never trims an export. With `selectedOnly: true`, only the selected rows that pass
+the filters. With [server-side data](/docs/data-grid/server-side/) the grid only has the current
+page, so that is what you get.
+
+**Columns.** The visible leaf columns in display order (`visibleOnly: false` includes hidden
+ones), minus the checkbox, expander, row-number and actions columns, minus columns with
+`export: false`, and only columns that have an accessor or an `export` function (a display column
+with neither has nothing to export). The header is the column's label: `label`, else the string
+`header`, else the id humanised.
+
+**Values.** By default the same string the cell shows, from the column's kind and formatting
+options and the grid's `locale` (currency symbols, date styles, enum labels, tags joined with
+commas); blanks are `""`. With `formatted: false`, the raw value from the row: numbers stay
+numbers in JSON, `Date`s become ISO strings in CSV, arrays and objects are JSON-encoded in CSV. A
+column's `export` function wins over both and receives `(value, row)`.
+
+```tsx
+col.date("joinedAt", { header: "Joined", export: (d) => d.toISOString().slice(0, 10) })
+col.text("notes", { header: "Notes", export: false })
+```
+
+<Aside type="note" title="Grouping and trees">
+  Group rows are never exported; the leaf rows under them are, whether the groups are open or
+  closed. The same goes for tree data: every descendant row is included, expanded or not.
+</Aside>
+
+## Formats
+
+| Format | Details |
+| --- | --- |
+| CSV | RFC 4180: cells holding a comma, a quote or a line break are quoted, quotes doubled. `\r\n` line ends. The file starts with a UTF-8 BOM so Excel opens accents correctly. MIME `text/csv;charset=utf-8`. |
+| JSON | An array of objects keyed by header label, pretty-printed with two spaces. Missing cells are `null`. |
+| TSV (clipboard) | Tabs between cells, `\n` line ends, header row included. Spreadsheets paste it as a block. |
+
+The file name is the stem you pass (or the grid `name`), slugified: `"Orders · 2026"` becomes
+`orders-2026.csv`; an empty stem falls back to `export`. Downloads are a `Blob` and a temporary
+`<a download>`; outside a browser `exportCsv` and `exportJson` do nothing.
+
+## Options
+
+Per call, `DataGridExportOptions`:
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `selectedOnly` | `boolean` | `false` | Only the selected rows (that pass the filters). |
+| `formatted` | `boolean` | `true` | Display strings (`true`) or raw values (`false`). |
+| `visibleOnly` | `boolean` | `true` | Visible columns only, or every exportable column. |
+
+Column options:
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `export` | `boolean \| (value, row) => unknown` | `true` | `false` leaves the column out; a function supplies the exported value. |
+
+Toolbar props: `export` (show the menu, default `true`) and `exportFilename`.
+
+## Api
+
+| Member | What it does |
+| --- | --- |
+| `grid.exportTable(options?)` | `{ headers: string[], rows: unknown[][] }`, the model behind every format. |
+| `grid.exportCsv(filename?, options?)` | Downloads `<stem>.csv`. |
+| `grid.exportJson(filename?, options?)` | Downloads `<stem>.json`. |
+| `grid.copyToClipboard(options?)` | Copies TSV with headers; resolves `true` on success. |
+
+The pure helpers are exported too, for a custom format or a server route: `toCsv(table)`,
+`toTsv(table, { headers })`, `toJson(table, { pretty })`, `toDelimited(table, delimiter, { headers, eol })`,
+`csvCell(value, delimiter)`, `downloadFile(filename, content, mime)`, `copyText(text)` and
+`slugifyFilename(name, fallback)`. `ExportTable` is the type they share.
+
+## See also
+
+- [Cell selection and clipboard](/docs/data-grid/cell-selection/): <kbd>⌘</kbd><kbd>C</kbd> on a range copies cells without headers.
+- [Columns](/docs/data-grid/columns/): the formatting options the export reuses.
+- [Internationalisation](/docs/data-grid/i18n/): `locale` and the menu labels.

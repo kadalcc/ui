@@ -1,0 +1,134 @@
+---
+title: Row selection and bulk actions
+description: The checkbox column, shift-click ranges, selecting the page, single mode, per-row rules, the selected count, and the bulk-actions bar with your buttons.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+Selection is on by default; `col.select()` gives it a checkbox column. Tick rows, shift-click a
+range, tick the header for the whole page, and a bar appears with the count and your actions.
+
+<Demo name="data-grid-selection" />
+
+## Use it
+
+Put `col.select()` first in the columns, and give the grid `getRowId` so the selection follows the
+row rather than its position:
+
+```tsx
+const columns = col.columns([
+  col.select(),
+  col.text("name", { header: "Name" }),
+  // …
+])
+
+<DataGrid
+  data={customers}
+  columns={columns}
+  getRowId={(c) => c.id}
+  bulkActions={(rows, grid) => (
+    <>
+      <Button size="sm" variant="outline" onClick={() => exportRows(rows)}>Export {rows.length}</Button>
+      <Button size="sm" variant="destructive" onClick={() => archive(rows)}>Archive</Button>
+    </>
+  )}
+/>
+```
+
+`bulkActions` receives the selected rows as your objects and the grid api, and whatever it returns
+is rendered in the bar while anything is selected.
+
+### Selecting
+
+| Do this | To |
+| --- | --- |
+| Click a checkbox | Toggle that row. |
+| <kbd>Shift</kbd> + click a checkbox | Select or deselect every row between it and the last one you clicked. |
+| Tick the header checkbox | Select every row on the current page; tick again to clear them. It shows a dash while only some of the page is selected. |
+| <kbd>Space</kbd> on a focused cell | Toggle the row (with its sub-rows). Needs [cell selection](/docs/data-grid/cell-selection/), which is on by default. |
+| Click a row | Toggle it, but only when there is no checkbox column and cell selection is off (`cellSelection={false}`), so plain clicks have no other meaning. |
+
+The header selects the **page**, not every row in the result. On a grid with thousands of rows
+that keeps "select all" meaning the rows you can see, so a bulk action never runs on rows you never
+looked at. To select the whole result from your own control, call
+`grid.table.toggleAllRowsSelected(true)`.
+
+### Single selection
+
+```tsx
+<DataGrid selection={{ mode: "single" }} />
+```
+
+Selecting a row replaces the previous one; the header checkbox is not rendered.
+
+### Which rows can be selected
+
+```tsx
+<DataGrid selection={{ enable: (row) => row.status !== "churned" }} />
+```
+
+A row that fails the test renders no checkbox, is skipped by the header checkbox and ranges, and
+ignores <kbd>Space</kbd>.
+
+### Tree data
+
+With `getSubRows`, selecting a parent selects its children, and a parent with some children
+selected shows a dash. `selection={{ subRows: false }}` makes each row independent. See
+[expanding and tree data](/docs/data-grid/expanding/).
+
+### Reading and changing the selection
+
+```ts
+grid.table.state.rowSelection                 // { [rowId]: true }
+grid.table.getSelectedRowModel().rows         // the selected TanStack rows (row.original is yours)
+grid.table.getFilteredSelectedRowModel().rows // only those that pass the current filters
+grid.table.resetRowSelection(true)            // clear
+grid.table.getRow(id).toggleSelected(true)    // select one
+```
+
+## How it behaves
+
+- Selection is keyed by row id and survives sorting, filtering and paging: the count in the pager
+  ("x of y row(s) selected.") and the bar include rows on other pages.
+- The bar, `DataGridBulkActions`, shows the count, a **Clear selection** button and your actions.
+  On `<DataGrid>` it sits between the toolbar and the table; when composing, render it where you
+  like inside `DataGridRoot` and pass your actions as its children function.
+- The count is the number of selected rows that exist: when your action removes rows from
+  `data`, the bar and the pager drop them at once. Call `grid.table.resetRowSelection(true)`
+  afterwards anyway if the ids should not linger in the state (they would re-select rows that come
+  back with the same id).
+- The export menu offers **Selected rows only** while rows are selected, and
+  `grid.exportCsv(name, { selectedOnly: true })` does the same in code.
+- Selected rows get `data-state="selected"` and `aria-selected`, and the grid sets
+  `aria-multiselectable` on its `role="grid"` element. Style them with
+  `[data-state=selected]` or through `getRowClassName`.
+- `selection={false}` turns the whole thing off: no checkboxes, no bar, no count in the pager, and
+  the `select` column, if you left it in, renders empty.
+
+## Keyboard
+
+| Key | What it does |
+| --- | --- |
+| <kbd>Space</kbd> | Toggle the focused row |
+| <kbd>Shift</kbd> + click | Range from the last click |
+
+## Options
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `selection` | boolean or object | `true` | Row selection, or its settings: `{ mode?, enable?, range?, subRows? }`. |
+| `selection.mode` | string | `"multiple"` | `"multiple"` or `"single"`: many rows, or one at a time. |
+| `selection.enable` | function | every row | `(row) => boolean`: which rows can be selected. |
+| `selection.range` | boolean | `true` | Shift-click selects a range. |
+| `selection.subRows` | boolean | `true` | Selecting a parent selects its children. |
+| `bulkActions` | function | | `(rows, grid) => ReactNode`: your controls in the bar, on `<DataGrid>`. |
+| `initialState.rowSelection` | object | `{}` | `{ [rowId]: true }`: start with rows selected. |
+| `getRowId` | function | the index | `(row, index, parent) => string`: stable ids. Without it, selection sticks to positions. |
+| Labels | strings | English | `selectAll`, `selectRow`, `selected`, `clearSelection` and `selectedOf` in `labels`; see [internationalisation](/docs/data-grid/i18n/). |
+
+## See also
+
+- [Row actions](/docs/data-grid/row-actions/): a menu for one row at a time.
+- [Cell selection and clipboard](/docs/data-grid/cell-selection/): selecting cells rather than rows.
+- [Export](/docs/data-grid/export/): the selected rows as CSV, JSON or clipboard text.

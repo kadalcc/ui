@@ -1,0 +1,85 @@
+---
+title: Column visibility
+description: The View popover with search, show all and reset, hiding a column from its menu, columns that cannot be hidden, starting hidden, and persistence.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+Every data column can be hidden and shown again from the toolbar's **View** popover or from its own
+header menu. Start with some hidden, keep one always on, and let `persist` remember the choice.
+
+<Demo name="data-grid-visibility" />
+
+## Use it
+
+### The View popover
+
+**View** in the toolbar opens `DataGridViewOptions`: a search box, a checkbox per column, **Show
+all** and **Reset view**. The button carries an "n hidden" badge while anything is hidden. Each row
+shows the column's label, a pin icon if it is pinned, and an eye for its state. Only columns that can
+be hidden are listed; the utility columns (`select`, `expander`, `rowNumber`, `actions`) never are.
+
+**Reset view** does more than visibility: without `persist` it resets visibility, order, sizes and
+pinning to the column definitions; with `persist` it calls `grid.views.reset()`, which also restores
+sorting, grouping, density and page size, and drops the active saved view.
+
+### From the header menu
+
+The ⋮ menu on a header ends with **Hide column**. Get it back from View.
+
+### Start hidden
+
+```tsx
+<DataGrid initialState={{ columnVisibility: { notes: false, country: false } }} />
+```
+
+`columnVisibility` maps column ids to booleans; anything not listed is visible. With `persist` on,
+the user's last choice wins over `initialState`.
+
+### Always visible
+
+```tsx
+col.text("name", { header: "Name", enableHiding: false })
+```
+
+The column disappears from the View list and loses the **Hide column** item.
+
+### In code
+
+```ts
+grid.table.state.columnVisibility             // { notes: false }
+grid.table.getColumn("notes")?.toggleVisibility()
+grid.table.setColumnVisibility({ notes: false, country: false })
+grid.table.toggleAllColumnsVisible(true)
+grid.table.getVisibleLeafColumns()
+```
+
+## How it behaves
+
+- A hidden column keeps its filter and its place in a sort, and the chip stays in the toolbar; clear
+  it from the chip or show the column again.
+- Exports take visible columns by default (`visibleOnly: true`); pass
+  `grid.exportCsv(name, { visibleOnly: false })` for every exportable column.
+- Hiding every child of a [group header](/docs/data-grid/columns/#group-headers) hides the group.
+- Visibility is part of the persisted view and of saved views, so with `persist` the choice comes
+  back on the next visit and can be named; see [persistence](/docs/data-grid/persistence/).
+- The grouping bar, filter chips and View list all use the column's `label` (or header string), so
+  give a column with a function `header` a `label`.
+
+## Options
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `enableHiding` (column) | boolean | `true` | `false` keeps the column always on. |
+| `initialState.columnVisibility` | object | `{}` | Column ids mapped to `false` start hidden. |
+| `columns` | the toolbar | `true` | Show the View button: `toolbar={{ columns: false }}` hides it. |
+| `persist` | boolean, string or object | off | Remember visibility (and the rest of the view). |
+| `table.enableHiding` | boolean | `true` | Hiding for the whole grid. |
+| Labels | strings | English | `view`, `searchColumns`, `hidden`, `showAll`, `resetView` and `hideColumn` in `labels`; see [internationalisation](/docs/data-grid/i18n/). |
+
+## See also
+
+- [Column pinning](/docs/data-grid/pinning/), [reordering](/docs/data-grid/reordering/) and [resizing](/docs/data-grid/resizing/): the rest of the view.
+- [Saved views and persistence](/docs/data-grid/persistence/): remembering it.
+- [Export](/docs/data-grid/export/): visible columns only, or all.

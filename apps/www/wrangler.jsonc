@@ -1,0 +1,40 @@
+// The Cloudflare Worker that serves ui.kadal.cc: the Astro site, the docs and the shadcn registry
+// (public/r → /r/*.json), all static files out of dist/. Deployed by .github/workflows/deploy.yml
+// on every push to main, or by hand with `bun run deploy` from this directory.
+{
+  // Editor completion and validation of this file.
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  // The Worker's name on the dashboard and in `wrangler deploy`; one Worker per site.
+  "name": "kadal-ui",
+
+  // No `main`: this Worker is assets only. Wrangler serves the files itself, at the edge, with
+  // no script to run, so there is nothing to invoice per request and nothing to keep warm.
+  "assets": {
+    // Where `astro build` writes the site (and `shadcn build` the registry, under r/).
+    "directory": "./dist",
+    // Astro writes dist/404.html; serve it, with a 404 status, for any path that isn't a file.
+    "not_found_handling": "404-page",
+    // Astro builds /docs/data-grid/ as docs/data-grid/index.html; redirect /docs/data-grid to the
+    // trailing-slash form so every page has one URL, which is what the sitemap lists.
+    "html_handling": "auto-trailing-slash"
+  },
+
+  // The Workers runtime behaviour this Worker was written against; bump deliberately, not with
+  // every deploy.
+  "compatibility_date": "2026-11-01",
+
+  // The Kadal Cloudflare account. In CI the CLOUDFLARE_ACCOUNT_ID secret says the same thing;
+  // here so that `bun run deploy` from a maintainer's machine needs only the API token.
+  "account_id": "478c548d7b952f0e1472e52928630f4b",
+
+  // ui.kadal.cc is a custom domain on this Worker: Cloudflare creates the DNS record and the
+  // certificate, and the zone's kadal.cc records don't need editing.
+  "routes": [{ "pattern": "ui.kadal.cc", "custom_domain": true }],
+
+  // No kadal-ui.<account>.workers.dev twin: one origin, so there is one URL for a page.
+  "workers_dev": false,
+
+  // Request logs and errors in the dashboard (Workers → kadal-ui → Observability).
+  "observability": { "enabled": true }
+}

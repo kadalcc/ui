@@ -1,0 +1,18 @@
+# Cloudflare Workers static assets read this file (same format as Pages).
+#
+# The playground runs inside LiveCodes' sandbox on another origin and imports the grid bundle and
+# stylesheet from here as modules, which needs CORS. The registry JSON gets it too, so browser-based
+# tools (and the shadcn docs' registry viewer) can read it.
+/play/*
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
+/r/*
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=300, stale-while-revalidate=3600
+
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/og/*
+  Cache-Control: public, max-age=86400

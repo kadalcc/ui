@@ -1,0 +1,99 @@
+---
+title: Column resizing
+description: Drag a header's edge to resize a column, double-click the edge to fit the content, and set size, minSize and maxSize per column.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+Every column has a width you set, and a handle the user drags to change it. Double-click the handle
+and the column fits its content.
+
+<Demo name="data-grid-resizing" />
+
+## Use it
+
+Move the pointer to the trailing edge of a header: a thin handle appears. Drag it, with a mouse or a
+finger. Double-click it, or choose **Fit to content** from the column menu, to size the column to
+its widest visible cell.
+
+Set the starting width and the bounds on the column:
+
+```tsx
+const columns = col.columns([
+  col.text("name", { header: "Name", size: 200, minSize: 120, maxSize: 400 }),
+  col.enum("status", { header: "Status", options: STATUS_OPTIONS, size: 120, enableResizing: false }),
+  col.text("notes", { header: "Notes", size: 320 }),
+])
+```
+
+From code, the TanStack sizing API applies:
+
+```ts
+grid.table.setColumnSizing((old) => ({ ...old, name: 240 }))
+grid.table.getColumn("name")?.resetSize()
+grid.table.resetColumnSizing()
+```
+
+## How it behaves
+
+- **Fixed layout.** The table uses `table-layout: fixed` and is exactly as wide as the sum of its
+  visible columns (`table.getTotalSize()`). A column is its size, never squeezed to make room for the
+  others, and columns never stretch to fill a wide viewport: if the sizes add up to less than the
+  grid's width, the table ends early. Size your columns for the data, and give a long text column
+  the room it needs.
+- **Live.** `columnResizeMode` is `"onChange"`, so the column follows the pointer while you drag,
+  and the columns after it move with it. Pinned columns update their sticky offsets as you go.
+- **Fit to content** (`autosizeColumn`) measures the rendered content of every cell in the column,
+  takes the widest, adds 24 px for the cell padding and the header's icons, and clamps the result to
+  the column's `minSize` and `maxSize`. It only sees what is in the DOM: the current page, or the
+  rows in view when [virtualized](/docs/data-grid/virtualization/). A wider value on another page is
+  not measured.
+- **Defaults.** Every column starts at 160 px, between 48 and 2000, unless it says otherwise. The
+  utility columns are fixed: the checkbox and the expander at 40 px, the row number and the actions
+  menu at 56 px (minimum 48).
+- **Clicks on the handle don't sort.** The handle stops the click so a resize never toggles the
+  sort of the header it sits on.
+- **Right to left.** Drag offsets are computed for a left-to-right layout. Under `dir="rtl"`, pass
+  `table={{ columnResizeDirection: "rtl" }}` so the handle moves the right way.
+- **Persistence.** Widths are part of the view the grid [remembers](/docs/data-grid/persistence/)
+  with `persist`. The write is debounced 300 ms, so a drag does not write to storage on every pixel.
+  **Reset view** restores the sizes you defined.
+
+<Aside type="note" title="No keyboard resize yet">
+  The handle is a `role="separator"` with a label, but it has no key bindings. **Fit to content** in
+  the column menu is reachable from the keyboard. If you need arrow-key resizing, say so on the
+  [issue tracker](https://github.com/kadalcc/ui/issues).
+</Aside>
+
+## Options
+
+Column options:
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `size` | `number` | `160` | Starting width in pixels, until the user or `columnSizing` state overrides it. |
+| `minSize` | `number` | `48` | Lower bound for dragging and for Fit to content. |
+| `maxSize` | `number` | `2000` | Upper bound for dragging and for Fit to content. |
+| `enableResizing` | `boolean` | `true` | `false` hides the handle and the Fit to content item; the column keeps its `size`. |
+
+Grid options, through the `table` escape hatch:
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `table.enableColumnResizing` | `boolean` | `true` | Turns resizing off for every column. |
+| `table.columnResizeMode` | `"onChange" \| "onEnd"` | `"onChange"` | When sizes commit. The grid draws no preview line, so with `"onEnd"` nothing moves until release. |
+| `table.columnResizeDirection` | `"ltr" \| "rtl"` | `"ltr"` | Which way a drag grows the column. |
+| `initialState.columnSizing` | `Record<string, number>` | `{}` | Widths by column id, over the columns' `size`. |
+
+Helpers exported from the grid:
+
+| Export | What it does |
+| --- | --- |
+| `autosizeColumn(rootElement, column)` | What double-click and Fit to content call. `rootElement` is the grid root (`useDataGridUi().rootRef.current`). |
+
+## See also
+
+- [Column pinning](/docs/data-grid/pinning/): sticky offsets follow the widths.
+- [Columns](/docs/data-grid/columns/): every other column option.
+- [Saved views and persistence](/docs/data-grid/persistence/).

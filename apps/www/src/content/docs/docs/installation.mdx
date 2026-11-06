@@ -1,0 +1,123 @@
+---
+title: Installation
+description: Add the Kadal UI data grid to a React project with the shadcn CLI or the @kadal/ui CLI, what gets installed, and how to update.
+---
+
+import { Steps, Tabs, TabItem, Aside } from "@astrojs/starlight/components";
+
+The grid is distributed as a [shadcn registry](https://ui.shadcn.com/docs/registry). You need a
+React 19 project with Tailwind CSS v4 and shadcn/ui set up for **Base UI** (the default since
+July 2026). Next.js, Vite, Astro, Remix, React Router and TanStack Start all work.
+
+## Requirements
+
+- React 19 and TypeScript 5.5 or later (7 recommended).
+- Tailwind CSS v4.
+- shadcn/ui initialised with Base UI: `npx shadcn@latest init -b base`. On an existing Radix
+  project, the grid's menu and popover code expects Base UI's `render` prop API; see
+  [the FAQ](/docs/faq/#radix) for your options.
+
+## Install
+
+<Tabs syncKey="installer">
+  <TabItem label="shadcn CLI">
+    <Steps>
+      1. Register the `@kadal` namespace once, in `components.json`:
+
+         ```json title="components.json" ins={3-5}
+         {
+           "$schema": "https://ui.shadcn.com/schema.json",
+           "registries": {
+             "@kadal": "https://ui.kadal.cc/r/{name}.json"
+           }
+         }
+         ```
+
+      2. Add the grid:
+
+         ```sh
+         npx shadcn@latest add @kadal/data-grid
+         ```
+
+      3. Optional: the URL-state hook, the demo data and the examples.
+
+         ```sh
+         npx shadcn@latest add @kadal/data-grid-url-state @kadal/data-grid-demo
+         ```
+    </Steps>
+  </TabItem>
+  <TabItem label="@kadal/ui CLI">
+    The `@kadal/ui` package is a small wrapper around the shadcn CLI that knows the registry. It
+    registers the namespace for you and runs `shadcn init -b base` first if the project has no
+    `components.json`.
+
+    ```sh
+    npx @kadal/ui add data-grid
+    ```
+
+    Other commands: `list`, `docs data-grid --open`, `diff data-grid`, `info`, and `mcp` to set up
+    the shadcn MCP server for your AI agent. See the [CLI reference](/docs/cli/).
+  </TabItem>
+  <TabItem label="Without a registry">
+    You can also skip the registry and install straight from the GitHub repository:
+
+    ```sh
+    npx shadcn@latest add kadalcc/ui/data-grid
+    ```
+
+    Pin a release with `kadalcc/ui/data-grid#v0.1.0`.
+  </TabItem>
+</Tabs>
+
+## What the command does
+
+- Copies 21 TypeScript files into `components/ui/data-grid/` (the folder your `components.json`
+  `ui` alias points at). Import from `@/components/ui/data-grid`.
+- Adds the shadcn primitives it uses if you don't have them: `badge`, `button`, `checkbox`,
+  `dialog`, `dropdown-menu`, `empty`, `input`, `label`, `popover`, `select`, `spinner`, `textarea`
+  and `tooltip`. Files you already have are left alone.
+- Installs `@tanstack/react-table@^9.3.1`, `@tanstack/react-virtual@^3.14.26`, `@dnd-kit/react@^0.5.3`,
+  `@dnd-kit/dom@^0.5.3` and `lucide-react` with your package manager.
+
+No CSS file to import: the grid is Tailwind classes over your theme tokens (`--background`,
+`--primary`, `--muted` and friends), so it takes your theme and dark mode as they are.
+
+<Aside type="tip" title="Tooltips">
+  The grid wraps itself in a `TooltipProvider`, so you don't need one for it. If the rest of your
+  app uses shadcn tooltips, keep your own provider at the root as usual.
+</Aside>
+
+## Updating
+
+Your copy doesn't update itself, which is the point. When a new version is out:
+
+```sh
+npx shadcn@latest add @kadal/data-grid --diff     # what changed, file by file
+npx shadcn@latest add @kadal/data-grid --overwrite # take the new version
+```
+
+Keep your own changes in files next to the grid (a custom cell, a column kind, a toolbar) rather
+than inside it, and the overwrite stays painless. The [changelog](/changelog/) lists every change
+to the registry by version.
+
+## Verify
+
+```tsx title="app/customers/page.tsx"
+import { DataGrid, createDataGridColumns } from "@/components/ui/data-grid"
+
+type Customer = { id: string; name: string; plan: "free" | "pro"; mrr: number }
+
+const col = createDataGridColumns<Customer>()
+const columns = col.columns([
+  col.text("name", { header: "Name" }),
+  col.enum("plan", { options: [{ value: "free", label: "Free" }, { value: "pro", label: "Pro" }] }),
+  col.currency("mrr", { header: "MRR" }),
+])
+
+export default function Page({ customers }: { customers: Customer[] }) {
+  return <DataGrid data={customers} columns={columns} getRowId={(c) => c.id} />
+}
+```
+
+If that renders a grid with a search box, sortable headers and a pager, you're set. Next:
+[your first grid in 5 minutes](/docs/quick-start/).

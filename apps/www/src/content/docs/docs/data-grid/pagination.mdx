@@ -1,0 +1,102 @@
+---
+title: Pagination
+description: Page size and the size choices, the pager's parts, starting on a page, turning paging off, how expanded rows and auto-reset behave, and server-side row counts.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+Rows are paged, ten to a page, with a pager under the table. Change the numbers, start on a page, or
+turn paging off and let [virtualisation](/docs/data-grid/virtualization/) handle the scroll.
+
+<Demo name="data-grid-pagination" />
+
+## Use it
+
+```tsx
+<DataGrid data={data} columns={columns} />                                              // 10 a page; 10, 20, 50, 100 to choose from
+<DataGrid data={data} columns={columns} pagination={{ pageSize: 25 }} />                // 25 a page
+<DataGrid data={data} columns={columns} pagination={{ pageSize: 25, pageSizeOptions: [25, 50, 100] }} />
+<DataGrid data={data} columns={columns} pagination={false} />                           // every row, no pager
+```
+
+The page size comes from `pagination.pageSize`, else `initialState.pagination.pageSize`, else 10.
+The size in use is always offered in the "rows per page" select, even when it is not one of the
+options, so a persisted or initial size never shows as blank.
+
+### Start on a page
+
+```tsx
+<DataGrid data={data} columns={columns} initialState={{ pagination: { pageIndex: 2, pageSize: 25 } }} />
+```
+
+`pageIndex` is zero-based: `2` is page 3. With `persist` on, the saved page size wins over
+`initialState`; the page index is never persisted.
+
+### The pager
+
+`DataGridPagination` renders, left to right:
+
+| Part | What it shows |
+| --- | --- |
+| The count | "x of y row(s) selected." when selection is on, otherwise "y rows". `y` is the row count after filtering. |
+| Rows per page | A select over `pageSizeOptions`. The label hides on narrow screens; the select stays. |
+| Page x of y | The position. |
+| Go to page | A number box, shown once there are more than five pages. Type a page and press <kbd>Enter</kbd>. |
+| First, previous, next, last | Buttons, disabled at the ends. First and last hide below the `lg` breakpoint. |
+
+```tsx
+<DataGrid pager={false} />                              // no pager; rows still page
+<DataGrid pager={{ showGoTo: true, showSelection: false }} /> // always show the go-to box, never the selected count
+```
+
+When you compose the parts yourself, render `<DataGridPagination />` wherever you like, above or
+below the table. It renders nothing when `pagination` is `false`.
+
+## How it behaves
+
+- Paging happens last: after filtering, sorting and grouping, so a page is a slice of the result you
+  see.
+- The page index resets to 0 whenever the result changes: new `data`, a filter, the search, a sort
+  or a grouping change. That is TanStack's `autoResetPageIndex`, on for client-side grids and off
+  for server-side ones. Set `table={{ autoResetPageIndex: false }}` to keep the page through data
+  updates (polling, say), and reset it yourself with `grid.table.setPageIndex(0)` when a filter
+  changes.
+- Expanded sub-rows do not count toward the page (`paginateExpandedRows: false`): a page holds
+  `pageSize` top-level rows, and their children render beneath them on the same page, so an
+  expanded page shows more than `pageSize` rows. The same goes for group rows.
+- With paging on, only the current page is in the row model, so
+  [virtualisation](/docs/data-grid/virtualization/) rarely kicks in; with `pagination: false` the
+  whole result is one scrolling list and virtualisation takes over past the threshold.
+- The page size is part of the persisted view and of saved views; see
+  [persistence](/docs/data-grid/persistence/).
+- Selection is per row id, so it survives paging: select on page 1, page on, and the count in the
+  pager still includes them.
+- The state is `grid.table.state.pagination` (`{ pageIndex, pageSize }`), with
+  `setPageIndex`, `setPageSize`, `nextPage`, `previousPage`, `firstPage`, `lastPage`,
+  `getPageCount()` and `getRowCount()` on the table.
+
+<Aside type="note" title="Server-side paging">
+  Pass `server: { rowCount }` (and `pageCount` if a page is not `rowCount / pageSize`) and the grid
+  stops slicing: it renders the rows you give it, shows "Page x of y" from your count, and reports
+  the page index through the `state` adapter (`pageIndex`, `onPageIndexChange`) or
+  `grid.table.state.pagination` for you to refetch. See [server-side data](/docs/data-grid/server-side/).
+</Aside>
+
+## Options
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `pagination` | `false` or object | 10 a page; 10, 20, 50, 100 | `{ pageSize?, pageSizeOptions? }` sets the size and the choices; `false` shows every row with no pager. |
+| `initialState.pagination` | object | page 1 | `{ pageIndex?, pageSize? }`: the starting page and, failing `pagination.pageSize`, the size. |
+| `pager` | `false` or object | `true` | On `<DataGrid>`: hide the pager, or configure it with `{ showSelection?, showGoTo? }`. |
+| `server.rowCount` | number | | The total from the server; `server.pageCount` when a page is not `rowCount / pageSize`. |
+| `state.pageIndex` | adapter | | With `state.onPageIndexChange`, another owner for the page index (the URL). |
+| `table.autoResetPageIndex` | boolean | `true` client-side, `false` server-side | Back to page 1 when the result changes. |
+| Labels | strings | English | `rowsPerPage`, `pageOf`, `goToPage`, `selectedOf` and `rowsCount` in `labels`; see [internationalisation](/docs/data-grid/i18n/). |
+
+## See also
+
+- [Virtualization](/docs/data-grid/virtualization/): the other way to handle many rows.
+- [Server-side data](/docs/data-grid/server-side/): when the server pages.
+- [URL state](/docs/data-grid/url-state/): the page in the address bar.

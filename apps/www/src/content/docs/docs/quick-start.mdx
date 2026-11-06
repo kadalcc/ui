@@ -1,0 +1,112 @@
+---
+title: Your first grid in 5 minutes
+description: From an installed data grid to a page with your own data, typed columns, editing and a bulk action, in five short steps.
+---
+
+import { Steps, Aside } from "@astrojs/starlight/components";
+import Demo from "../../../components/docs/Demo.astro";
+
+You have [installed the grid](/docs/installation/). Here is the shortest path to one that looks like
+it belongs in your app, with the toolbar, pager, selection and editing on.
+
+<Steps>
+1. **Describe a row.** The grid is typed from this.
+
+   ```ts title="customers/columns.tsx"
+   export type Customer = {
+     id: string
+     name: string
+     email: string
+     plan: "free" | "pro" | "team"
+     mrr: number
+     active: boolean
+     joinedAt: Date
+   }
+   ```
+
+2. **Build the columns.** `createDataGridColumns<Customer>()` gives you one builder per column kind.
+   Keys are checked against `Customer`; each kind brings the right sort, filter, editor, aggregation
+   and format.
+
+   ```tsx title="customers/columns.tsx"
+   import { createDataGridColumns } from "@/components/ui/data-grid"
+
+   const col = createDataGridColumns<Customer>()
+
+   export const columns = col.columns([
+     col.select(),
+     col.text("name", { header: "Name", editable: true }),
+     col.link("email", { header: "Email", href: (v) => `mailto:${v}` }),
+     col.enum("plan", {
+       header: "Plan",
+       options: [
+         { value: "free", label: "Free" },
+         { value: "pro", label: "Pro" },
+         { value: "team", label: "Team" },
+       ],
+       editable: true,
+     }),
+     col.currency("mrr", { header: "MRR", currency: "USD" }),
+     col.boolean("active", { header: "Active" }),
+     col.date("joinedAt", { header: "Joined" }),
+   ])
+   ```
+
+3. **Render it.** `data` and `columns` are all it needs; `getRowId` keeps selection and editing
+   stable when rows move.
+
+   ```tsx title="customers/page.tsx"
+   import { DataGrid } from "@/components/ui/data-grid"
+   import { columns, type Customer } from "./columns"
+
+   export function CustomersPage({ customers }: { customers: Customer[] }) {
+     return <DataGrid data={customers} columns={columns} getRowId={(c) => c.id} />
+   }
+   ```
+
+4. **Save edits.** `onCellEdit` fires after a cell is committed, with the row, the column id and
+   the typed value. Throw (or return a rejected promise) to keep the editor open with the message.
+
+   ```tsx title="customers/page.tsx" ins={4-7}
+   <DataGrid
+     data={customers}
+     columns={columns}
+     onCellEdit={async ({ row, columnId, value }) => {
+       await api.customers.update(row.id, { [columnId]: value })
+       // then refetch, or update local state
+     }}
+   />
+   ```
+
+5. **Act on a selection.** Whatever you render in `bulkActions` appears in a bar while rows are
+   selected, with the selected rows as the argument.
+
+   ```tsx title="customers/page.tsx" ins={4-8}
+   <DataGrid
+     data={customers}
+     columns={columns}
+     bulkActions={(rows) => (
+       <Button variant="destructive" size="sm" onClick={() => archive(rows.map((r) => r.id))}>
+         Archive {rows.length}
+       </Button>
+     )}
+   />
+   ```
+</Steps>
+
+That is the whole thing. Here it is with every feature on, on demo data:
+
+<Demo name="data-grid-demo" props={{ rows: 200 }} />
+
+<Aside type="tip" title="Remember the user's view">
+  Add `persist="customers"` and the grid remembers column order, widths, visibility, pinning,
+  sorting, grouping, density and page size in localStorage, and offers saved views in the toolbar.
+  Add [URL state](/docs/data-grid/url-state/) and the filters, search and page become a shareable link.
+</Aside>
+
+## What to read next
+
+- [Columns](/docs/data-grid/columns/): every kind, every option, custom cells and headers.
+- [Server-side data](/docs/data-grid/server-side/) when the rows live behind an API.
+- [Composition](/docs/data-grid/composition/) when the default layout isn't yours.
+- [Theming](/docs/theming/) to make it look like your product (it already mostly does).

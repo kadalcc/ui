@@ -1,0 +1,120 @@
+---
+title: Theming and styling
+description: The Kadal UI data grid is Tailwind classes over your shadcn theme tokens. Which tokens it uses, dark mode, density, the class and data-attribute hooks, and where to edit the styles in your copy.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../components/docs/Demo.astro";
+
+There is no grid stylesheet to import or override. Every colour is one of your shadcn tokens, every
+size is a Tailwind class, and the source is in your project, so the grid already looks like the rest
+of your app and changes the way the rest of your app does.
+
+<Demo name="data-grid-theming" />
+
+## The tokens it uses
+
+| Token | Where |
+| --- | --- |
+| `background` | the viewport, header cells, pinned cells, the fullscreen backdrop, editors |
+| `foreground` | text; the dotted filler below the rows (at 14 % through `color-mix`) |
+| `muted` / `muted-foreground` | row hover (`bg-muted/40`), stripes (`bg-muted/20`), grouped rows (`bg-muted/30`), the footer, secondary text, sort and menu icons |
+| `accent` | a header that is a drop target while dragging (`bg-accent/60`), hovered rows in the columns popover |
+| `primary` | the focused-cell ring, selected cells (`bg-primary/10`), selected rows (`bg-primary/5`, hover `/10`), range edges, the loading bar, links, the boolean “yes” pill, the active resize handle |
+| `border` | cell and header borders, pinned-edge shadows, the resize handle |
+| `ring` | focus-visible rings on header buttons |
+| `popover` | the bulk-actions bar |
+| `destructive` | an editor whose value was rejected |
+
+Dark mode is whatever your theme does with `.dark`: the grid has no `dark:` variants of its own.
+If your tokens pass contrast in both modes, so does the grid.
+
+## Density
+
+The root sets `--dg-row-height` (32, 40 or 48 px) and `data-density="compact" | "comfortable" | "spacious"`;
+rows, cells and headers are `h-(--dg-row-height)`. Change the three values in `DENSITY_ROW_HEIGHT`
+(`data-grid-types.ts`) or target a density from CSS:
+
+```css
+[data-slot="data-grid"][data-density="compact"] td { font-size: 0.8125rem; }
+```
+
+## Class hooks
+
+Without touching the source:
+
+| Hook | Applies to |
+| --- | --- |
+| `className` | the root `div` (`flex min-h-0 flex-col gap-3 text-foreground`) |
+| `tableClassName` | the viewport (`relative flex min-h-0 flex-col rounded-lg border bg-background`) |
+| `striped` | odd rows get `bg-muted/20` |
+| `getRowClassName(row)` | a row; merged after the built-in classes, so `bg-*` you return wins |
+| `headerClassName` (column) | that column's `<th>` |
+| `cellClassName` (column) | that column's `<td>`; a string or `(value, row) => string` |
+| `options[].className` (enum, tags) | the badge for that value (a status colour) |
+| `align`, `mono`, `wrap`, `truncate` (column) | text alignment, monospace, wrapping |
+| `className` on any part | in a [composed layout](/docs/data-grid/composition/) |
+
+Classes are merged with `cn()` (tailwind-merge), so a conflicting utility you pass replaces the
+built-in one rather than fighting it. Arbitrary variants reach inside: the example above colours
+the header row with `[&_thead_th]:bg-indigo-50` on `tableClassName`.
+
+## Data attributes
+
+For CSS or tests:
+
+| Attribute | On | Values |
+| --- | --- | --- |
+| `data-slot` | the parts | `data-grid`, `data-grid-viewport`, `data-grid-table`, `data-grid-toolbar`, `data-grid-search`, `data-grid-grouping-bar`, `data-grid-pagination`, `data-grid-bulk-actions`, `data-grid-filter` |
+| `data-density`, `data-fullscreen` | the root | the density; `true` while fullscreen |
+| `data-row-id`, `data-index`, `data-state="selected"`, `data-grouped`, `data-pinned` | rows | — / — / selected / `true` / `top` or `bottom` |
+| `data-cell-id`, `data-column-id`, `data-kind`, `data-selected`, `data-focused`, `data-editing`, `data-editable` | cells | ids, the column kind, booleans |
+| `data-column-id`, `data-pinned`, `data-dragging`, `data-drop-target` | headers | — |
+
+```css
+[data-slot="data-grid"] tr[data-state="selected"] td { background: color-mix(in oklch, var(--primary) 8%, transparent); }
+[data-slot="data-grid"] td[data-kind="currency"] { font-variant-numeric: tabular-nums; }
+```
+
+## Editing the source
+
+The styles are ordinary class strings in the files the CLI copied. The ones people change first:
+
+| What | File | Look for |
+| --- | --- | --- |
+| row hover, stripes, selected and grouped tints, pinned rows | `data-grid-table.tsx`, `DataGridRowView` | `hover:bg-muted/40`, `bg-muted/20`, `bg-primary/5 hover:bg-primary/10`, `bg-muted/30` |
+| cell padding, borders, focus ring, selection tint and edges | `data-grid-table.tsx`, `DataGridCellView` | `px-2`, `border-b`, `ring-2 ring-primary ring-inset`, `bg-primary/10`, the four `shadow-[inset…]` |
+| the dotted filler below the last row | `data-grid-table.tsx`, after `</table>` | the `aria-hidden` div with `bg-[radial-gradient(…)]`; delete it for a plain background |
+| header background, sort icons, drop-target tint, resize handle | `data-grid-column-header.tsx` | `bg-background`, `ChevronsUpDownIcon`, `bg-accent/60`, `after:bg-border` / `after:bg-primary` |
+| badges, boolean pill, links, tags | `data-grid-cells.tsx` | `Badge variant="secondary"`, `bg-primary/10 text-primary`, `text-primary underline-offset-4` |
+| the editor ring and error state | `data-grid-editing.tsx` | `ring-2 ring-primary ring-inset`, `ring-destructive` |
+| toolbar buttons and menus | `data-grid-toolbar.tsx` | `variant="outline" size="sm"` |
+| fullscreen frame, bulk-actions bar | `data-grid.tsx` | `fixed inset-0 z-50 bg-background p-4`, `bg-popover shadow-md` |
+
+Keep your own cells, parts and column kinds in files next to the grid where you can; then
+`shadcn add @kadal/data-grid --overwrite` stays painless ([updating](/docs/installation/#updating)).
+
+## Icons
+
+Icons are `lucide-react`, imported at the top of each file (`ArrowUpIcon`, `FilterIcon`,
+`PinIcon`, `DownloadIcon`, …). Swap a set by changing the imports; the grid sizes them with
+`size-3.5` and `size-4` classes, so any component that accepts `className` fits.
+
+## Primitives
+
+The menus, popovers, selects, checkboxes, dialogs and tooltips are your shadcn components on
+**Base UI**, used through Base UI's `render` prop: `<PopoverTrigger render={<Button variant="outline" size="sm" />}>`.
+Swapping a primitive for your own means keeping that contract (and Base UI-specific props such as
+`closeOnClick` on menu items, `items` on `Select`, `indeterminate` on `Checkbox`).
+
+<Aside type="caution" title="Radix">
+  A shadcn project on Radix is not supported out of the box: Radix uses `asChild` where Base UI
+  uses `render`, and the select, checkbox and menu props differ. The options are in the
+  [FAQ](/docs/faq/#radix).
+</Aside>
+
+## See also
+
+- [Density](/docs/data-grid/density/)
+- [Accessibility](/docs/data-grid/accessibility/): what the contrast depends on.
+- [Composition](/docs/data-grid/composition/): your own layout from the parts.

@@ -1,0 +1,182 @@
+---
+title: Server-side data
+description: "Let a server page, sort and filter: the server option, reading state back through the table escape hatch, the TanStack Query pattern, facets, and a cursor-paged variant."
+---
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+When the rows live behind an API, the grid renders the page it is given and reports every change
+of state, and you refetch. The demo fakes a server holding 5,000 people and fetches a page of 20 on
+every change of page, sort, filter or search.
+
+<Demo name="data-grid-server" />
+
+## Use it
+
+The `server` option switches the grid to manual mode:
+
+```tsx
+<DataGrid
+  data={page.rows}
+  columns={columns}
+  server={{ rowCount: page.total }}
+  pagination={{ pageSize: 20 }}
+/>
+```
+
+- `rowCount` is the total across all pages. It drives the page count, the **x of y** text and
+  `aria-rowcount`.
+- Pagination is always manual with `server`: the grid shows the rows you give it as one page and
+  never resets the page index on its own (`autoResetPageIndex` is off), so it is you who sends the
+  user back to page 1 when a filter changes.
+- Sorting and filtering are the server's by default (`manualSorting`, `manualFiltering`); the grid
+  changes its indicators and reports the state, nothing else. Set `sorting: false` or
+  `filtering: false` to have the grid sort or filter the current page locally instead.
+- Grouping and expanding stay local unless you say `grouping: true` or `expanding: true`, in which
+  case the grid expects the rows already grouped or expanded.
+
+### Reading the state back
+
+Everything the grid knows is TanStack state. The `table` option is the escape hatch to any TanStack
+table option, applied last, and that includes `state` and the `on*Change` callbacks:
+
+```tsx
+table={{
+  state: { pagination, sorting, columnFilters, globalFilter },
+  onPaginationChange: (u) => setPagination((old) => (typeof u === "function" ? u(old) : u)),
+  onSortingChange: (u) => setSorting((old) => (typeof u === "function" ? u(old) : u)),
+  // …
+}}
+```
+
+A slice you put in `state` is controlled: the grid reads it from you and calls the matching
+`on*Change` instead of changing it. TanStack hands these callbacks either a value or an updater
+function, hence the `typeof u === "function"` dance. Slices you leave out stay the grid's own.
+
+<Aside type="note" title="Or the state adapter">
+  `state={...}` (a `DataGridStateAdapter`) is a smaller, typed version of the same idea for
+  `columnFilters`, `globalFilter`, `sorting`, `grouping` and `pageIndex`. It is what
+  [URL state](/docs/data-grid/url-state/) uses, and a server fetch keyed on URL state is a fine
+  design. The example uses `table` because it also needs `pageSize`.
+</Aside>
+
+## The example, line by line
+
+<Steps>
+1. **A pretend API.** `ALL` is 5,000 rows generated once; `fetchPeople(q)` waits a few hundred
+   milliseconds, then filters, sorts and slices them. It reuses the grid's own filter functions
+   (`filterFn_facet`, `filterFn_range`, `filterFn_textOp`) and `rankMatch` so the fake server agrees
+   with what the filter UI sends, which is exactly what your real server has to do: a facet filter
+   value is an array of chosen values, a range filter is `{ min, max }`, a text filter is
+   `{ op, value }`, the search is a string.
+
+2. **Columns** are ordinary columns. Nothing marks them as server-side.
+
+3. **Four pieces of state** in the component: `pagination` (`pageIndex` and `pageSize`), `sorting`,
+   `columnFilters` and `globalFilter`. They are the whole query.
+
+4. **`useQuery`** keys on those four, so any change refetches. `placeholderData: keepPreviousData`
+   keeps the last page on screen while the next loads, which turns the loading state into a thin
+   bar over the rows instead of a spinner and a flash of empty grid.
+
+5. **`data`** is the current page, or `[]` before the first response. **`server.rowCount`** is the
+   server's total, or `0` until it arrives.
+
+6. **`loading={query.isFetching}`**, **`error`** and **`onRetry`** wire the
+   [states](/docs/data-grid/states/) to the query. `isFetching` is true on refetches too, which is
+   what you want for the bar.
+
+7. **`table`** hands the four slices to the grid as controlled state and receives changes back.
+   `onColumnFiltersChange` and `onGlobalFilterChange` also set `pageIndex` to `0`: a new filter
+   should show the first page of its results, and the grid will not do that for you in server mode.
+   Sorting changes keep the page here; reset it there too if your product prefers.
+
+8. **`grouping={false}`** removes the Group menu. Grouping a server page locally would group 20 rows
+   and show misleading counts; you can leave it on if that is fine for your data, or implement
+   `server.grouping`.
+
+9. **`QueryClientProvider`** wraps it, as it would in your app root.
+</Steps>
+
+## Facets on the server
+
+The facet filter list is built from two sources: the column's declared `options` first, in their
+order, then any other value present in the rows the grid has. In server mode those rows are the
+current page, so:
+
+- For `enum` and `tags` columns, declare `options` with the full set of values. The list is
+  complete even when the page shows only a few of them, and the counts beside each value describe
+  the current page.
+- A text or other column without `options` lists only the values on the page. If users need the
+  full set, fetch it from the server and pass it as `options`.
+- The range filter's suggested `min` and `max` come from the page as well; the user can type any
+  bound.
+
+## A cursor-paged variant
+
+Many APIs page by cursor and don't report a total. The grid wants a `pageIndex` and a `rowCount`;
+bridge them by remembering the cursor for each page you have seen:
+
+```tsx
+const [pageIndex, setPageIndex] = React.useState(0)
+const pageSize = 50
+const cursors = React.useRef<Array<string | null>>([null]) // cursors[i] opens page i
+
+const query = useQuery({
+  queryKey: ["orders", pageIndex, sorting],
+  queryFn: () => api.orders.list({ cursor: cursors.current[pageIndex], limit: pageSize, sort: sorting }),
+  placeholderData: keepPreviousData,
+})
+
+React.useEffect(() => {
+  if (query.data?.nextCursor) cursors.current[pageIndex + 1] = query.data.nextCursor
+}, [query.data, pageIndex])
+
+// Claim one more page while a next cursor exists; the count grows as the user goes.
+const known = (pageIndex + 1) * pageSize
+const rowCount = query.data?.nextCursor ? known + pageSize : known - pageSize + (query.data?.rows.length ?? 0)
+
+<DataGrid
+  data={query.data?.rows ?? []}
+  columns={columns}
+  server={{ rowCount }}
+  pagination={{ pageSize, pageSizeOptions: [pageSize] }}
+  pager={{ showGoTo: false }}
+  loading={query.isFetching}
+  table={{
+    state: { pagination: { pageIndex, pageSize }, sorting },
+    onPaginationChange: (u) => setPageIndex((typeof u === "function" ? u({ pageIndex, pageSize }) : u).pageIndex),
+    onSortingChange: (u) => {
+      setSorting((old) => (typeof u === "function" ? u(old) : u))
+      cursors.current = [null] // a new order invalidates every cursor
+      setPageIndex(0)
+    },
+  }}
+/>
+```
+
+The pager's **Page x of y** then shows the pages known so far, and `showGoTo: false` hides the
+jump-to-page input, since there is no cursor for a page nobody has reached.
+
+## Options
+
+The `server` option:
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `rowCount` | `number` | required | Total rows across all pages. |
+| `pageCount` | `number` | from `rowCount` | Supply it when your API reports pages rather than rows. |
+| `sorting` | `boolean` | `true` | Sorting is the server's job (`manualSorting`). `false` sorts the page locally. |
+| `filtering` | `boolean` | `true` | Filtering and search are the server's job (`manualFiltering`). |
+| `grouping` | `boolean` | `false` | `true` expects grouped rows from you (`manualGrouping`). |
+| `expanding` | `boolean` | `false` | `true` expects expanded rows from you (`manualExpanding`). |
+
+What `server` sets on the table, for the record: `manualPagination: true`, `rowCount`,
+`pageCount`, `autoResetPageIndex: false`, and the four manual flags above. `grid.isServer` is `true`.
+
+## See also
+
+- [Loading and empty states](/docs/data-grid/states/).
+- [URL state](/docs/data-grid/url-state/): the query in the address bar, shareable.
+- [Virtualization](/docs/data-grid/virtualization/): when the rows are already in the browser.

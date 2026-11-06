@@ -1,0 +1,102 @@
+---
+title: Global search
+description: "The toolbar search box: fuzzy matching across every searchable column, what counts as a match, which columns take part, and the plain-substring and off modes."
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+The search box in the toolbar matches what you type against every searchable column at once, with a
+fuzzy matcher that forgives word order, prefixes and missing letters. It is on by default.
+
+<Demo name="data-grid-search" />
+
+## Use it
+
+Type. The grid waits 200 ms after the last keystroke, then filters. The × in the box, or
+<kbd>Esc</kbd> while the box has focus, clears it.
+
+```tsx
+<DataGrid data={data} columns={columns} />                          // fuzzy, the default
+<DataGrid data={data} columns={columns} globalFilter="includesString" /> // plain substring
+<DataGrid data={data} columns={columns} globalFilter={false} />      // no search box
+```
+
+### What matches
+
+With the default `"fuzzy"` matcher, each cell's text is scored against the query by `rankMatch`:
+
+| Tier | The cell… | Example for `ann` |
+| --- | --- | --- |
+| 6 | equals the query | `Ann` |
+| 5 | starts with it | `Annette` |
+| 4 | has a word that starts with it (after a space, `_`, `-`, `.`, `/` or `(`) | `Mary Ann` |
+| 3 | contains it | `Joanna` |
+| 2 | has initials that start with it (the first letter of each word) | `Aarav Nair Nguyen` |
+| 1 | contains its letters in order, with gaps | `Ananya` |
+| 0 | none of the above: no match | |
+
+A row passes when any searchable cell scores above 0. The tiers decide what matches; they do not
+reorder the rows, so the sort you have chosen still decides the order. Matching is
+case-insensitive.
+
+`"includesString"` is TanStack's built-in: the cell contains the query, case-insensitively, and
+nothing looser. Choose it when a short query on a big grid matches too much by subsequence.
+
+### Which columns take part
+
+Every column with an accessor, except:
+
+- the utility columns (`select`, `expander`, `rowNumber`, `actions`);
+- a column with `enableGlobalFilter: false`;
+- `display` columns, which have no value to search.
+
+```tsx
+col.text("notes", { enableGlobalFilter: false }) // free text that should not make a row match
+```
+
+## How it behaves
+
+- Search sees the raw value, not the formatted cell: a date is matched as its ISO string, a
+  currency as the bare number, an `enum` as its value rather than its label, an array as its items
+  joined by spaces. Searching for "$1,200" finds nothing; "1200" does.
+- Search and [column filters](/docs/data-grid/filtering/) combine: a row must pass both.
+- A change takes the pager back to page 1. With [grouping](/docs/data-grid/grouping/) on, groups
+  that end up empty disappear.
+- The value lives in `grid.table.state.globalFilter`; `grid.table.setGlobalFilter("ann")` sets it
+  from your own control and the box follows. `initialState={{ globalFilter: "ann" }}` starts with a
+  query, and the `state` adapter (`globalFilter`, `onGlobalFilterChange`) lets the
+  [URL](/docs/data-grid/url-state/) own it.
+- With [server-side data](/docs/data-grid/server-side/), the grid passes the query on through the
+  state and leaves the rows alone.
+- The box is the `DataGridSearch` part. Put it anywhere inside `DataGridRoot` when you compose your
+  own toolbar; `toolbar={{ search: false }}` removes it from the built-in one.
+
+<Aside type="note" title="Scale">
+  The matcher is dependency-free and runs on every searchable cell of every row on each (debounced)
+  change. Tens of thousands of rows are fine; for hundreds of thousands, or when the rows live on a
+  server anyway, search server-side.
+</Aside>
+
+## Keyboard
+
+| Key | Where | What it does |
+| --- | --- | --- |
+| <kbd>Esc</kbd> | in the search box | Clear the query |
+
+## Options
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `globalFilter` | string or `false` | `"fuzzy"` | The matcher, `"fuzzy"` or `"includesString"`, or no search at all. |
+| `enableGlobalFilter` (column) | boolean | `true` | `false` keeps the column out of the search. |
+| `initialState.globalFilter` | string | `""` | The starting query. |
+| `state.globalFilter` | adapter | | With `state.onGlobalFilterChange`, another owner for the query. |
+| `search` | the toolbar | `true` | Show the box: `toolbar={{ search: false }}` hides it. |
+| `labels.search` | string | `"Search…"` | The placeholder and accessible name. |
+
+## See also
+
+- [Filtering](/docs/data-grid/filtering/): per-column filters with operators, ranges and facets.
+- [URL state](/docs/data-grid/url-state/): keep the query in the address bar.
+- [Server-side data](/docs/data-grid/server-side/): search on the server.

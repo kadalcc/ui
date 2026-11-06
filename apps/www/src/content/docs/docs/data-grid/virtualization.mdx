@@ -1,0 +1,102 @@
+---
+title: Virtualization
+description: "Render only the rows in view with TanStack Virtual: the 200-row threshold, the height the grid needs, what keeps working, and when a server should page instead."
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+With virtualization the DOM holds only the rows in view, plus a few either side, however many rows
+the grid has. The demo below has 50,000 and no pager.
+
+<Demo name="data-grid-virtualized" />
+
+## Use it
+
+Give the grid a bounded height and turn the pager off; `virtualize` is `"auto"` by default and kicks
+in at 200 rows.
+
+```tsx
+<DataGrid
+  data={rows}
+  columns={columns}
+  getRowId={(row) => row.id}
+  pagination={false}
+  height={520}
+/>
+```
+
+- `virtualize="auto"` (the default) virtualizes once the rows the body would render number 200 or
+  more. `virtualize` (`true`) always does; `virtualize={false}` never does;
+  `virtualize={{ threshold: 500, overscan: 12 }}` tunes auto.
+- **A bounded height is required.** The virtualizer needs a scroll container of known height: pass
+  `height` (a pixel number or any CSS length) or `fillHeight`, which sizes the grid to the bottom of
+  its scroll parent, console-style. The all-in-one `<DataGrid>` turns `fillHeight` on by itself when
+  rows virtualize and you gave no `height`; with your own layout, set one on `<DataGridTable>`.
+- **The count that matters** is the rows the body would render. With the pager on, that is one page,
+  so a 10-row page never virtualizes; virtualization is for `pagination={false}` or a very large
+  page size.
+
+## How it behaves
+
+- **TanStack Virtual** does the work: `useVirtualizer` with the current row height as the estimate,
+  `overscan` rows beyond each edge (8 by default), and `getItemKey` set to the row id, so React keys
+  and measured heights survive sorting and filtering. Each rendered row is measured, so a row that
+  [wraps](/docs/data-grid/columns/) its text takes its true height. Two padding rows, hidden from
+  assistive technology, keep the scrollbar the right length.
+- **What stays.** The sticky header, [pinned columns](/docs/data-grid/pinning/) (same table, same
+  cells), row selection (by id), cell selection and the keyboard (moving focus to a row that is not
+  in the DOM scrolls the virtualizer to it first), inline editing, sorting, filters, search, grouping,
+  expanding, and export of every filtered row rather than the rendered ones. `aria-rowcount` reports
+  the real total, and each row its `aria-rowindex`.
+- **What to expect.** Rendering cost is flat: the DOM holds about the viewport height divided by the
+  row height, plus twice the overscan. What remains is TanStack Table's row model: each sort, filter
+  or search recomputes over the whole array, so the cost of a keystroke grows with the row count.
+  The demo's 50,000 rows feel immediate; 100,000 plain rows are comfortable. Beyond that, or with
+  expensive accessors and many faceted columns, move the work to a server.
+- **Density** changes the estimate and the measured heights follow. Striping uses the virtual index,
+  so stripes stay consistent as you scroll.
+- **Row pinning** is the one feature that weakens: pinned rows are part of the virtual list, so a
+  row pinned to the top leaves the DOM when the top of the list scrolls out of the overscan. See
+  [Row pinning](/docs/data-grid/row-pinning/).
+- **Fit to content** measures rendered rows only, so it sizes a column to the rows in view.
+
+## When to page on the server instead
+
+Virtualization solves rendering, not data. If the rows don't fit comfortably in the browser, arrive
+from an API a page at a time, or need sorting and filtering over a set the client never holds in
+full, keep the pager and let the server page, sort and filter. See
+[Server-side data](/docs/data-grid/server-side/). The two combine: a server page of 500 rows and
+`virtualize` on the grid renders only the visible slice of that page.
+
+<Aside type="tip" title="Measuring it">
+  Open the demo, type in the search box and watch the DOM: `tbody tr` stays at a few dozen rows
+  whatever the match count. `grid.virtualizeRows` tells you whether the grid is virtualizing right
+  now; `grid.virtualizeOptions` the resolved `overscan` and `threshold`.
+</Aside>
+
+## Options
+
+Grid options:
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `virtualize` | `boolean`, `"auto"` or options | `"auto"` | When to render only the rows in view. The options object is `{ overscan?, threshold? }`. |
+| `virtualize.overscan` | `number` | `8` | Rows rendered beyond the viewport on each side. |
+| `virtualize.threshold` | `number` | `200` | With `"auto"`, virtualize when the row model has at least this many rows. |
+| `pagination` | `false` or options | `{ pageSize: 10 }` | `false` shows every row with no pager, which is when virtualization matters. |
+| `height` | `number \| string` | | A fixed height for the scroll area. |
+| `fillHeight` | `boolean` | `false` | Fill from the grid's top edge to the bottom of its scroll parent, at least 240 px. `<DataGrid>` turns it on when rows virtualize and there is no `height`. |
+
+Read-only on the api:
+
+| Property | What it holds |
+| --- | --- |
+| `grid.virtualizeRows` | Whether rows are virtualized right now. |
+| `grid.virtualizeOptions` | The resolved `{ overscan, threshold }`. |
+
+## See also
+
+- [Server-side data](/docs/data-grid/server-side/): when the rows should not all be in the browser.
+- [Pagination](/docs/data-grid/pagination/): the alternative for mid-sized sets.
+- [Row pinning](/docs/data-grid/row-pinning/): its limits with virtualization.

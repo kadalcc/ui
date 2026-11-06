@@ -1,0 +1,175 @@
+---
+/**
+ * The registry's changelog, rendered from CHANGELOG.md at the repo root so there is one source of
+ * truth. The file is read at build time through Vite's glob (which tolerates its absence while the
+ * first entry is being written); `## <version> — <date>` headings become sections.
+ */
+import Base from "../layouts/Base.astro";
+import CopyCommand from "../components/CopyCommand.astro";
+import { SITE } from "../data/site";
+
+const FALLBACK = `## 0.1.0 — 2026-11-07
+
+### Added
+
+- \`data-grid\`: the data grid on TanStack Table v9 and shadcn/ui (Base UI). Typed columns, sorting, faceted and typed filters, fuzzy search, pagination or 50,000 virtualized rows, selection and bulk actions, pinning, reordering, resizing, tree data, grouping and aggregation, inline editing, cell ranges and clipboard, keyboard navigation, export, density, saved views, server-side data, accessibility and translatable labels.
+- \`data-grid-url-state\`: filters, search and the page in the URL with nuqs.
+- \`data-grid-demo-data\`: the seeded dataset the examples use.
+- The examples: basic, everything on, 50,000 rows, tree data, server-side with TanStack Query, a composed layout, URL state.
+- The \`@kadal/ui\` CLI 0.1.0: \`init\`, \`add\`, \`list\`, \`docs\`, \`diff\`, \`info\`, \`mcp\`.
+`;
+
+// src/pages → src → apps/www → apps → the repo root.
+const found = import.meta.glob("../../../../CHANGELOG.md", { query: "?raw", import: "default", eager: true }) as Record<
+  string,
+  string
+>;
+// Until the repo's CHANGELOG.md lands, the first entry is rendered from the fallback above.
+const source = Object.values(found)[0] ?? FALLBACK;
+
+const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+/** Inline Markdown: code, bold, italic, links. Code spans first, so nothing inside them is touched. */
+const inline = (s: string) =>
+  escape(s)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[\s(])[*_]([^*_]+)[*_](?=[\s.,;:)!?]|$)/g, "$1<em>$2</em>")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+|\/[^)\s]*)\)/g, (_m, text: string, href: string) =>
+      `<a href="${href}"${href.startsWith("http") ? ' rel="noopener"' : ""}>${text}</a>`,
+    );
+
+/** Block Markdown, as a changelog uses it: headings, lists (one level of nesting), paragraphs. */
+const render = (md: string): string => {
+  const out: string[] = [];
+  let para: string[] = [];
+  let list: { depth: number; items: string[] }[] = [];
+  const flushPara = () => {
+    if (para.length) out.push(`<p>${inline(para.join(" "))}</p>`);
+    para = [];
+  };
+  const flushList = () => {
+    if (!list.length) return;
+    // Nested items are folded into the item before them, so the HTML nests the way the text did.
+    const html: string[] = [];
+    for (const l of list) {
+      if (l.depth === 0) html.push(`<li>${l.items.join(" ")}</li>`);
+      else {
+        const last = html.pop() ?? "<li></li>";
+        const nested = `<ul><li>${l.items.join(" ")}</li></ul>`;
+        html.push(last.endsWith("</ul></li>") ? last.replace(/<\/ul><\/li>$/, `<li>${l.items.join(" ")}</li></ul></li>`) : last.replace(/<\/li>$/, `${nested}</li>`));
+      }
+    }
+    out.push(`<ul>${html.join("")}</ul>`);
+    list = [];
+  };
+  for (const raw of md.split("\n")) {
+    const line = raw.replace(/\s+$/, "");
+    const heading = /^(#{3,4})\s+(.+)$/.exec(line);
+    const item = /^(\s*)[-*]\s+(.+)$/.exec(line);
+    if (heading) {
+      flushPara();
+      flushList();
+      const level = heading[1]!.length;
+      out.push(`<h${level}>${inline(heading[2]!)}</h${level}>`);
+    } else if (item) {
+      flushPara();
+      list.push({ depth: item[1]!.length >= 2 ? 1 : 0, items: [inline(item[2]!)] });
+    } else if (line.trim() === "") {
+      flushPara();
+      flushList();
+    } else if (list.length && /^\s{2,}/.test(raw)) {
+      list[list.length - 1]!.items.push(inline(line.trim()));
+    } else {
+      flushList();
+      para.push(line.trim());
+    }
+  }
+  flushPara();
+  flushList();
+  return out.join("\n");
+};
+
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const prettyDate = (d: string) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d.trim());
+  if (!m) return d.trim();
+  return `${Number(m[3])} ${MONTHS[Number(m[2]) - 1]} ${m[1]}`;
+};
+
+type Entry = { label?: string; version: string; date?: string; id: string; html: string };
+const entries: Entry[] = [];
+{
+  const parts = source.split(/^(?=## )/m).filter((p) => p.startsWith("## "));
+  for (const part of parts) {
+    const nl = part.indexOf("\n");
+    const head = (nl < 0 ? part : part.slice(0, nl)).slice(3).trim();
+    const body = nl < 0 ? "" : part.slice(nl + 1);
+    // "## Data grid 0.1.0 — 2026-11-07", "## 0.1.0 — 2026-11-07", "## [0.1.0] - 2026-11-07" or "## Unreleased":
+    // an optional item name, the version, an optional date after a dash.
+    const m = /^(?:(.*?)\s+)?\[?v?(\d+\.\d+\.\d+(?:[-+][\w.]+)?|unreleased)\]?(?:\([^)]*\))?\s*(?:[—–-]+\s*(.+))?$/i.exec(head);
+    const label = m?.[1]?.trim() || undefined;
+    const version = m?.[2] ?? head;
+    const date = m?.[3]?.trim();
+    const id = `${label ?? "v"} ${version}`.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
+    entries.push({ label, version, date, id, html: render(body) });
+  }
+}
+const latest = entries.find((e) => !/unreleased/i.test(e.version));
+const latestName = latest ? `${latest.label ? `${latest.label} ` : ""}${latest.version}` : "";
+const diff = `${SITE.install} --diff`;
+---
+
+<Base
+  title="Changelog"
+  description={`Every change to the Kadal UI registry, by version${latestName ? `; now at ${latestName}` : ""}. The data grid, its hooks and examples, and the @kadal/ui CLI.`}
+>
+  <section class="relative overflow-hidden">
+    <div class="mx-auto max-w-7xl px-4 pt-16 pb-10 sm:px-6 sm:pt-24">
+      <div class="max-w-3xl">
+        <p class="font-mono text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">Changelog</p>
+        <h1 class="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">What changed</h1>
+        <p class="mt-5 text-lg text-muted-foreground">
+          Every change to the registry, by version. The code lives in your repository, so an update is a diff you review,
+          not a version bump: run the command below and shadcn shows what moved between your copy and the registry.
+        </p>
+        <div class="mt-6 max-w-2xl"><CopyCommand command={diff} /></div>
+        <p class="mt-4 text-sm text-muted-foreground">
+          The <code class="rounded bg-muted px-1 font-mono text-[0.9em]">@kadal/ui</code> CLI has its own notes on
+          <a href={`${SITE.repo}/releases`} rel="noopener" class="underline underline-offset-4 hover:text-foreground">GitHub releases</a>;
+          this page is also
+          <a href={`${SITE.repo}/blob/main/CHANGELOG.md`} rel="noopener" class="underline underline-offset-4 hover:text-foreground">CHANGELOG.md</a>
+          in the repository.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <div class="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
+    {
+      entries.map((e) => (
+        <section
+          id={e.id}
+          aria-labelledby={`${e.id}-heading`}
+          class="grid gap-6 border-t border-border py-10 lg:grid-cols-[220px_1fr]"
+        >
+          <div class="lg:sticky lg:top-24 lg:self-start">
+            <h2 id={`${e.id}-heading`} class="text-2xl font-semibold tracking-tight">
+              {e.label && <span class="block text-sm font-medium text-muted-foreground">{e.label}</span>}
+              <a href={`#${e.id}`} class="underline-offset-4 hover:underline">{e.version}</a>
+            </h2>
+            {e.date && <p class="mt-1 font-mono text-xs text-muted-foreground">{prettyDate(e.date)}</p>}
+            {e === latest && (
+              <span class="mt-2 inline-block rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-emerald-700 uppercase dark:text-emerald-300">
+                Latest
+              </span>
+            )}
+          </div>
+          <div
+            class="max-w-3xl text-[15.5px] leading-7 text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a:hover]:text-foreground [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-foreground [&_h3]:mt-6 [&_h3]:font-mono [&_h3]:text-xs [&_h3]:font-medium [&_h3]:tracking-[0.14em] [&_h3]:text-muted-foreground [&_h3]:uppercase [&_h3:first-child]:mt-0 [&_h4]:mt-4 [&_h4]:font-medium [&_h4]:text-foreground [&_li]:mt-2 [&_p]:mt-3 [&_p:first-child]:mt-0 [&_strong]:font-medium [&_strong]:text-foreground [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul_ul]:mt-1"
+            set:html={e.html}
+          />
+        </section>
+      ))
+    }
+  </div>
+</Base>

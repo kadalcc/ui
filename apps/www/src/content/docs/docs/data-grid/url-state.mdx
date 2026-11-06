@@ -1,0 +1,188 @@
+---
+title: URL state
+description: Keep the Kadal UI data grid's filters, search and page in the URL with nuqs so a view can be shared and survives a refresh, or plug in any state source with a DataGridStateAdapter.
+---
+
+import { Aside, Tabs, TabItem } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+A filtered grid should be a link you can send. `useDataGridUrlState` keeps the grid's *query*
+(column filters, the search box, the page, optionally the sort) in the URL with
+[nuqs](https://nuqs.dev), while [`persist`](/docs/data-grid/persistence/) keeps the *view*. Under
+it is a small interface, `DataGridStateAdapter`, that any state source can implement.
+
+<Demo name="data-grid-url-state" />
+
+Change a filter or the page above and watch the address bar.
+
+## Install
+
+```sh
+npx shadcn@latest add @kadal/data-grid-url-state
+```
+
+This adds `hooks/use-data-grid-url-state.ts` and installs `nuqs@^2.10.2`. nuqs needs an adapter
+around your app, once, for your router:
+
+<Tabs syncKey="router">
+  <TabItem label="Next.js (app)">
+    ```tsx title="app/layout.tsx"
+    import { NuqsAdapter } from "nuqs/adapters/next/app"
+
+    export default function RootLayout({ children }) {
+      return <html><body><NuqsAdapter>{children}</NuqsAdapter></body></html>
+    }
+    ```
+  </TabItem>
+  <TabItem label="Next.js (pages)">
+    ```tsx title="pages/_app.tsx"
+    import { NuqsAdapter } from "nuqs/adapters/next/pages"
+
+    export default function App({ Component, pageProps }) {
+      return <NuqsAdapter><Component {...pageProps} /></NuqsAdapter>
+    }
+    ```
+  </TabItem>
+  <TabItem label="React Router">
+    ```tsx title="main.tsx"
+    import { NuqsAdapter } from "nuqs/adapters/react-router/v7" // or /v6
+
+    <NuqsAdapter><RouterProvider router={router} /></NuqsAdapter>
+    ```
+  </TabItem>
+  <TabItem label="Remix">
+    ```tsx title="app/root.tsx"
+    import { NuqsAdapter } from "nuqs/adapters/remix"
+
+    <NuqsAdapter><Outlet /></NuqsAdapter>
+    ```
+  </TabItem>
+  <TabItem label="TanStack Router">
+    ```tsx title="main.tsx"
+    import { NuqsAdapter } from "nuqs/adapters/tanstack-router"
+
+    <NuqsAdapter><RouterProvider router={router} /></NuqsAdapter>
+    ```
+  </TabItem>
+  <TabItem label="Plain React">
+    ```tsx title="main.tsx"
+    import { NuqsAdapter } from "nuqs/adapters/react"
+
+    <NuqsAdapter><App /></NuqsAdapter>
+    ```
+  </TabItem>
+</Tabs>
+
+## Use it
+
+```tsx title="customers/page.tsx"
+import { DataGrid, useDataGrid } from "@/components/ui/data-grid"
+import { useDataGridUrlState } from "@/hooks/use-data-grid-url-state"
+
+export function CustomersPage({ customers }: { customers: Customer[] }) {
+  const urlState = useDataGridUrlState({ key: "customers" })
+  const grid = useDataGrid({ data: customers, columns, getRowId: (c) => c.id, state: urlState })
+  return <DataGrid grid={grid} />
+}
+```
+
+The hook returns a `DataGridStateAdapter`; `state` hands it to the grid, which treats those slices
+as controlled and keeps the rest itself.
+
+### The query keys
+
+With `key: "customers"`:
+
+| Key | Holds | Format |
+| --- | --- | --- |
+| `customers.filters` | `ColumnFiltersState` | JSON, e.g. `[{"id":"status","value":["active"]}]` |
+| `customers.q` | the search text | string |
+| `customers.page` | the page | integer, 1-based |
+| `customers.sort` | `SortingState`, only with `sorting: true` | JSON |
+
+Keys at their default (no filters, empty search, page 1) are removed from the URL. Changing a
+filter or the search puts the page back to 1. Writes use `history: "replace"` by default so the
+back button is not flooded; `"push"` makes each change a history entry.
+
+## How it behaves
+
+- Two grids on one page need different `name`s; the default is `"grid"`.
+- The sort stays out of the URL unless you ask (`sorting: true`), because it is a view preference
+  that [`persist`](/docs/data-grid/persistence/) already remembers. With `sorting: true` the URL
+  owns the sort entirely: the stored view still records it, but no longer restores it.
+- The page index lives in the URL and the page size in the view; the grid merges them.
+- With [server-side data](/docs/data-grid/server-side/), read the same `urlState` for your fetch
+  parameters, so the URL, the grid and the request agree.
+
+```tsx
+const urlState = useDataGridUrlState({ key: "orders" })
+const { data } = useQuery({
+  queryKey: ["orders", urlState.columnFilters, urlState.globalFilter, urlState.pageIndex],
+  queryFn: () => fetchOrders({ filters: urlState.columnFilters, q: urlState.globalFilter, page: urlState.pageIndex }),
+})
+```
+
+## Options
+
+`useDataGridUrlState(options?)`:
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `name` | `string` | `"grid"` | Prefix of the query keys. |
+| `sorting` | `boolean` | `false` | Put the sort in the URL too. |
+| `history` | `"replace" \| "push"` | `"replace"` | nuqs history mode for every key. |
+
+## Your own adapter
+
+Anything can own these slices: React state, a store, a router's search params, a form. Implement
+`DataGridStateAdapter` and pass it as `state`. Every field is optional; a slice you provide is
+controlled, a slice you leave out is the grid's.
+
+```ts
+interface DataGridStateAdapter {
+  columnFilters?: ColumnFiltersState
+  onColumnFiltersChange?: OnChangeFn<ColumnFiltersState>
+  globalFilter?: string
+  onGlobalFilterChange?: OnChangeFn<string>
+  pageIndex?: number                          // 0-based
+  onPageIndexChange?: (pageIndex: number) => void
+  sorting?: SortingState
+  onSortingChange?: OnChangeFn<SortingState>
+  grouping?: GroupingState
+  onGroupingChange?: OnChangeFn<GroupingState>
+}
+```
+
+`OnChangeFn<T>` is TanStack's updater callback: it receives either a value or `(old) => next`.
+
+```tsx title="A React-state adapter"
+import * as React from "react"
+import type { ColumnFiltersState, DataGridStateAdapter } from "@/components/ui/data-grid"
+
+function useLocalQueryState(): DataGridStateAdapter {
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  const [globalFilter, setGlobalFilter] = React.useState("")
+  const [pageIndex, setPageIndex] = React.useState(0)
+  return {
+    columnFilters,
+    onColumnFiltersChange: (u) => { setColumnFilters(u); setPageIndex(0) },
+    globalFilter,
+    onGlobalFilterChange: (u) => { setGlobalFilter((old) => (typeof u === "function" ? u(old) : u) ?? ""); setPageIndex(0) },
+    pageIndex,
+    onPageIndexChange: setPageIndex,
+  }
+}
+```
+
+<Aside type="tip">
+  Provide a value and its `on…Change` together. For the TanStack slices (filters, search, sort,
+  grouping) a value alone pins the slice to that value, and a callback alone takes over the update
+  without anything writing the value back, so the slice stops changing. `pageIndex` and
+  `onPageIndexChange` are wired separately and each works on its own.
+</Aside>
+
+## See also
+
+- [Saved views and persistence](/docs/data-grid/persistence/): the view half.
+- [Server-side data](/docs/data-grid/server-side/)
+- [Filtering](/docs/data-grid/filtering/) and [Global search](/docs/data-grid/search/): what ends up in the URL.

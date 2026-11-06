@@ -1,0 +1,113 @@
+---
+title: Keyboard navigation
+description: Every keyboard shortcut in the Kadal UI data grid, how focus moves between cells, editors and headers, and what the live region announces.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+The grid is built to be driven without a mouse: one focused cell, arrows to move, a handful of
+spreadsheet keys, and menus that are ordinary shadcn menus. This page is the complete list.
+
+<Demo name="data-grid-keyboard" />
+
+## Getting in
+
+<kbd>Tab</kbd> reaches the toolbar, then the column headers (each sortable header is a button),
+then the body, then the pager. The body uses a **roving tabindex**: only the focused cell is a tab
+stop, and until a cell has been focused there is none. The first time, press <kbd>Tab</kbd> to a
+header and then any arrow key, or click a cell; after that <kbd>Tab</kbd> returns to the last
+focused cell.
+
+<kbd>⌘</kbd> below is <kbd>Ctrl</kbd> on Windows and Linux.
+
+## In the body
+
+| Keys | What happens |
+| --- | --- |
+| <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> | Move the focused cell. The range collapses to it. |
+| <kbd>Shift</kbd>+<kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> | Extend the range one cell, keeping its anchor. |
+| <kbd>Home</kbd> / <kbd>End</kbd> | First / last data column in the current row. |
+| <kbd>⌘</kbd><kbd>Home</kbd> / <kbd>⌘</kbd><kbd>End</kbd> | First column of the first row / last column of the last row on the current page. |
+| <kbd>PageUp</kbd> / <kbd>PageDown</kbd> | Up / down by one screen of rows (viewport height ÷ row height, minus one), within the current page. |
+| <kbd>Enter</kbd> or <kbd>F2</kbd> | Open the editor on an editable cell; on an expandable row with no editor, toggle it. |
+| <kbd>Space</kbd> | Toggle the focused row's selection (with its sub-rows). Announces the count. |
+| <kbd>⌘</kbd><kbd>A</kbd> | Select every cell. Announces the count. |
+| <kbd>⌘</kbd><kbd>C</kbd> | Copy the selected cells as TSV. Announces “Copied n cells”. |
+| <kbd>Esc</kbd> | Collapse a range to the focused cell. In fullscreen with nothing selected, leave fullscreen. |
+
+Movement skips the checkbox, expander, row-number and actions columns at the ends of a row, and
+scrolls the cell into view, including rows that are not yet rendered in a
+[virtualized](/docs/data-grid/virtualization/) grid.
+
+## In an editor
+
+| Keys | What happens |
+| --- | --- |
+| <kbd>Enter</kbd> | Commit and move down one cell. |
+| <kbd>Shift</kbd>+<kbd>Enter</kbd> | Commit and stay. In a textarea: insert a line break. |
+| <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> | Commit and move right / left. |
+| <kbd>Esc</kbd> | Cancel: close the editor and keep the old value. |
+| arrows, <kbd>Home</kbd>, <kbd>End</kbd> | Belong to the input (move the caret). |
+
+A select editor opens its list at once: arrows move, <kbd>Enter</kbd> chooses and commits,
+<kbd>Esc</kbd> cancels. A checkbox commits as soon as it is toggled. See
+[inline editing](/docs/data-grid/editing/) for what happens on commit.
+
+## In the header
+
+| Keys | What happens |
+| --- | --- |
+| <kbd>Tab</kbd> | Focus the next header's sort button, then its filter and menu buttons (they appear on focus). |
+| <kbd>Enter</kbd> or <kbd>Space</kbd> on the title | Toggle the sort: ascending, descending, off. |
+| <kbd>Shift</kbd>+<kbd>Enter</kbd> on the title, or <kbd>Shift</kbd>-click | Add the column to a multi-column sort instead of replacing it. |
+| <kbd>Enter</kbd> on the ⋯ button | Open the column menu: sort, filter, pin, move, group, fit, hide. |
+| <kbd>Enter</kbd> on the filter button | Open the filter popover; its inputs take the usual keys. |
+| right-click on a header | Open the column menu with the pointer. |
+
+Inside a menu (Base UI): <kbd>↑</kbd> <kbd>↓</kbd> move, <kbd>Enter</kbd> activates,
+<kbd>Esc</kbd> closes and returns focus to the trigger. **Move left** and **Move right** in the
+column menu are the keyboard route to reordering; dragging a header has no keyboard equivalent.
+
+## Toolbar and pager
+
+Every control is a button, input or select with its normal keys. In the pager, type a page number
+in the “Go to page” field and press <kbd>Enter</kbd>. The search box clears on <kbd>Esc</kbd>.
+
+## Focus management
+
+- After a commit or cancel, focus returns to the cell, or to the cell <kbd>Enter</kbd> or
+  <kbd>Tab</kbd> moved to.
+- The grid only moves focus when focus is already inside it; changing the focused cell from code
+  while you are typing in the search box does not steal it.
+- In a virtualized grid, moving to a row that is not rendered scrolls it into view first and focuses
+  it once it exists.
+- Opening a menu or popover moves focus into it; closing it returns focus to the trigger.
+
+## Announcements
+
+A visually hidden `aria-live="polite"` region in the grid root announces, using the
+[labels](/docs/data-grid/i18n/):
+
+| Event | Text |
+| --- | --- |
+| sort toggled from the header | `Name: Sort ascending` / `… Sort descending` / `… Clear sort` |
+| row selected with <kbd>Space</kbd>, or <kbd>⌘</kbd><kbd>A</kbd> | `labels.selected(n)`: “3 selected” |
+| cells or rows copied | `labels.copied(n)`: “Copied 12 cells” |
+
+Call `useDataGridUi().announce(message)` from your own parts to speak through the same region.
+
+<Aside type="caution" title="Two things to know">
+  With `cellSelection: false` the body has no keyboard model: no arrows, no <kbd>Enter</kbd> to
+  edit, no <kbd>Space</kbd>. Editing is then by double-click only.
+
+  Keys pressed on a header button, or on a button or link inside a cell, go to that control:
+  <kbd>Enter</kbd> and <kbd>Space</kbd> there sort, open or follow, and never edit or select the
+  focused row. Arrow keys still move the focused cell from a button inside a cell.
+</Aside>
+
+## See also
+
+- [Cell selection and clipboard](/docs/data-grid/cell-selection/)
+- [Inline editing](/docs/data-grid/editing/)
+- [Accessibility](/docs/data-grid/accessibility/): roles, attributes and the known gaps.

@@ -1,0 +1,132 @@
+---
+title: Cell selection and clipboard
+description: "Spreadsheet-style cell focus and ranges in the Kadal UI data grid: click, drag, Shift-click and ⌘-click to select, ⌘C to copy the cells as tab-separated text."
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+Click a cell and it takes the focus; drag, <kbd>Shift</kbd>-click or <kbd>Shift</kbd>+arrows and
+you have a range; <kbd>⌘</kbd><kbd>C</kbd> puts the range on the clipboard as tab-separated text
+that pastes straight into a spreadsheet. It is on by default and costs nothing when unused.
+
+<Demo name="data-grid-cell-selection" />
+
+## Use it
+
+Nothing to add: `cellSelection` defaults to `true`. Turn it off with `cellSelection: false`, which
+also removes the grid's [keyboard model](/docs/data-grid/keyboard/) for the body (arrows, Enter to
+edit, Space to select) and re-enables native text selection.
+
+```tsx
+<DataGrid data={rows} columns={columns} cellSelection={false} />
+```
+
+To keep a single column out of ranges, set TanStack's column option: `col.text("secret", { enableCellSelection: false })`.
+
+## With the pointer
+
+| Gesture | Result |
+| --- | --- |
+| Click | Focuses the cell and collapses any range to it. |
+| Drag | Extends the range from the cell you pressed on, cell by cell, until you release (even outside the grid). |
+| <kbd>Shift</kbd>-click | Extends the active range to the clicked cell, keeping its anchor. |
+| <kbd>⌘</kbd>-click or <kbd>Ctrl</kbd>-click | Starts a second range. On a cell that is already selected it starts an *exclusion* instead, cutting a hole in the selection. Dragging continues the same operation. |
+
+The modifiers are TanStack Table's defaults: `shiftKey` extends, `ctrlKey` or `metaKey` adds or
+subtracts. The grid passes `enableCellRangeSelection`, `enableMultiCellRangeSelection` and
+`enableCellSelectionDrag` as `true`; change any of them, or the predicates, through the
+[`table` escape hatch](/docs/data-grid/api/#raw-tanstack-options):
+
+```tsx
+useDataGrid({ data, columns, table: { enableMultiCellRangeSelection: false } })
+```
+
+## With the keyboard
+
+| Keys | Result |
+| --- | --- |
+| <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> | Move the focused cell (and collapse the range to it). With nothing focused, the first key focuses the first cell. |
+| <kbd>Shift</kbd>+arrows | Extend the active range one cell. |
+| <kbd>⌘</kbd><kbd>A</kbd> | Select every selectable cell of every row (all pages, not just the current one). |
+| <kbd>⌘</kbd><kbd>C</kbd> | Copy the selection as TSV. |
+| <kbd>Esc</kbd> | Collapse a range back to the focused cell. |
+
+<kbd>⌘</kbd> is <kbd>Ctrl</kbd> on Windows and Linux. The full table, including <kbd>Home</kbd>,
+<kbd>End</kbd> and <kbd>PageDown</kbd>, is on the [keyboard page](/docs/data-grid/keyboard/).
+
+## What you see
+
+- The focused cell has an inset ring in the primary colour (`ring-2 ring-primary ring-inset`) and
+  is the one element in the body with `tabindex="0"` (roving tabindex).
+- Selected cells are tinted `bg-primary/10`, and the outer edges of the selection get a one-pixel
+  inset line, so a union of rectangles reads as one outline.
+- Cells carry `data-focused` and `data-selected` while in those states, for your own styles.
+- Text selection is disabled on the table (`select-none`) so a drag selects cells, not characters.
+
+## Copying
+
+<kbd>⌘</kbd><kbd>C</kbd> with a selection calls `selectedCellsToTsv(grid)` and copies the result:
+
+- rows in display order, columns in visible order, one line per row, a tab between cells, `\n`
+  between lines, no header row;
+- values **formatted the way the cells show them** (currency, dates, enum labels), using the same
+  `formatValue` as the cells and the export; blanks are empty strings;
+- a cell inside the bounding box but outside the selection (after a ⌘-click exclusion) is an empty
+  field, so the pasted shape stays rectangular.
+
+The copy uses `navigator.clipboard.writeText`, falling back to `document.execCommand("copy")` on
+plain `http://` origins and in some webviews. On success the live region announces
+`labels.copied(count)` (“Copied 4 cells”).
+
+Copy with headers, or copy whole rows, from the [Export menu](/docs/data-grid/export/) instead.
+
+## How it behaves
+
+- The checkbox, expander, row-number and actions columns never join a range, a select-all or a
+  copy.
+- A range is stored as two corner cells by row id and column id, not as positions. Sorting,
+  filtering or reordering keeps the corners and recomputes what lies between them; hiding a column
+  a corner sits on makes the range inert until the column returns.
+- The selection resets whenever `data` changes (TanStack's `autoResetCellSelection`), so a refetch
+  does not leave ranges pointing at rows that moved. Keep ranges across refetches with
+  `table: { autoResetCellSelection: false }`.
+- While an editor is open, pointer selection on other cells and the body's keys are paused.
+- Row selection (the checkbox column) is a separate feature; <kbd>Space</kbd> toggles the focused
+  row and [bulk actions](/docs/data-grid/selection/) work on rows, not cells.
+
+<Aside type="note" title="Screen readers">
+  Each cell reports `aria-selected`; a range is announced only through the live region, as a count
+  when you select all or copy. See [accessibility](/docs/data-grid/accessibility/).
+</Aside>
+
+## Options
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `cellSelection` | `boolean` | `true` | Cell focus, ranges, copy and the body keyboard model. |
+| `enableCellSelection` (column) | `boolean` | `true` | TanStack column option; `false` keeps a column out of ranges. |
+
+## Api
+
+| Member | What it does |
+| --- | --- |
+| `grid.cellSelectionEnabled` | The resolved option. |
+| `grid.table.getFocusedCell()` | The focused `DataGridCell`, or `undefined`. |
+| `grid.table.setFocusedCell(rowId, columnId)` | Focus one cell and collapse the range. |
+| `grid.table.moveCellSelection(dir)` / `extendCellSelection(dir)` | What the arrow keys call; `dir` is `"up" \| "down" \| "left" \| "right"`. |
+| `grid.table.selectCellRange(range, { mode })` | Add, replace or exclude a rectangle. |
+| `grid.table.selectAllCells()` / `resetCellSelection(true)` | What <kbd>⌘</kbd><kbd>A</kbd> and <kbd>Esc</kbd> call. |
+| `grid.table.getSelectedCellCount()` | How many cells are selected. |
+| `grid.table.getCellSelectionRowIds()` / `getCellSelectionColumnIds()` | The rows and columns the selection touches. |
+| `grid.table.getSelectedCellRangesData()` | Raw values per range, `[range][row][column]`. |
+| `grid.table.state.cellSelection` | The ranges themselves (reactive). |
+| `selectedCellsToTsv(grid)` | `{ text, count }`: what <kbd>⌘</kbd><kbd>C</kbd> copies. |
+| `copyText(text)` | The clipboard write with its fallback; resolves `true` on success. |
+| `findCellElement(root, cellId)` | The `<td>` for a cell id inside the grid. |
+
+## See also
+
+- [Keyboard navigation](/docs/data-grid/keyboard/)
+- [Export](/docs/data-grid/export/): CSV, JSON and copying whole rows with headers.
+- [Row selection and bulk actions](/docs/data-grid/selection/)

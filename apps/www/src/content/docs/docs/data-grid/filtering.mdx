@@ -1,0 +1,153 @@
+---
+title: Filtering
+description: Facet, text, number range, date range and boolean filters from the column header, chips in the toolbar, custom filter functions and the filter value shapes.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+Every data column has a filter in its header, and the kind picks which one: a facet with counts for
+an `enum`, a range for a `number`, a date range for a `date`, yes/no for a `boolean`, and operators
+like "starts with" for text. Active filters show as chips in the toolbar.
+
+<Demo name="data-grid-filtering" />
+
+## Use it
+
+Hover a header and click the funnel, or pick **Filter…** from the ⋮ menu (a right-click on the header
+opens it too). The popover is titled with the column's name, has a clear button once a value is set,
+and shows the editor for the column's filter kind. The funnel stays visible while a filter is active;
+for a facet with several values it turns into a count badge.
+
+### The five kinds
+
+| Kind | Editor | Row passes when |
+| --- | --- | --- |
+| `facet` | A search box and a checkbox list of every value in the data, each with how many rows hold it. Declared `options` come first, in their order and with their labels; anything else found in the data follows. | its value, or one of its values for an array, is among the chosen ones. Values are compared as strings, so they survive a trip through a URL. |
+| `text` | An operator select (contains, does not contain, starts with, ends with, equals, is empty, is not empty) and an input. | the operator holds, case-insensitively. A bare string value means "contains". |
+| `range` | Min and Max inputs; their placeholders show the smallest and largest value in the data. | `min ≤ value ≤ max`, either end open. Rows whose value is not a number never pass. |
+| `dateRange` | From and To date inputs (date and time for a `datetime` column). | `from ≤ value ≤ to`, either end open. A bare `to` date means through the end of that day. |
+| `boolean` | Any / Yes / No. | `Boolean(value)` matches the choice. "Any" removes the filter. |
+
+### How a column's kind is chosen
+
+The column's `filter` option wins. Without one, the column kind decides: `number`, `currency` and
+`percent` get `range`; `date` and `datetime` get `dateRange`; `boolean` gets `boolean`; `enum` and
+`tags` get `facet`; the utility columns (`select`, `expander`, `rowNumber`, `actions`) get none; and
+everything else (`text`, `link`, `custom`, or a column with no kind) gets `text`.
+
+```tsx
+col.text("team", { filter: "facet" })                   // a facet over free text
+col.text("notes", { filter: false })                     // no filter in the header
+```
+
+<Aside type="note" title="filter sets the UI, and the function follows">
+  A kind sets both to match, and `filter` on its own switches both: `filter: "facet"` on a text
+  column gives it the facet editor and the `facet` function. Pass `filterFn` as well only when you
+  want a different function from the UI's (yours, usually). The names line up one to one: `facet`,
+  `text`, `range`, `dateRange`, `boolean`.
+</Aside>
+
+### Chips and clearing
+
+`DataGridFilterChips`, in the toolbar, shows one chip per active filter: the column's label and a
+summary of the value (up to two facet names and "+n", `contains "ann"`, `≥ $100`, `from 1 Jan 2025`,
+`Yes`). The × on a chip clears that filter; a **Clear** button appears beside the chips when there
+is more than one. When filters leave no rows, the table shows "No rows match the current filters"
+with a button that clears every column filter and the search.
+
+### Start filtered
+
+`columnFilters` is a list of `{ id, value }`. The value shape depends on the filter kind, and each
+has an exported type so you can build it in code:
+
+```tsx
+import type {
+  DataGridDateRangeFilterValue,
+  DataGridRangeFilterValue,
+  DataGridTextFilterValue,
+} from "@/components/ui/data-grid"
+
+<DataGrid
+  data={data}
+  columns={columns}
+  initialState={{
+    columnFilters: [
+      { id: "status", value: ["active", "invited"] },                                   // facet: an array
+      { id: "name", value: { op: "startsWith", value: "A" } as DataGridTextFilterValue }, // text
+      { id: "mrr", value: { min: 100 } as DataGridRangeFilterValue },                     // range
+      { id: "joinedAt", value: { from: "2025-01-01", to: "2025-12-31" } as DataGridDateRangeFilterValue },
+      { id: "active", value: true },                                                      // boolean
+    ],
+  }}
+/>
+```
+
+The same shapes come back from `grid.table.state.columnFilters`, go to a server with
+[server-side data](/docs/data-grid/server-side/), and round-trip through the address bar with
+[URL state](/docs/data-grid/url-state/). Set a filter from your own control with
+`grid.table.getColumn("status")?.setFilterValue(["active"])` and clear it with
+`setFilterValue(undefined)`.
+
+### Facets from options or from the data
+
+An `enum` column with `options` lists them first, in the order you gave, with their labels, and with
+the count of rows holding each value (zero if none). A column without `options` lists whatever the
+data holds, labelled by value, with blanks shown as "—". A `tags` column lists each item of the
+arrays as its own entry. `options` also give the badge its `icon` and `className`, so one list
+drives the cell, the facet and the select editor.
+
+### Your own filter function
+
+`filterFn` takes a function or the name of a registered one. A function gets the row, the column id
+and the current filter value, and returns whether the row passes:
+
+```tsx
+col.text("name", {
+  filterFn: (row, columnId, value: DataGridTextFilterValue) =>
+    row.getValue<string>(columnId).normalize("NFD").toLowerCase().includes(value.value.toLowerCase()),
+})
+```
+
+The names available are the grid's `facet`, `text`, `range`, `dateRange` and `boolean`, and
+TanStack's `includesString`, `equals` and `weakEquals`. A custom function still gets its value from
+the header's editor, so match the shape of the column's filter kind.
+
+## How it behaves
+
+- Column filters apply before sorting, grouping and pagination; changing one takes the pager back to
+  page 1.
+- Column filters and the [global search](/docs/data-grid/search/) combine: a row must pass both.
+- Facet counts and range placeholders come from the rows the grid holds. With server-side filtering
+  that is the current page, so the counts describe the page, not the whole result.
+- Filtering compares raw values, not formatted ones. A `format` on a column changes what the chips
+  and facet labels show, not what the filter compares.
+- `column.getCanFilter()` is true for any column with an accessor; `filter: false` only removes the
+  header UI, so you can still filter such a column in code.
+
+## Options
+
+### Column options
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `filter` | string or `false` | by kind | The editor in the header: `"facet"`, `"text"`, `"range"`, `"dateRange"` or `"boolean"`; `false` removes it. |
+| `filterFn` | string or function | by kind | How a row is tested against the value: a registered name, or `(row, columnId, value) => boolean`. |
+| `enableColumnFilter` | boolean | `true` | `false` makes `getCanFilter()` false as well, so neither the UI nor code can filter the column. |
+| `options` | array | | Orders, labels and styles the facet entries. |
+
+### Grid options
+
+| Option | Where | Default | What it does |
+| --- | --- | --- | --- |
+| `initialState.columnFilters` | `useDataGrid`, `<DataGrid>` | `[]` | The starting filters. |
+| `state.columnFilters` | the `state` adapter | | With `state.onColumnFiltersChange`, another owner for the filters (the URL). |
+| `server.filtering` | `server` | `true` with `server` | The server filters; the grid leaves the rows alone. |
+| `filters` | the toolbar | `true` | Show the chips: `toolbar={{ filters: false }}` hides them. |
+| `enableColumnFilters` | `table` | `true` | Filtering for the whole grid. |
+
+## See also
+
+- [Global search](/docs/data-grid/search/): one box across every column.
+- [Columns](/docs/data-grid/columns/): what each kind sets.
+- [URL state](/docs/data-grid/url-state/): filters as a shareable link.

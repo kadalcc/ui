@@ -6,15 +6,17 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev --port 5400",
-    "build": "bun run registry:build && bun run play:build && astro build",
+    "build": "bun run gen:examples && bun run registry:build && bun run play:build && astro build",
     "preview": "astro preview --port 5400",
-    "typecheck": "astro check && tsc --noEmit -p tsconfig.json",
+    "typecheck": "node scripts/gen-examples.mjs && tsc --noEmit -p tsconfig.json",
     "registry:build": "shadcn build registry.json -o public/r",
     "play:build": "bun scripts/build-playground.ts",
     "og": "bun scripts/og.ts",
-    "test": "bun test src registry",
+    "test": "bun test tests",
     "test:e2e": "playwright test",
-    "deploy": "bun run build && wrangler deploy"
+    "deploy": "bun run build && wrangler deploy",
+    "gen:examples": "node scripts/gen-examples.mjs",
+    "predev": "node scripts/gen-examples.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^7.1.4",
@@ -54,6 +56,12 @@
     "shadcn": "^4.23.0",
     "tsdown": "^0.23.7",
     "typescript": "^7.0.2",
-    "wrangler": "^4.105.0"
+    "wrangler": "^4.105.0",
+    "@tailwindcss/cli": "^4.3.5"
+  },
+  "optionalDependencies": {
+    "@bruits/satteri-darwin-arm64": "0.11.6",
+    "@bruits/satteri-linux-x64-gnu": "0.11.6",
+    "@bruits/satteri-linux-arm64-gnu": "0.11.6"
   }
 }

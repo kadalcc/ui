@@ -1,0 +1,219 @@
+---
+title: Columns
+description: The typed column builder, every column kind and what it sets by default, the flat options, custom cells and headers, group headers and plain TanStack defs.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+A column is one call on the builder: `col.currency("mrr")`. The kind picks the cell renderer, the
+sort function, the filter UI and function, the editor, the aggregation and the export format, so most
+columns need nothing else. Keys are checked against your row type, and the value type flows into
+`format`, `options`, `href`, `validate` and `onEdit`.
+
+<Demo name="data-grid-columns" />
+
+## Use it
+
+Create one builder per row type and pass the result of `col.columns([...])` to the grid.
+
+```tsx title="customers/columns.tsx"
+import { createDataGridColumns } from "@/components/ui/data-grid"
+
+const col = createDataGridColumns<Customer>()
+
+export const columns = col.columns([
+  col.select(),
+  col.text("name", { header: "Name", editable: true }),
+  col.link("email", { header: "Email", href: (v) => `mailto:${v}` }),
+  col.enum("plan", { header: "Plan", options: PLAN_OPTIONS }),
+  col.currency("mrr", { header: "MRR", currency: "EUR" }),
+  col.date("joinedAt", { header: "Joined" }),
+  col.actions(({ row }) => <CustomerMenu customer={row.original} />),
+])
+```
+
+`col.columns` is TanStack's tuple helper: it keeps each column's own value type instead of widening
+the array to `unknown`. Define columns once, outside the component, unless a cell needs component
+state.
+
+### The kinds
+
+| Kind | Cell | Sort | Filter | Aggregation |
+| --- | --- | --- | --- | --- |
+| `text` | The value, with an ellipsis when it overflows. | alphanumeric | text | unique count |
+| `number` | `Intl.NumberFormat`, up to 2 decimals, tabular figures, right-aligned. | basic | range | sum |
+| `currency` | `Intl` currency, USD unless you say, right-aligned. | basic | range | sum |
+| `percent` | `Intl` percent of a 0–1 value, up to 1 decimal, right-aligned. | basic | range | mean |
+| `date` | Medium date style. | datetime | date range | extent (first – last) |
+| `datetime` | Medium date style, short time style. | datetime | date range | extent |
+| `boolean` | A tick or a cross, centred; exports as Yes/No. | basic | yes / no | count |
+| `enum` | A badge with the matching option's label, icon and colour. | alphanumeric | facet | unique count |
+| `tags` | Up to three badges and a "+n" tooltip for the rest. Not groupable. | alphanumeric | facet, one entry per item | unique count |
+| `link` | An anchor to `href(value, row)` or the value itself, in a new tab. | alphanumeric | text | unique count |
+| `custom` | Yours (`cell`). Set `sortFn` and `filterFn` to match. | TanStack auto | text UI, auto function | none |
+| `display` | Yours; no accessor, so no sort, filter, search or export. `id` required. | | | |
+| `group` | A header spanning its child columns. | | | |
+| `select` | The selection checkbox; the header ticks the page. 40px, fixed. | | | |
+| `expander` | The expand chevron, indented by depth; the header expands all. 40px, fixed. | | | |
+| `rowNumber` | The 1-based position after sorting and filtering. 56px, right-aligned, mono. | | | |
+| `actions` | Yours; a row menu, usually. 56px, right-aligned, `stable`. | | | |
+
+The last four are **utility columns**. The grid renders them itself and never sorts, filters,
+searches, groups, hides, resizes or exports them; they can be pinned. Every data column defaults to
+160px wide, between 48 and 2000.
+
+Editing follows the kind as well: `number`, `currency` and `percent` open a number input, `enum` a
+select over its `options`, `boolean` a checkbox, `date` and `datetime` a date input, and everything
+else a text input. See [inline editing](/docs/data-grid/editing/).
+
+### Accessor functions, ids and nested keys
+
+A key can be a nested path, and an accessor can be a function. A function has no key to name the
+column by, so it needs an `id`; the value type still comes from what it returns.
+
+```ts
+col.text("address.city", { header: "City" })
+col.currency((row) => row.mrr * 12, { id: "arr", header: "ARR" })
+col.number((row) => row.seats * row.unitPrice, { id: "total", header: "Total" })
+```
+
+### Options
+
+Every TanStack column option (`size`, `minSize`, `maxSize`, `cell`, `header`, `footer`,
+`enableSorting`, `sortFn`, `filterFn`, `enableHiding`, `enablePinning`, `aggregationFn`, …) is
+accepted as is. The grid's own options sit beside them, flat, and end up in the column's typed
+`meta`; `grid.metaFor(columnId)` returns the merged result.
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `header` | string or function | the humanised key | A string renders the sortable title with the column menu; a function `(ctx) => ReactNode` renders what you return in its place. |
+| `label` | string | the header string, else the humanised key | The title in menus, filter chips, the grouping bar, the View list and exports. Set it when `header` is a function. |
+| `description` | string | | Shown as a tooltip on the header title, and stored on `meta`. |
+| `align` | string | by kind | `"start"`, `"center"` or `"end"`: text alignment of the header and cells. |
+| `filter` | string or `false` | by kind | Which filter UI the header offers: `"facet"`, `"text"`, `"range"`, `"dateRange"` or `"boolean"`. `false` removes it. Pair a change with the matching `filterFn`. |
+| `editable` | boolean or object | `false` | Opens an editor on Enter, F2 or double-click. The `DataGridEditorSpec` object sets `type`, `options`, `min`, `max`, `step`, `placeholder`, `validate`, `parse` and `canEdit`. |
+| `onEdit` | function | | Called after a commit in this column, before the grid's `onCellEdit`, with the row id and index, the row, the column id, the new value and the previous one (a `DataGridCellEdit`). May return a promise; throw to keep the editor open with the message. |
+| `format` | function | by kind | `(value, row) => string`: replaces the display string in cells, group rows, filter chips and exports. |
+| `options` | array | | For `enum` and `tags`: one `DataGridOption` per choice, with `value`, `label` and optional `icon` and `className`. Orders and labels the facet, styles the badge, feeds the select editor. |
+| `currency` | string | `"USD"` | ISO 4217 code for `currency` columns. |
+| `locale` | string | the grid's `locale`, else the browser's | BCP 47 tag for this column's numbers and dates. |
+| `minimumFractionDigits` | number | by kind | Passed to `Intl.NumberFormat`. |
+| `maximumFractionDigits` | number | by kind | Passed to `Intl.NumberFormat`. |
+| `dateStyle`, `timeStyle` | string | medium, short | `"full"`, `"long"`, `"medium"` or `"short"`, passed to `Intl.DateTimeFormat`. |
+| `href` | function | the value | `(value, row) => string`: the anchor's `href` for `link` columns. |
+| `target` | string | `"_blank"` | The anchor's `target`. Links always get `rel="noreferrer"`. |
+| `export` | boolean or function | `true` | `false` leaves the column out of exports; `(value, row) => unknown` supplies the exported value. |
+| `truncate` | boolean | `true` | An ellipsis when the value overflows, with the full text as the title. |
+| `wrap` | boolean | `false` | Let long text wrap onto more lines instead. |
+| `mono` | boolean | `false` | Monospace cells (ids, hashes, codes). |
+| `headerClassName` | string | | Extra classes on the `<th>`. |
+| `cellClassName` | string or function | | Extra classes on each `<td>`; `(value, row) => string` for per-value classes. |
+| `tooltip` | boolean or function | `false` | A tooltip on hover: the full text, or what `(value, row) => ReactNode` returns. |
+| `groupable` | boolean | `true` | `false` keeps the column out of "Group by". |
+| `draggable` | boolean | `true` | `false` hides the drag handle; the column still moves when others are reordered around it. |
+| `stable` | boolean | `false`; `true` for utility kinds | Renders the column outside the drag-to-reorder machinery. Needed when a cell anchors a menu or popover; see [row actions](/docs/data-grid/row-actions/). |
+| `meta` | object | | Anything else you want on the column's meta, typed or your own keys; merged last. |
+
+## Custom cells and headers
+
+Give any typed column a `cell` and the kind keeps doing the rest: sorting, filtering, grouping,
+editing and export still follow the value, only the rendering is yours. The context is TanStack's
+`CellContext`, typed as `DataGridCellContext<TData, TValue>`:
+
+```tsx
+col.percent("usage", {
+  header: "Usage",
+  cell: ({ getValue, row }) => {
+    const pct = Math.round(getValue() * 100) // getValue(): number
+    return <UsageBar value={pct} warn={row.original.plan === "free"} />
+  },
+})
+```
+
+| In the context | What it is |
+| --- | --- |
+| `getValue()` | The column's value for this row, typed. `renderValue()` is the same with `null` for missing values. |
+| `row` | The TanStack row: `row.original` is your object, then `row.id`, `row.index`, `row.depth`, `row.getIsSelected()`, `row.toggleExpanded()`, … |
+| `column` | The column: `column.id`, `column.getIsSorted()`, `column.getFilterValue()`, … |
+| `cell` | The cell: `cell.id`, `cell.getIsSelected()`, `cell.getIsGrouped()`. |
+| `table` | The whole table, when you need state from elsewhere. |
+
+A `header` function replaces the title inside the sortable button, so clicking it still sorts and
+the menu and filter still appear. Its context is `DataGridHeaderContext<TData, TValue>`:
+`column`, `header` and `table`. Because the title is no longer a string, give the column a `label`
+so menus, chips and exports have a name.
+
+```tsx
+col.number("seats", {
+  label: "Seats",
+  header: ({ column }) => (
+    <span className="inline-flex items-center gap-1">
+      <UsersIcon className="size-3.5" /> Seats
+      {column.getIsSorted() ? null : <span className="text-muted-foreground">(click to sort)</span>}
+    </span>
+  ),
+})
+```
+
+For a column that is not a field at all (an avatar, a sparkline, a computed badge) use
+`col.display({ id, cell })`. It has no accessor, so it never sorts, filters, searches or exports;
+set `size` to what the cell needs.
+
+## Group headers
+
+`col.group(header, columns, options?)` puts a header row above a run of columns. The children are
+ordinary columns; wrap them in `col.columns` so their value types survive the group's `unknown`.
+The group's `id` defaults to its header text.
+
+```tsx
+col.group("Billing", col.columns([
+  col.enum("plan", { header: "Plan", options: PLAN_OPTIONS, size: 110 }),
+  col.currency("mrr", { header: "MRR", size: 110 }),
+  col.number("seats", { header: "Seats", size: 110 }),
+]), { size: 330 })
+```
+
+A group header is not sortable, filterable or draggable itself; its children are. Hiding every
+child hides the group.
+
+A group header is as wide as its children added up (`header.getSize()`), so the children keep
+their own `size`; a `size` on the group itself is ignored.
+
+## Plain TanStack column defs
+
+You do not have to use the builder. Any TanStack column def typed as `DataGridColumnDef<TData>`
+(or `DataGridColumnDef<TData, TValue>`) goes in the same array, and the grid still renders it: when
+a def has no `meta.kind`, the kind is inferred from the first non-null value in the data (number or
+bigint → `number`, boolean → `boolean`, `Date` → `datetime`, array → `tags`, anything else →
+`text`) and the default cell renders by that kind.
+
+```tsx
+import type { DataGridColumnDef } from "@/components/ui/data-grid"
+
+const country: DataGridColumnDef<Customer, string> = {
+  id: "country",
+  accessorKey: "country",
+  header: "Country",
+  filterFn: "text",
+}
+
+const columns = col.columns([col.text("name"), country, col.currency("mrr")])
+```
+
+<Aside type="note" title="Filtering a plain def">
+  A plain def with no `filterFn` gets the grid's `byValue` function, which reads whatever the
+  header's filter UI sends (an array, `{ op, value }`, `{ min, max }`, `{ from, to }` or a
+  boolean) and matches accordingly, so the inferred kind's filter just works. Set `filterFn` to
+  one of `"text"`, `"range"`, `"dateRange"`, `"boolean"` or `"facet"` to pin it down, or to a
+  function of your own. Sorting stays on TanStack's `auto`.
+</Aside>
+
+`col.helper` is the raw TanStack column helper for the same features, when you want
+`helper.accessor` with the grid's typing and none of the defaults.
+
+## See also
+
+- [Filtering](/docs/data-grid/filtering/): the five filter kinds and the value shapes.
+- [Inline editing](/docs/data-grid/editing/): the editor spec, validation and `onCellEdit`.
+- [Type safety](/docs/type-safety/): what the builder checks and how `DataGridColumnDef` relates to TanStack's `ColumnDef`.

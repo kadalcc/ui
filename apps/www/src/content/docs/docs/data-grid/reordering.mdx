@@ -1,0 +1,104 @@
+---
+title: Column reordering
+description: Drag a header to move a column, or use Move left and Move right in its menu; which columns stay put, and how to set and remember an order.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+Drag a header sideways to put the column where you want it. The menu has **Move left** and
+**Move right** for the keyboard.
+
+<Demo name="data-grid-reordering" />
+
+## Use it
+
+Press on a header's title and move. The drag starts after 6 px, so a click still sorts. The columns
+rearrange under the pointer as you pass over them; release to keep the new order, or press
+<kbd>Escape</kbd> to put everything back where it was.
+
+From the column menu (the <kbd>⋯</kbd> button at the right of the header, or right-click),
+**Move left** and **Move right** swap the column with its visible neighbour. They are disabled at the
+first and last position.
+
+To start in an order of your own, list the ids:
+
+```tsx
+<DataGrid
+  data={data}
+  columns={columns}
+  initialState={{ columnOrder: ["select", "name", "mrr", "status", "plan", "team", "joinedAt"] }}
+/>
+```
+
+Ids you leave out follow the listed ones, in the order you defined the columns; ids that match no
+column are ignored. An empty array means definition order. From code:
+
+```ts
+grid.table.setColumnOrder(["name", "team", "mrr"])
+grid.table.resetColumnOrder()
+grid.table.state.columnOrder // [] until someone reorders
+```
+
+## How it behaves
+
+- **Pointer only, header only.** Dragging uses dnd kit's pointer sensor, so it works with a mouse, a
+  pen or a finger, and the dragged header cannot leave the header row. The header being dragged
+  fades to 80 % and the one it would land on is tinted. Hovering a draggable title shows the hint
+  **Drag to reorder column** (`labels.dragColumn`).
+- **The order is one list.** Dragging and the menu both edit `columnOrder`, a list of every leaf
+  column id. The screen order is that list, with [pinned](/docs/data-grid/pinning/) columns moved to
+  their edges and [grouped](/docs/data-grid/grouping/) columns moved to the front.
+- **Columns that don't drag:**
+  - The **utility columns**, `col.select()`, `col.expander()`, `col.rowNumber()` and
+    `col.actions()`, and any column with `stable: true`. They are rendered outside the drag
+    machinery because a dragging header carries a CSS transform and re-registers with the sensor as
+    the grid changes, which gives a menu anchored in the column an unstable position. They are
+    neither draggable nor drop targets.
+  - **Pinned columns**: no handle, and no Move items in the menu. Unpin to move.
+  - **Grouped columns**: the grid's `groupedColumnMode` is `"reorder"`, which moves them to the front
+    for as long as they are grouped; their handle is off meanwhile.
+  - **Group headers** (`col.group`) don't drag. Their leaf columns do.
+  - A column with **`draggable: false`** has no handle but keeps its place in the list, so it still
+    shifts when its neighbours are dragged past it.
+- **Move left and Move right** work on the centre region's visible columns, utility columns
+  included, so a column can be moved past the checkbox column from the menu even though it cannot
+  be dragged there.
+- **Hidden columns** keep their place in the order and reappear there.
+- **Persistence.** `columnOrder` is part of the view the grid [remembers](/docs/data-grid/persistence/)
+  with `persist` and of saved views. **Reset view** restores definition order. [URL state](/docs/data-grid/url-state/)
+  does not carry it: order is a preference, not a query.
+
+<Aside type="note" title="No announcement on reorder">
+  Sorting announces its result to screen readers; a drag does not. Keyboard users have the two menu
+  items, which move the column one step at a time with the usual menu feedback.
+</Aside>
+
+## Keyboard
+
+| Key | Does |
+| --- | --- |
+| <kbd>Tab</kbd> to a header, then its <kbd>⋯</kbd> button, <kbd>Enter</kbd> | Opens the column menu with **Move left** and **Move right**. |
+| <kbd>Escape</kbd> while dragging | Cancels the drag and restores the order from before it. |
+
+## Options
+
+Column options:
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `draggable` | `boolean` | `true` | `false` hides the drag handle; the column still moves when others are reordered. |
+| `stable` | `boolean` | `false` (`true` on utility columns) | Renders the column outside the drag machinery. Set it on any column whose cell anchors a menu or popover. |
+
+Grid options:
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `initialState.columnOrder` | `string[]` | `[]` (definition order) | The starting order, by id. A persisted view wins over it. |
+| `table.onColumnOrderChange` + `table.state.columnOrder` | | | Control the slice yourself. |
+
+## See also
+
+- [Column pinning](/docs/data-grid/pinning/): pinned columns and the drag.
+- [Column visibility](/docs/data-grid/visibility/): the View popover, and Reset view.
+- [Row actions](/docs/data-grid/row-actions/): why the actions column is stable.

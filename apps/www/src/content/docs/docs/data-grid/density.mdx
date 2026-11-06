@@ -1,0 +1,84 @@
+---
+title: Density
+description: Three row heights, compact, comfortable and spacious, from the toolbar menu or a controlled prop, with a CSS variable and a data attribute for your own styling.
+---
+
+import Demo from "../../../../components/docs/Demo.astro";
+
+Density is the row height: 32, 40 or 48 pixels. The user picks it from the toolbar; you can set
+the start, or own it from outside the grid.
+
+<Demo name="data-grid-density" />
+
+## Use it
+
+The toolbar's density button (the rows icon) opens a menu with **Compact**, **Comfortable** and
+**Spacious**. Comfortable is the default.
+
+Set a starting density, uncontrolled:
+
+```tsx
+<DataGrid data={data} columns={columns} defaultDensity="compact" />
+```
+
+Or control it, the way the demo does with a toggle outside the grid:
+
+```tsx
+const [density, setDensity] = React.useState<DataGridDensity>("compact")
+
+<DataGrid data={data} columns={columns} density={density} onDensityChange={setDensity} />
+```
+
+Either way the menu keeps working: when you control it, it calls `onDensityChange`. From code,
+`grid.density` holds the current value, `grid.setDensity(next)` changes it, `grid.rowHeight` is the
+pixel height.
+
+## How it behaves
+
+- **One variable.** The grid root sets `--dg-row-height` (`32px`, `40px` or `48px`) and
+  `data-density="compact" | "comfortable" | "spacious"`. Header cells, body cells, footer cells, the
+  pinned-row offsets, the overlay inset and the virtualizer's size estimate all read the variable,
+  so a density change is one style write.
+- **Style with it.** Target the attribute for anything that should change with density, in CSS or
+  with a Tailwind arbitrary variant on your own cells:
+
+  ```tsx
+  col.text("notes", { cellClassName: "[[data-density=compact]_&]:text-xs" })
+  ```
+
+  ```css
+  [data-slot="data-grid"][data-density="spacious"] td { font-size: 0.95rem; }
+  ```
+
+  Your own [parts](/docs/data-grid/composition/) can size to a row with `h-(--dg-row-height)`.
+- **Where the start comes from.** A persisted view wins; then `defaultDensity`; then
+  `initialState.density`; then `"comfortable"`. When you pass `density`, the prop wins over all of
+  them, and applying a saved view or **Reset view** reaches you through `onDensityChange` rather
+  than changing anything itself.
+- **Persistence.** Density is part of the view the grid [remembers](/docs/data-grid/persistence/)
+  with `persist` and of saved views.
+- **Labels.** `density`, `densityCompact`, `densityComfortable` and `densitySpacious` in `labels`
+  rename the menu. `toolbar={{ density: false }}` hides it.
+
+## Options
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `density` | `DataGridDensity` | | Controlled density: `"compact"`, `"comfortable"` or `"spacious"`. |
+| `defaultDensity` | `DataGridDensity` | `"comfortable"` | Uncontrolled start. |
+| `onDensityChange` | `(density) => void` | | Called on every change, from the menu, `setDensity` or a saved view. |
+| `initialState.density` | `DataGridDensity` | | Another way to set the start; `defaultDensity` wins over it. |
+
+Exports:
+
+| Export | What it holds |
+| --- | --- |
+| `DENSITY_ROW_HEIGHT` | `{ compact: 32, comfortable: 40, spacious: 48 }`. |
+| `DataGridDensity` | The union type. |
+| `DataGridDensityMenu` | The toolbar menu, for your own layouts. |
+
+## See also
+
+- [Theming and styling](/docs/theming/): the other tokens the grid reads.
+- [Composition and custom layouts](/docs/data-grid/composition/): placing the density menu yourself.
+- [Saved views and persistence](/docs/data-grid/persistence/).

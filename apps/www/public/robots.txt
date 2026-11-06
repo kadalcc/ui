@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /dev/
+
+Sitemap: https://ui.kadal.cc/sitemap-index.xml

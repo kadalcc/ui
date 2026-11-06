@@ -1,0 +1,188 @@
+---
+title: Internationalisation
+description: Translate every string in the Kadal UI data grid with the labels option, format numbers and dates with locale and Intl, and what happens in right-to-left layouts.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+Every string the grid shows lives in one object, `DataGridLabels`, and every number and date goes
+through `Intl` with a locale you choose. Pass a partial translation and anything you leave out
+stays English.
+
+<Demo name="data-grid-i18n" />
+
+## Use it
+
+```tsx
+import { DataGrid, type DataGridLabels } from "@/components/ui/data-grid"
+
+const fr: Partial<DataGridLabels> = {
+  search: "Rechercher…",
+  view: "Affichage",
+  export: "Exporter",
+  pageOf: (page, pages) => `Page ${page} sur ${pages}`,
+  selected: (n) => (n === 1 ? "1 sélectionnée" : `${n} sélectionnées`),
+}
+
+<DataGrid data={rows} columns={columns} labels={fr} locale="fr-FR" />
+```
+
+Labels that carry a number are functions, so plural rules are yours. Column titles are not labels:
+set `header` (or `label`) on each column in the language you want.
+
+## Locale
+
+`locale` is a BCP 47 tag for `Intl.NumberFormat` and `Intl.DateTimeFormat`. It defaults to the
+browser's locale, which is usually right. It affects:
+
+| Kind | Formatting |
+| --- | --- |
+| `number` | grouping and decimal separators; `maximumFractionDigits` defaults to 2 |
+| `currency` | `style: "currency"` with the column's `currency` (default `USD`) |
+| `percent` | `style: "percent"`; `maximumFractionDigits` defaults to 1 |
+| `date` | `dateStyle` (default `"medium"`) |
+| `datetime` | `dateStyle` + `timeStyle` (defaults `"medium"` and `"short"`) |
+| `enum`, `tags` | not formatted by locale; the label comes from `options` |
+
+The same strings appear in cells, facet filter lists, aggregated group rows, the clipboard and
+exports, so they always agree. Per column, `locale` overrides the grid's (a Japanese yen column in
+an otherwise German grid), and `format: (value, row) => string` replaces the formatting entirely.
+
+```tsx
+col.currency("total", { currency: "EUR" })                       // the grid's locale
+col.currency("totalJpy", { currency: "JPY", locale: "ja-JP" })   // this column's own
+col.date("due", { dateStyle: "full" })
+col.number("score", { format: (v) => `${v.toFixed(1)} pts` })
+```
+
+Formatters are cached per locale and options, so changing `locale` at runtime is cheap.
+
+## Dates in editors
+
+Date and datetime editors are the browser's `<input type="date">` and `<input type="datetime-local">`,
+which display and parse in the **browser's** locale, not the grid's. The value they commit is a
+`Date` either way.
+
+## Right-to-left
+
+Set `dir="rtl"` on the document (or the grid's ancestor) as usual. Pinning uses TanStack's logical
+`start` / `end` regions and CSS `inset-inline-start` / `inset-inline-end`, tree indentation uses
+`margin-inline-start`, and alignment uses `text-start` / `text-end`, so a column pinned to the
+start sits on the right in RTL. The “Pin to start” and “Pin to end” menu items read correctly in
+both directions.
+
+## Every label
+
+The `DataGridLabels` keys with their English defaults. Functions receive the numbers they format.
+
+### Toolbar
+
+| Key | Default |
+| --- | --- |
+| `search` | Search… |
+| `clearFilters` | Clear |
+| `filters` | `(n) => "1 filter" \| "n filters"` |
+| `view` | View |
+| `viewColumns` | Columns |
+| `searchColumns` | Search columns… |
+| `noColumns` | No columns found. |
+| `hidden` | `(n) => "n hidden"` |
+| `showAll` | Show all |
+| `resetView` | Reset view |
+| `density` | Density |
+| `densityCompact` / `densityComfortable` / `densitySpacious` | Compact / Comfortable / Spacious |
+| `export` | Export |
+| `exportCsv` / `exportJson` / `exportCopy` | Download CSV / Download JSON / Copy to clipboard |
+| `exportSelectedOnly` | Selected rows only |
+| `group` | Group |
+| `groupBy` | `(column) => "Group by <column>"` |
+| `ungroup` | Ungroup |
+| `groupedBy` | Grouped by |
+| `clearGrouping` | Clear grouping |
+| `savedViews` | Views |
+| `saveView` | Save current view… |
+| `saveViewPrompt` | Name this view |
+| `deleteView` | Delete view |
+| `defaultView` | Default view |
+| `fullscreen` / `exitFullscreen` | Fullscreen / Exit fullscreen |
+
+### Column menu and filters
+
+| Key | Default |
+| --- | --- |
+| `sortAsc` / `sortDesc` / `clearSort` | Sort ascending / Sort descending / Clear sort |
+| `pinStart` / `pinEnd` / `unpin` | Pin to start / Pin to end / Unpin |
+| `hideColumn` | Hide column |
+| `autosize` / `autosizeAll` | Fit to content / Fit all columns |
+| `filter` | Filter |
+| `filterPlaceholder` | Search values… |
+| `filterNoResults` | No values found. |
+| `filterApplied` | `(n) => "n applied"` |
+| `filterContains` / `filterNotContains` / `filterStartsWith` / `filterEndsWith` / `filterEquals` | Contains / Does not contain / Starts with / Ends with / Equals |
+| `filterIsEmpty` / `filterIsNotEmpty` | Is empty / Is not empty |
+| `filterMin` / `filterMax` | Min / Max |
+| `filterFrom` / `filterTo` | From / To |
+| `filterAny` / `filterTrue` / `filterFalse` | Any / Yes / No |
+| `applied` | applied |
+| `dragColumn` | Drag to reorder column |
+| `resizeColumn` | Resize column |
+
+### Pagination and selection
+
+| Key | Default |
+| --- | --- |
+| `rowsPerPage` | Rows per page |
+| `pageOf` | `(page, pages) => "Page 1 of 10"` |
+| `goToPage` | Go to page |
+| `firstPage` / `previousPage` / `nextPage` / `lastPage` | Go to first page / Go to previous page / Go to next page / Go to last page |
+| `selectedOf` | `(selected, total) => "2 of 50 row(s) selected."` |
+| `rowsCount` | `(total) => "1 row" \| "1,250 rows"` |
+| `selectAll` / `selectRow` | Select all / Select row |
+| `clearSelection` | Clear selection |
+| `selected` | `(n) => "1 selected" \| "n selected"` |
+
+### Rows, states and editing
+
+| Key | Default |
+| --- | --- |
+| `expand` / `collapse` / `expandAll` / `collapseAll` | Expand / Collapse / Expand all / Collapse all |
+| `pinRowTop` / `pinRowBottom` / `unpinRow` | Pin row to top / Pin row to bottom / Unpin row |
+| `rowActions` | Row actions |
+| `columnMenu` | Column menu |
+| `moveLeft` / `moveRight` | Move left / Move right |
+| `values` | `(n) => "1 value" \| "n values"` (an aggregated `unique` cell with more than three) |
+| `outOfRange` | `(min, max) => "Must be between 1 and 100"`, or "at least" / "at most" with one bound |
+| `loading` | Loading… |
+| `empty` | No records found. |
+| `emptyFiltered` | No rows match the current filters. |
+| `error` | Something went wrong. |
+| `retry` | Retry |
+| `copied` | `(n) => "Copied 1 cell" \| "Copied n cells"` |
+| `edit` | Edit |
+| `save` / `cancel` | Save / Cancel |
+| `invalid` | Invalid value |
+| `keyboardHint` | Use the arrow keys to move, Enter to edit, Space to select. |
+| `yes` / `no` | Yes / No |
+| `blank` | — |
+
+`defaultLabels` and `resolveLabels(partial)` are exported, and the merged set is on `grid.labels`
+for your own parts.
+
+## Options
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `labels` | `Partial<DataGridLabels>` | English | Merged over the defaults. |
+| `locale` | `string` | the browser's | BCP 47 tag for number and date formatting. |
+| `locale` (column) | `string` | the grid's | Overrides for one column. |
+| `format` (column) | `(value, row) => string` | by kind | Replaces the formatting for one column. |
+| `currency` (column) | `string` | `"USD"` | ISO 4217 code for `currency` columns. |
+| `dateStyle`, `timeStyle` (column) | `Intl.DateTimeFormatOptions[...]` | `"medium"`, `"short"` | For `date` and `datetime` columns. |
+| `minimumFractionDigits`, `maximumFractionDigits` (column) | `number` | by kind | For number-like columns. |
+
+## See also
+
+- [Columns](/docs/data-grid/columns/): every formatting option.
+- [Accessibility](/docs/data-grid/accessibility/): which labels screen readers hear.
+- [Export](/docs/data-grid/export/): formatted and raw values.

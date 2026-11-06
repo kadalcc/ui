@@ -1,0 +1,200 @@
+---
+title: Inline editing
+description: Edit cells in place with typed editors per column kind, validation, async saves that keep the editor open on failure, and Enter, Tab and Escape that behave like a spreadsheet.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+Mark a column `editable` and its cells open an editor on <kbd>Enter</kbd>, <kbd>F2</kbd> or a
+double-click. The editor comes from the column's kind, so a number column gets a number input and
+an enum column gets a select without you saying so. Your save handler runs when the value is
+committed; throw from it and the editor stays open with the message.
+
+<Demo name="data-grid-editing" />
+
+## Use it
+
+Set `editable` on the columns that may change, and give the grid a handler for committed edits.
+
+```tsx title="customers/columns.tsx"
+import { createDataGridColumns } from "@/components/ui/data-grid"
+
+const col = createDataGridColumns<Customer>()
+
+export const columns = col.columns([
+  col.text("name", { header: "Name", editable: true }),
+  col.number("seats", { header: "Seats", editable: { min: 1, step: 1 } }),
+  col.enum("plan", { header: "Plan", options: PLAN_OPTIONS, editable: true }),
+  col.boolean("active", { header: "Active", editable: true }),
+  col.text("notes", { header: "Notes", editable: { type: "textarea" } }),
+])
+```
+
+```tsx title="customers/page.tsx"
+<DataGrid
+  data={customers}
+  columns={columns}
+  getRowId={(c) => c.id}
+  onCellEdit={async ({ row, columnId, value }) => {
+    await api.customers.update(row.id, { [columnId]: value })
+  }}
+/>
+```
+
+`editable: true` takes the defaults for the kind. An object configures the editor; its fields are
+in [the editor spec](#the-editor-spec) below.
+
+## Editors by kind
+
+| Column kind | Editor | Commits |
+| --- | --- | --- |
+| `text`, `link`, `tags`, `custom` | text input | the string |
+| `number`, `currency`, `percent` | `<input type="number">` with `inputMode="decimal"` | `Number(raw)`; an empty field commits `null`; anything that is not a finite number commits the raw string |
+| `enum` | select, opened at once, listing the column's `options` | the option's `value`, as soon as one is chosen |
+| `boolean` | checkbox | the new boolean, as soon as it is toggled |
+| `date` | `<input type="date">` | a `Date`; an empty field commits `null`; an unparseable value commits the raw string |
+| `datetime` | `<input type="datetime-local">` | a `Date`, same rules |
+| any kind with `type: "textarea"` | three-row textarea | the string, with line breaks |
+
+The editor `type` can be set explicitly on any column; `type: "select"` on a text column needs
+`options`. `parse` replaces the default conversion for text, number, date and datetime editors.
+
+## How it behaves
+
+**Opening.** <kbd>Enter</kbd> or <kbd>F2</kbd> on the focused cell, or a double-click on any
+editable cell. Cells that can be edited show a text cursor on hover and carry `data-editable`. A
+grouped row is never editable. Programmatically: `grid.editing.start(rowId, columnId)`.
+
+**Committing.** <kbd>Enter</kbd> commits and moves the focus to the cell below; <kbd>Shift</kbd>+<kbd>Enter</kbd>
+commits and stays (in a textarea it inserts a line break instead). <kbd>Tab</kbd> commits and
+moves right, <kbd>Shift</kbd>+<kbd>Tab</kbd> commits and moves left; both open the next editor
+only when you press <kbd>Enter</kbd> again. Clicking anywhere else blurs the input and commits.
+Choosing an option in a select commits it and moves down; toggling a checkbox commits at once.
+
+**Cancelling.** <kbd>Escape</kbd> closes the editor and keeps the old value. Closing a select
+without choosing cancels, and so does clicking away from an open checkbox.
+
+**Unchanged values.** If the committed value `Object.is` the previous one, the editor closes and no
+handler runs.
+
+**Validation.** `validate(value, row)` runs first. Return a string to reject the value: the
+editor stays open, the message appears as its tooltip, the input gets `aria-invalid` and a red
+ring. Return nothing to accept.
+
+**Saving.** The column's `onEdit` runs, then the grid's `onCellEdit`, each awaited in turn. The
+editor stays open until both settle. If either throws, the message (`error.message`, or
+`labels.invalid` for anything that is not an `Error`) is shown the same way as a validation error
+and the value is not committed. Resolve normally and the editor closes and focus returns to the
+cell.
+
+```ts
+interface DataGridCellEdit<TData, TValue> {
+  rowId: string      // from getRowId
+  rowIndex: number   // the row's index in the data
+  row: TData         // the row as it was before the edit
+  columnId: string
+  value: TValue      // the parsed new value
+  previous: TValue   // what the cell held
+}
+```
+
+On a column, `onEdit` is typed with that column's value type. On the grid, `onCellEdit` receives
+`DataGridCellEdit<TData, unknown>`: narrow on `columnId` ([type safety](/docs/type-safety/)).
+
+<Aside type="note" title="min and max are rules">
+  On a number editor `min`, `max` and `step` become the input's attributes, and `min` and `max`
+  are also checked on commit: a value outside them is rejected with `labels.outOfRange` before
+  `validate` runs. `validate` is for everything else.
+</Aside>
+
+## Local state or refetch
+
+The grid never writes to your data. After a commit you either update the array you pass as `data`
+(optimistic) or refetch it from the server; until you do, the cell shows the old value.
+
+```tsx
+// Optimistic: update local state, let the request follow.
+onCellEdit={({ rowId, columnId, value }) => {
+  setRows((rows) => rows.map((r) => (r.id === rowId ? { ...r, [columnId]: value } : r)))
+  void api.update(rowId, { [columnId]: value })
+}}
+
+// Pessimistic: wait for the server, then invalidate the query. A failure keeps the editor open.
+onCellEdit={async ({ rowId, columnId, value }) => {
+  await api.update(rowId, { [columnId]: value })
+  await queryClient.invalidateQueries({ queryKey: ["customers"] })
+}}
+```
+
+With [server-side data](/docs/data-grid/server-side/) the second shape is the natural one.
+
+## Limiting what can be edited
+
+- `editing: false` turns editing off for the whole grid, whatever the columns say.
+- `editing: { canEdit: (row) => row.status !== "locked" }` is a per-row switch for every column.
+- `editable: { canEdit: (row) => row.draft }` is a per-row switch for one column.
+- `editable: false`, or leaving it out, keeps a column read-only.
+
+<Aside type="note">
+  `onCellEdit` on the grid is shorthand for `editing: { onCellEdit }`. When both are given, the
+  one inside `editing` wins.
+</Aside>
+
+## Accessibility
+
+The editor is labelled `Edit: <column label>` and marked `aria-invalid` when rejected. Once any
+column is editable, every cell that cannot be edited carries `aria-readonly="true"`; a grid with no
+editable column has no such attributes. Focus returns to the grid cell when the editor closes; see
+[keyboard navigation](/docs/data-grid/keyboard/) for the full model.
+
+## The editor spec
+
+`editable: true | DataGridEditorSpec<TValue, TData>`
+
+| Field | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `type` | `"text" \| "number" \| "select" \| "checkbox" \| "date" \| "datetime" \| "textarea"` | from the kind | Which editor opens. |
+| `options` | `readonly DataGridOption<TValue>[]` | the column's `options` | Choices for a select editor. |
+| `min`, `max`, `step` | `number` | — | Attributes on a number input; `min` and `max` are enforced on commit. |
+| `placeholder` | `string` | — | Placeholder for text, number, date and textarea inputs. |
+| `validate` | `(value: TValue, row: TData) => string \| null \| undefined \| void` | — | A string rejects the value and is shown. |
+| `parse` | `(raw: string, row: TData) => TValue` | by type | Turns the input's string into the column's value. |
+| `canEdit` | `(row: TData) => boolean` | — | Per-row switch for this column. |
+
+## Options
+
+Column options:
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `editable` | `boolean \| DataGridEditorSpec` | `false` | Lets the cells open an editor. |
+| `onEdit` | `(edit: DataGridCellEdit<TData, TValue>) => void \| Promise<void>` | — | Runs after a commit in this column, before the grid's handler. Throw to reject. |
+
+Grid options:
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `editing` | `boolean \| { onCellEdit?, canEdit? }` | on | `false` disables editing everywhere. |
+| `onCellEdit` | `(edit: DataGridCellEdit<TData, unknown>) => void \| Promise<void>` | — | Runs after any commit, after the column's `onEdit`. Throw to reject. |
+
+## The editing api
+
+`grid.editing` on the object `useDataGrid` returns:
+
+| Member | What it does |
+| --- | --- |
+| `enabled` | `false` only with `editing: false`. |
+| `cell` | `{ rowId, columnId }` of the open editor, or `null`. |
+| `error` | The current validation or save message, or `null`. |
+| `start(rowId, columnId)` | Opens an editor. |
+| `cancel()` | Closes it without committing. |
+| `commit(value)` | Validates, runs the handlers, resolves `true` on success. |
+| `isEditable(cell)` | Whether a cell would open an editor. |
+| `editorFor(cell)` | The resolved spec (type and options filled in), or `null`. |
+
+## See also
+
+- [Keyboard navigation](/docs/data-grid/keyboard/): every key, including the ones inside editors.
+- [Columns](/docs/data-grid/columns/): kinds, options and formatting.
+- [Type safety](/docs/type-safety/): how `validate` and `onEdit` know the column's value type.

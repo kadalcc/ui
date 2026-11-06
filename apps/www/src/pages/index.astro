@@ -1,15 +1,302 @@
 ---
-import "../styles/global.css";
+import Base from "../layouts/Base.astro";
+import CopyCommand from "../components/CopyCommand.astro";
+import Icon from "../components/Icon.astro";
+import { SITE } from "../data/site";
+import { PAID_PRODUCTS, linkTo } from "../data/network";
+import DataGridDemo from "@/registry/kadal/examples/data-grid-demo";
+
+const FEATURES: { title: string; line: string; href: string }[] = [
+  { title: "Typed columns", line: "A column builder that knows your row type: keys, values, editors and formats all typed.", href: "/docs/data-grid/columns/" },
+  { title: "Sorting", line: "Click to sort, shift-click to add a second key, each key numbered in the header.", href: "/docs/data-grid/sorting/" },
+  { title: "Filters by type", line: "Facets with counts, text operators, number and date ranges, booleans, chips to clear.", href: "/docs/data-grid/filtering/" },
+  { title: "Fuzzy search", line: "One box over every column, ranked so the best matches come first.", href: "/docs/data-grid/search/" },
+  { title: "50,000 rows", line: "Virtualized rows with the sticky header and pinning intact, or a pager when you'd rather.", href: "/docs/data-grid/virtualization/" },
+  { title: "Selection and bulk actions", line: "Checkboxes, shift-click ranges, select all on the page, and a bar for what happens next.", href: "/docs/data-grid/selection/" },
+  { title: "Pin, reorder, resize", line: "Pin columns to either end, drag headers into place, drag edges or double-click to fit.", href: "/docs/data-grid/pinning/" },
+  { title: "Group and aggregate", line: "Group by any column; sums, means, counts and ranges in the group rows, formatted like the column.", href: "/docs/data-grid/grouping/" },
+  { title: "Tree data", line: "Nested rows with an expander column, indentation and selection that follows the tree.", href: "/docs/data-grid/expanding/" },
+  { title: "Inline editing", line: "Enter or double-click to edit; text, number, select, checkbox, date and textarea editors; validation.", href: "/docs/data-grid/editing/" },
+  { title: "Keyboard and clipboard", line: "Arrow keys, Home/End, PageUp/Down, Shift to extend a range, ⌘A, ⌘C as tab-separated text.", href: "/docs/data-grid/keyboard/" },
+  { title: "Export", line: "CSV and JSON of what's on screen, or the selected rows, with the values as you see them.", href: "/docs/data-grid/export/" },
+  { title: "Saved views and URL state", line: "The user's columns, sort and density remembered; filters and the page shareable in the URL.", href: "/docs/data-grid/persistence/" },
+  { title: "Server-side ready", line: "Hand it a page and a row count; sort and filter state comes back for your query.", href: "/docs/data-grid/server-side/" },
+  { title: "Accessible", line: "A real grid: roles, aria-sort, roving focus, live announcements, 40 px targets on touch.", href: "/docs/data-grid/accessibility/" },
+  { title: "Yours to change", line: "Every label translatable, every part composable, every file in your repo. No prop-drilling into a black box.", href: "/docs/data-grid/composition/" },
+];
+
+const SHORTCUTS: [string, string][] = [
+  ["↑ ↓ ← →", "Move the focused cell"],
+  ["Shift + arrows", "Extend the selection"],
+  ["Home / End", "First / last column"],
+  ["⌘ Home / ⌘ End", "First / last row"],
+  ["PageUp / PageDown", "A screen at a time"],
+  ["Enter / F2", "Edit the cell"],
+  ["Space", "Select the row"],
+  ["⌘ A", "Select every cell"],
+  ["⌘ C", "Copy as tab-separated text"],
+  ["Esc", "Clear the selection"],
+];
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Kadal UI</title>
-  </head>
-  <body>
-    <main class="p-8"><h1 class="text-2xl font-bold">Kadal UI</h1></main>
-  </body>
-</html>
+<Base>
+  <!-- Hero -->
+  <section class="relative overflow-hidden">
+    <div
+      class="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60%_50%_at_50%_0%,color-mix(in_oklch,var(--primary)_10%,transparent),transparent_70%)]"
+    >
+    </div>
+    <div class="mx-auto max-w-7xl px-4 pt-16 pb-10 sm:px-6 sm:pt-24">
+      <div class="mx-auto max-w-3xl text-center">
+        <p class="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+          <span class="inline-block size-1.5 rounded-full bg-emerald-500"></span>
+          Data grid 0.1 · TanStack Table v9 · shadcn/ui on Base UI · MIT
+        </p>
+        <h1 class="text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
+          The data grid your power users keep asking for.
+        </h1>
+        <p class="mt-5 text-lg text-pretty text-muted-foreground sm:text-xl">
+          Sorting, faceted filters, grouping, 50,000 virtualized rows, inline editing, keyboard ranges and
+          clipboard, saved views. Typed end to end. One command copies the source into your project, so
+          the code is yours.
+        </p>
+        <div class="mx-auto mt-8 max-w-xl">
+          <CopyCommand command={SITE.install} id="install" />
+        </div>
+        <div class="mt-5 flex flex-wrap items-center justify-center gap-3">
+          <a
+            href="/docs/quick-start/"
+            class="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Your first grid in 5 minutes <Icon name="arrow-right" size={16} />
+          </a>
+          <a
+            href="/playground/"
+            class="inline-flex h-10 items-center gap-2 rounded-lg border border-border px-4 text-sm font-medium hover:bg-muted"
+          >
+            Try it in the playground
+          </a>
+          <a
+            href={SITE.repo}
+            rel="noopener"
+            class="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            <Icon name="github" size={16} /> Star on GitHub
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live demo -->
+  <section class="mx-auto max-w-7xl px-4 pb-16 sm:px-6" aria-labelledby="demo-heading">
+    <div class="mb-3 flex flex-wrap items-end justify-between gap-2">
+      <h2 id="demo-heading" class="text-sm font-medium text-muted-foreground">
+        Live. Sort, filter, group, drag a column, double-click a cell, press <kbd class="rounded bg-muted px-1 font-mono text-xs">⌘C</kbd>.
+      </h2>
+      <a href="/docs/data-grid/" class="text-sm font-medium underline-offset-4 hover:underline">Every feature, documented →</a>
+    </div>
+    <div class="rounded-2xl border border-border bg-background p-3 shadow-sm sm:p-4">
+      <DataGridDemo client:visible rows={400} />
+    </div>
+  </section>
+
+  <!-- Own the code -->
+  <section class="border-t border-border bg-muted/20">
+    <div class="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-center">
+      <div>
+        <p class="font-mono text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">How it ships</p>
+        <h2 class="mt-3 text-3xl font-semibold tracking-tight">Not a dependency. Your code.</h2>
+        <p class="mt-4 text-muted-foreground">
+          Kadal UI is a <a href="https://ui.shadcn.com/docs/registry" rel="noopener" class="underline underline-offset-4">shadcn registry</a>.
+          The command above copies twenty-one TypeScript files into <code class="rounded bg-muted px-1 font-mono text-[0.9em]">components/ui/data-grid/</code>,
+          pulls the shadcn primitives it uses, and adds TanStack Table and TanStack Virtual to your package.json. From then on it is
+          your component: rename a label, swap an icon, delete a feature, add a column kind. Updates arrive as a diff you review, not a
+          version bump you hope for.
+        </p>
+        <ul class="mt-6 grid gap-3 text-sm sm:grid-cols-2">
+          <li class="flex gap-2"><Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" /> React 19, TypeScript 7, Tailwind v4</li>
+          <li class="flex gap-2"><Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" /> shadcn/ui on Base UI, the new default</li>
+          <li class="flex gap-2"><Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" /> TanStack Table v9: tree-shaken features, store-based state</li>
+          <li class="flex gap-2"><Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" /> Works with Next.js, Vite, Astro, Remix, TanStack Start</li>
+          <li class="flex gap-2"><Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" /> <code class="font-mono">kadal-ui diff</code> shows what changed upstream</li>
+          <li class="flex gap-2"><Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" /> MIT, no licence keys, no enterprise tier</li>
+        </ul>
+      </div>
+      <div class="overflow-hidden rounded-2xl border border-border bg-background text-sm shadow-sm">
+        <div class="flex items-center gap-2 border-b border-border px-4 py-2 font-mono text-xs text-muted-foreground">
+          <Icon name="terminal" size={14} /> what the command does
+        </div>
+        <pre class="overflow-x-auto p-4 font-mono text-[13px] leading-6"><code>$ npx shadcn@latest add @kadal/data-grid
+✔ Checking registry.
+✔ Installing dependencies.
+  @tanstack/react-table@^9.3.1 @tanstack/react-virtual@^3.14.26
+  @dnd-kit/react@^0.5.3 lucide-react
+✔ Created 34 files:
+  src/components/ui/data-grid/data-grid.tsx
+  src/components/ui/data-grid/use-data-grid.tsx
+  src/components/ui/data-grid/data-grid-columns.tsx
+  src/components/ui/data-grid/data-grid-filters.tsx
+  …
+  src/components/ui/button.tsx   src/components/ui/popover.tsx
+  src/components/ui/select.tsx   src/components/ui/tooltip.tsx
+
+Docs: https://ui.kadal.cc/docs/data-grid/</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="mx-auto max-w-7xl px-4 py-16 sm:px-6" aria-labelledby="features-heading">
+    <p class="font-mono text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">What you get</p>
+    <h2 id="features-heading" class="mt-3 text-3xl font-semibold tracking-tight">Everything a grid needs on day one. Each one a page in the docs.</h2>
+    <ul class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {
+        FEATURES.map((f) => (
+          <li>
+            <a
+              href={f.href}
+              class="flex h-full flex-col gap-1.5 rounded-xl border border-border p-4 transition-colors hover:border-foreground/30 hover:bg-muted/30"
+            >
+              <strong class="text-sm font-semibold">{f.title}</strong>
+              <span class="text-sm text-muted-foreground">{f.line}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <!-- Typed -->
+  <section class="border-t border-border">
+    <div class="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-center">
+      <div class="overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
+        <div class="flex items-center gap-2 border-b border-border px-4 py-2 font-mono text-xs text-muted-foreground">
+          <Icon name="code" size={14} /> columns.tsx
+        </div>
+        <pre class="overflow-x-auto p-4 font-mono text-[13px] leading-6"><code>const col = createDataGridColumns&lt;Order&gt;()
+
+export const columns = col.columns([
+  col.select(),
+  col.text("customer", {'{'} header: "Customer", editable: true {'}'}),
+  col.enum("status", {'{'} options: STATUS, editable: true {'}'}),
+  col.currency("total", {'{'} currency: "EUR" {'}'}),
+  col.percent("margin"),
+  col.date("placedAt", {'{'} header: "Placed" {'}'}),
+  col.tags("labels"),
+  col.actions(({'{'} row {'}'}) =&gt; &lt;OrderMenu order={'{'}row.original{'}'} /&gt;),
+])
+
+&lt;DataGrid data={'{'}orders{'}'} columns={'{'}columns{'}'}
+  onCellEdit={'{'}({'{'} row, columnId, value {'}'}) =&gt; save(row.id, columnId, value){'}'} /&gt;</code></pre>
+      </div>
+      <div>
+        <p class="font-mono text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">Type safety</p>
+        <h2 class="mt-3 text-3xl font-semibold tracking-tight">Columns that know your rows.</h2>
+        <p class="mt-4 text-muted-foreground">
+          <code class="rounded bg-muted px-1 font-mono text-[0.9em]">col.currency("total")</code> only accepts a key of
+          <code class="rounded bg-muted px-1 font-mono text-[0.9em]">Order</code>, including nested paths. Its
+          <code class="rounded bg-muted px-1 font-mono text-[0.9em]">format</code>, <code class="rounded bg-muted px-1 font-mono text-[0.9em]">validate</code> and
+          <code class="rounded bg-muted px-1 font-mono text-[0.9em]">onEdit</code> see a <code class="rounded bg-muted px-1 font-mono text-[0.9em]">number</code>.
+          The kind picks the sort function, the filter UI, the editor, the aggregation and the export format, so most columns are one line
+          and none of them need a global type augmentation. Under it all is TanStack Table v9's feature-typed API: every method on the
+          table instance exists because its feature is registered.
+        </p>
+        <a href="/docs/type-safety/" class="mt-6 inline-flex items-center gap-2 text-sm font-medium underline-offset-4 hover:underline">
+          How the types work <Icon name="arrow-right" size={16} />
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Keyboard -->
+  <section class="border-t border-border bg-muted/20">
+    <div class="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-center">
+      <div>
+        <p class="font-mono text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">Built for the keyboard</p>
+        <h2 class="mt-3 text-3xl font-semibold tracking-tight">Spreadsheet hands welcome.</h2>
+        <p class="mt-4 text-muted-foreground">
+          Click a cell and it's focused. Drag or hold Shift and you have a range. Press ⌘C and the range lands in a spreadsheet as
+          tab-separated text, formatted the way the grid shows it. Every action the mouse can take has a key, and a screen reader hears
+          what changed.
+        </p>
+        <a href="/docs/data-grid/keyboard/" class="mt-6 inline-flex items-center gap-2 text-sm font-medium underline-offset-4 hover:underline">
+          All the shortcuts <Icon name="arrow-right" size={16} />
+        </a>
+      </div>
+      <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 rounded-2xl border border-border bg-background p-5 text-sm shadow-sm">
+        {
+          SHORTCUTS.map(([keys, what]) => (
+            <>
+              <dt>
+                <kbd class="rounded-md border border-border bg-muted px-1.5 py-0.5 font-mono text-xs">{keys}</kbd>
+              </dt>
+              <dd class="text-muted-foreground">{what}</dd>
+            </>
+          ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  <!-- Sponsor -->
+  <section class="border-t border-border">
+    <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <div class="grid gap-8 rounded-2xl border border-pink-500/30 bg-pink-500/5 p-6 sm:p-10 lg:grid-cols-[1.4fr_1fr] lg:items-center">
+        <div>
+          <p class="font-mono text-xs font-medium tracking-[0.14em] text-pink-700 uppercase dark:text-pink-300">Free, and funded by you</p>
+          <h2 class="mt-3 text-3xl font-semibold tracking-tight">MIT for everyone. Sponsors keep the issues answered.</h2>
+          <p class="mt-4 text-muted-foreground">
+            There is no paid tier of Kadal UI and there won't be one. Sponsorships pay for time on bugs, docs, new components and the
+            features you ask for, and put your name or logo in the README and on this site. Companies can pay by invoice.
+          </p>
+          <div class="mt-6 flex flex-wrap gap-3">
+            <a
+              href={SITE.sponsor}
+              rel="noopener"
+              class="inline-flex h-10 items-center gap-2 rounded-lg bg-pink-600 px-4 text-sm font-medium text-white hover:bg-pink-700"
+            >
+              <Icon name="heart" size={16} /> Sponsor on GitHub
+            </a>
+            <a href="/sponsor/" class="inline-flex h-10 items-center rounded-lg border border-border px-4 text-sm font-medium hover:bg-muted">
+              Tiers and perks
+            </a>
+          </div>
+        </div>
+        <div class="grid gap-3">
+          {
+            PAID_PRODUCTS.map((p) => (
+              <a
+                href={linkTo(p)}
+                rel="noopener"
+                class="flex flex-col gap-1 rounded-xl border border-border bg-background p-4 transition-colors hover:border-foreground/30"
+              >
+                <span class="flex items-center justify-between gap-2">
+                  <strong class="text-sm">{p.name}</strong>
+                  <span class="text-xs text-muted-foreground">also pays for this</span>
+                </span>
+                <span class="text-sm font-medium">{p.tagline}</span>
+                <span class="text-sm text-muted-foreground">{p.line}</span>
+              </a>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="border-t border-border">
+    <div class="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
+      <h2 class="text-3xl font-semibold tracking-tight">Add it to your project now.</h2>
+      <p class="mt-3 text-muted-foreground">Five minutes from install to a grid with your data. Questions go to Discussions or the Discord; bugs and ideas have templates.</p>
+      <div class="mx-auto mt-6 max-w-xl"><CopyCommand command={SITE.install} /></div>
+      <div class="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm">
+        <a href={SITE.newBug} rel="noopener" class="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground"><Icon name="bug" size={15} /> Report a bug</a>
+        <a href={SITE.newFeature} rel="noopener" class="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground"><Icon name="lightbulb" size={15} /> Request a feature</a>
+        <a href={SITE.feedback} rel="noopener" class="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground"><Icon name="message-square" size={15} /> Send feedback</a>
+        <a href={SITE.discord} rel="noopener" class="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground"><Icon name="discord" size={15} /> Discord</a>
+      </div>
+    </div>
+  </section>
+</Base>

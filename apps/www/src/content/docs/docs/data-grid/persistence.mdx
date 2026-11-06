@@ -1,0 +1,182 @@
+---
+title: Saved views and persistence
+description: Remember how a user likes to see the Kadal UI data grid (columns, sort, widths, pinning, order, grouping, density, page size) in localStorage or your own storage, and let them save named views.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+A grid that is open all day should remember how you left it. `persist` keeps the *view* (the
+preferences, not the query) across reloads, in localStorage by default, and adds a Views menu where
+the user saves the current view under a name and switches between them.
+
+<Demo name="data-grid-persistence" />
+
+## Use it
+
+```tsx
+// Under the grid's key, in localStorage.
+useDataGrid({ name: "customers", data, columns, persist: true })
+
+// Under a key of your own.
+<DataGrid data={data} columns={columns} persist="customers" />
+
+// Everything configurable.
+useDataGrid({
+  data,
+  columns,
+  persist: {
+    name: "customers",
+    scope: user.id,            // one view per signed-in user on a shared browser
+    storage: sessionStorage,   // see below; default localStorage
+    savedViews: false,         // keep the current view, drop the Views menu
+  },
+})
+```
+
+<Aside type="note" title="Name the grid with `name`">
+  React reserves the `name` prop, so `<DataGrid key="customers" persist>` would store under
+  `"grid"`. Write `<DataGrid name="customers" persist>` (or `persist="customers"` to name only the
+  storage key).
+</Aside>
+
+## What is remembered
+
+The current view is a `DataGridView`:
+
+| Field | What it holds |
+| --- | --- |
+| `sorting` | `SortingState` |
+| `columnVisibility` | `ColumnVisibilityState` |
+| `columnPinning` | `{ start: string[], end: string[] }` |
+| `columnOrder` | `ColumnOrderState` |
+| `columnSizing` | `ColumnSizingState` |
+| `grouping` | `GroupingState` |
+| `pageSize` | rows per page |
+| `density` | `"compact" \| "comfortable" \| "spacious"` |
+
+Deliberately **not** remembered: column filters, the search text, the page index, row and cell
+selection, expanded rows. They describe what the user is looking for right now, not how they like
+to look, and belong in the URL ([URL state](/docs/data-grid/url-state/)) or nowhere.
+
+## How it behaves
+
+- The stored view is read synchronously before the first render, so there is no flash of the
+  defaults. Async storages land after mount and the view is applied then.
+- Every change to the view is written 300 ms after the last one (resizing writes once, not per
+  pixel).
+- Whatever is in storage is sanitised: unknown fields are dropped, wrong types fall back to the
+  defaults, and anything that is not schema version `1` is ignored.
+- Columns that no longer exist stay in the stored order and sizing harmlessly; TanStack ignores
+  ids it does not know.
+- `initialState` is the first visit and the **Reset view** target: its view slices (`sorting`,
+  `columnVisibility`, `columnPinning`, `columnOrder`, `columnSizing`, `grouping`) seed the default
+  view, and a stored view wins over them on later loads. The other slices (filters, search,
+  expansion, selection) are not persisted and apply every time.
+
+### The key
+
+Views are stored under `kadal:data-grid:v1:<scope>:<key>`, with `anon` as the scope when you give
+none, so the example on this page is `kadal:data-grid:v1:anon:docs-persistence`. `STORAGE_PREFIX`
+and `storageKeyFor(key, scope)` are exported if you need to read or clear it yourself. The record
+is:
+
+```ts
+interface PersistedGridState {
+  v: 1
+  current: DataGridView           // the live view
+  activeViewId: string | null     // the saved view it was last applied from
+  views: SavedView[]              // { id, name, view, savedAt }
+}
+```
+
+## Storage
+
+`storage` is anything with this shape; sync or async, your choice:
+
+```ts
+interface DataGridStorage {
+  get(key: string): PersistedGridState | null | Promise<PersistedGridState | null>
+  set(key: string, state: PersistedGridState): void | Promise<void>
+  remove(key: string): void | Promise<void>
+}
+```
+
+Three come with the grid:
+
+| Storage | For |
+| --- | --- |
+| `localStorageStorage` (default) | The same browser, forever. Private windows and blocked storage read as “nothing saved” and writes fail silently. |
+| `sessionStorageStorage` | This tab, until it closes. |
+| `memoryStorage()` | Tests, and grids that must never persist but still want the Views menu. |
+
+A server-synced storage is a small adapter; the grid handles the promise:
+
+```ts title="lib/grid-storage.ts"
+import type { DataGridStorage } from "@/components/ui/data-grid"
+
+export const serverStorage: DataGridStorage = {
+  get: async (key) => {
+    const res = await fetch(`/api/prefs/${encodeURIComponent(key)}`)
+    return res.ok ? res.json() : null
+  },
+  set: async (key, state) => {
+    await fetch(`/api/prefs/${encodeURIComponent(key)}`, { method: "PUT", body: JSON.stringify(state) })
+  },
+  remove: async (key) => {
+    await fetch(`/api/prefs/${encodeURIComponent(key)}`, { method: "DELETE" })
+  },
+}
+```
+
+Pass it with `scope: user.id` so the key is per user even before the server checks the session.
+Validate the body on the server with the same rules as `sanitizeState` if you store it as-is.
+
+## Saved views
+
+With persistence on, the toolbar gains a **Views** menu (bookmark icon) naming the active view:
+
+- **Default view** returns to the defaults and clears the active view.
+- Each saved view applies on click; the active one is ticked.
+- **Save current view…** opens a dialog for a name (blank becomes “View n”) and makes it active.
+- **Delete view** removes the active view.
+
+The same from code, on `grid.views`:
+
+| Member | What it does |
+| --- | --- |
+| `saved` | `SavedView[]` |
+| `activeId` | The applied view's id, or `null`. |
+| `current()` | A snapshot of the live view (what `save` would store). |
+| `save(name)` | Stores the current view and makes it active; returns the `SavedView`. |
+| `apply(id)` | Applies a saved view. |
+| `rename(id, name)` | Renames one (there is no menu item for this). |
+| `remove(id)` | Deletes one. |
+| `reset()` | Back to the defaults, no active view. |
+| `enabled` | `true` with `persist`. |
+| `savedViewsEnabled` | `enabled` and `savedViews !== false`; the menu renders only then. |
+
+### Reset view
+
+The **View** popover (columns) has a **Reset view** button. With `persist` it calls `views.reset()`
+and restores every field above to its default: no sorting, all columns visible, nothing pinned,
+natural order, default widths, no grouping, the `pagination.pageSize`, and `defaultDensity`
+(falling back to `initialState.density`, then `"comfortable"`). Without `persist` the same button
+only resets column visibility, order, sizing and pinning.
+
+## Options
+
+`persist: boolean | string | DataGridPersistOptions`
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `name` | `string` | the grid `name` | Storage key stem. |
+| `storage` | `DataGridStorage` | `localStorageStorage` | Where the record lives. |
+| `scope` | `string \| null` | `"anon"` | Namespaces the key, usually the user id. |
+| `savedViews` | `boolean` | `true` | The Views menu. `false` still persists the current view. |
+
+## See also
+
+- [URL state](/docs/data-grid/url-state/): the other half, for filters, search and the page.
+- [Density](/docs/data-grid/density/) and [Column visibility](/docs/data-grid/visibility/): two of the things a view holds.
+- [Composition](/docs/data-grid/composition/): placing `<DataGridViewsMenu>` yourself.

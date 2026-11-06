@@ -1,0 +1,134 @@
+---
+import Icon from "./Icon.astro";
+import Mark from "./Mark.astro";
+import FeedbackLinks from "./FeedbackLinks.astro";
+import { SITE, SOCIALS } from "../data/site";
+import { PAID_PRODUCTS, linkTo } from "../data/network";
+
+const year = new Date().getFullYear();
+const COLUMNS: { title: string; links: { href: string; label: string; external?: boolean }[] }[] = [
+  {
+    title: "Data grid",
+    links: [
+      { href: "/docs/data-grid/", label: "Overview" },
+      { href: "/docs/quick-start/", label: "Quick start" },
+      { href: "/docs/data-grid/api/", label: "API reference" },
+      { href: "/docs/data-grid/virtualization/", label: "Virtualization" },
+      { href: "/docs/data-grid/editing/", label: "Inline editing" },
+      { href: "/playground/", label: "Playground" },
+    ],
+  },
+  {
+    title: "Docs",
+    links: [
+      { href: "/docs/installation/", label: "Installation" },
+      { href: "/docs/type-safety/", label: "Type safety" },
+      { href: "/docs/theming/", label: "Theming" },
+      { href: "/docs/cli/", label: "CLI" },
+      { href: "/docs/ai-agents/", label: "AI agents" },
+      { href: "/docs/compare/", label: "Compared" },
+    ],
+  },
+  {
+    title: "Project",
+    links: [
+      { href: SITE.repo, label: "GitHub", external: true },
+      { href: SITE.npm, label: "npm: @kadal/ui", external: true },
+      { href: "/changelog/", label: "Changelog" },
+      { href: "/docs/contributing/", label: "Contributing" },
+      { href: "/sponsor/", label: "Sponsor" },
+      { href: `${SITE.repo}/blob/main/LICENSE`, label: "MIT licence", external: true },
+    ],
+  },
+  {
+    title: "Kadal",
+    links: [
+      ...PAID_PRODUCTS.map((p) => ({ href: linkTo(p), label: p.name, external: true })),
+      { href: SITE.studio, label: "Work with us", external: true },
+      { href: SITE.home, label: "kadal.cc", external: true },
+      { href: "/privacy/", label: "Privacy" },
+      { href: "/terms/", label: "Terms" },
+    ],
+  },
+];
+---
+
+<footer class="border-t border-border bg-muted/30">
+  <div class="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr_1fr_1fr]">
+    <div class="flex max-w-sm flex-col gap-4">
+      <a href="/" class="flex items-center gap-2.5 font-semibold tracking-tight" aria-label={`${SITE.name}, home`}>
+        <Mark size={28} /> <span>Kadal <span class="font-normal text-muted-foreground">UI</span></span>
+      </a>
+      <p class="text-sm text-muted-foreground">
+        Open-source React components for power users, installed into your own source code. Built on TanStack Table v9
+        and shadcn/ui. MIT, and sponsorships keep it moving.
+      </p>
+      <ul class="flex flex-col gap-2 text-sm">
+        <li>
+          <a href={SITE.repo} rel="noopener" class="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground">
+            <Icon name="github" size={16} /> kadalcc/ui on GitHub
+          </a>
+        </li>
+        <li>
+          <a href={SITE.discord} rel="noopener" class="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground">
+            <Icon name="discord" size={16} /> Join us on Discord
+          </a>
+        </li>
+        <li>
+          <a href={`mailto:${SITE.email}`} class="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground">
+            <Icon name="mail" size={16} /> {SITE.email}
+          </a>
+        </li>
+      </ul>
+      <ul class="flex flex-wrap gap-1.5" aria-label="Kadal elsewhere">
+        {
+          SOCIALS.map((n) => (
+            <li>
+              <a
+                href={n.href}
+                rel="noopener"
+                aria-label={`Kadal on ${n.name}`}
+                title={n.name}
+                class="inline-flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <Icon name={n.icon as any} size={16} />
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <FeedbackLinks />
+    </div>
+    {
+      COLUMNS.map((c) => (
+        <nav aria-label={c.title} class="flex flex-col gap-3">
+          <p class="font-mono text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">{c.title}</p>
+          <ul class="flex flex-col gap-2 text-sm">
+            {c.links.map((l) => (
+              <li>
+                <a
+                  href={l.href}
+                  rel={l.external ? "noopener" : undefined}
+                  class="text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {l.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ))
+    }
+  </div>
+  <div class="border-t border-border">
+    <div
+      class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-5 text-xs text-muted-foreground sm:px-6"
+    >
+      <span>© {year} {SITE.tradingAs} · {SITE.location} · MIT licence</span>
+      <span>
+        Made in Chennai by <a href={SITE.home} class="underline-offset-4 hover:underline">Kadal</a> · part of
+        <a href={SITE.home} class="underline-offset-4 hover:underline">kadal.cc</a>
+      </span>
+    </div>
+  </div>
+</footer>

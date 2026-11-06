@@ -1,0 +1,137 @@
+---
+import Base from "../layouts/Base.astro";
+import Icon from "../components/Icon.astro";
+import { SITE } from "../data/site";
+
+// The example list comes from the playground build; the page itself is static.
+import manifest from "../../public/play/manifest.json";
+import { PlaygroundPicker } from "../components/PlaygroundPicker";
+const labelFor = (name: string) => {
+  const stem = name.replace(/^data-grid-?/, "") || "kitchen sink";
+  return stem.charAt(0).toUpperCase() + stem.slice(1).replace(/-/g, " ");
+};
+const examples = (manifest.examples as { name: string; title: string }[]).map((e) => ({ ...e, label: labelFor(e.name) }));
+const FALLBACK = "data-grid-basic";
+---
+
+<Base
+  title="Playground"
+  description="Edit the Kadal UI data grid examples in your browser and see them run. Powered by LiveCodes; nothing to install."
+  og="/og/playground.png"
+  bare
+>
+  <section class="mx-auto flex max-w-[1600px] flex-col gap-3 px-4 py-4 sm:px-6">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-3">
+        <h1 class="text-lg font-semibold tracking-tight">Playground</h1>
+        <div class="flex items-center gap-2 text-sm">
+          <span class="text-muted-foreground">Example</span>
+          <PlaygroundPicker client:only="react" examples={examples} fallback={FALLBACK} />
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 text-sm">
+        <span class="hidden text-muted-foreground md:inline">
+          Edit the code on the left; the grid re-renders on the right. ⌘S saves nothing, this runs in your browser.
+        </span>
+        <a
+          href="/docs/installation/"
+          class="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 font-medium hover:bg-muted"
+        >
+          Install it <Icon name="arrow-right" size={14} />
+        </a>
+      </div>
+    </div>
+    <p id="example-title" class="text-sm text-muted-foreground" aria-live="polite"></p>
+    <div
+      id="playground"
+      class="h-[calc(100dvh-13rem)] min-h-[600px] overflow-hidden rounded-xl border border-border bg-muted/20"
+      data-base={import.meta.env.SITE ?? SITE.url}
+      data-default-styles="false"
+    >
+      <noscript><p class="p-6 text-sm text-muted-foreground">The playground needs JavaScript.</p></noscript>
+    </div>
+    <p class="text-xs text-muted-foreground">
+      The editor and compiler are <a href="https://livecodes.io" rel="noopener" class="underline underline-offset-4">LiveCodes</a>
+      (MIT), loaded from livecodes.io. React, the grid and everything the examples import are served from this site at the
+      versions in the repo. The grid is the same source the registry installs, bundled for the browser. Found a bug? <a href={SITE.newBug} rel="noopener" class="underline underline-offset-4">Report it</a> with the example's name.
+    </p>
+  </section>
+</Base>
+
+<script>
+  import { createPlayground, type Playground } from "livecodes";
+  import manifest from "../../public/play/manifest.json";
+
+  const container = document.getElementById("playground")!;
+  const titleEl = document.getElementById("example-title")!;
+  const base = new URL("/play/", location.origin).href;
+  const absolute = (v: string) => (v.startsWith("./") ? new URL(v, base).href : v);
+  const imports = Object.fromEntries(Object.entries(manifest.imports as Record<string, string>).map(([k, v]) => [k, absolute(v)]));
+  // Editor types for the `@/…` imports, so the grid's API autocompletes and nothing is looked up on a CDN.
+  const types = Object.fromEntries(
+    Object.entries(manifest.types as Record<string, { url: string; autoload?: boolean }>).map(([k, v]) => [k, { ...v, url: absolute(v.url) }]),
+  );
+  const examples = manifest.examples as { name: string; title: string }[];
+  const titleOf = (name: string) => {
+    const t = examples.find((e) => e.name === name)?.title ?? "";
+    return t === name ? "Every feature at once: the kitchen sink the landing page shows." : t;
+  };
+  const dark = () => document.documentElement.classList.contains("dark");
+
+  const params = new URLSearchParams(location.search);
+  const requested = params.get("example");
+  // "tsx" compiles with TypeScript; "react-tsx" adds the React Compiler through Babel.
+  const lang = (params.get("lang") ?? "tsx") as "tsx" | "react-tsx";
+  const first = examples.find((e) => e.name === requested)?.name ?? "data-grid-basic";
+  titleEl.textContent = titleOf(first);
+
+  async function loadSource(name: string): Promise<string> {
+    const res = await fetch(new URL(`examples/${name}.tsx`, base));
+    return res.text();
+  }
+
+  const config = (name: string, content: string) => ({
+    title: `Kadal UI · ${name}`,
+    activeEditor: "script" as const,
+    languages: [lang, "css", "html"],
+    markup: { language: "html" as const, content: '<div id="root" class="p-4"></div>' },
+    style: { language: "css" as const, content: "/* The grid's styles are linked; add yours here. */\n" },
+    script: { language: lang, content },
+    imports,
+    types,
+    // The grid's stylesheet, linked with `crossorigin` so the request carries an Origin (the dev
+    // server only answers cross-site requests that do). Tailwind's browser build then compiles any
+    // class you type that the stylesheet lacks.
+    head:
+      `<link rel="stylesheet" href="${new URL("styles.css", base).href}" crossorigin="anonymous">` +
+      '<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"><\/script>',
+    htmlAttrs: { lang: "en", class: dark() ? "dark" : "" },
+    theme: dark() ? ("dark" as const) : ("light" as const),
+    tools: { enabled: ["console"] as const, active: "console" as const, status: "closed" as const },
+    editor: "monaco" as const,
+    fontSize: 13,
+  });
+
+  let playground: Playground | null = null;
+  const source = await loadSource(first);
+  playground = await createPlayground(container, {
+    loading: "eager",
+    view: "split",
+    config: config(first, source),
+  });
+
+  window.addEventListener("kadal:example", async (event) => {
+    const name = (event as CustomEvent<string>).detail;
+    const url = new URL(location.href);
+    url.searchParams.set("example", name);
+    history.replaceState(null, "", url);
+    titleEl.textContent = titleOf(name);
+    const content = await loadSource(name);
+    await playground?.setConfig(config(name, content));
+  });
+
+  // Follow the site's theme toggle.
+  new MutationObserver(() => {
+    void playground?.setConfig({ theme: dark() ? "dark" : "light", htmlAttrs: { lang: "en", class: dark() ? "dark" : "" } });
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+</script>

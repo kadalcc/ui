@@ -1,0 +1,183 @@
+---
+title: Overview
+description: What the Kadal UI data grid is, its parts, the two ways to render it, what is on by default and how to turn each thing off.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+The data grid is a React component for the screens where people spend the day with real data:
+sorting, faceted filters, fuzzy search, grouping with aggregation, selection with bulk actions,
+inline editing, spreadsheet-style keyboard ranges and clipboard, column pinning, reordering and
+resizing, virtualised rows, export, saved views, and a toolbar and pager already wired to all of it.
+It is built on [TanStack Table v9](https://tanstack.com/table/latest) and the shadcn/ui primitives
+you already have, and it is installed as source into your project, so nothing sits between you and
+any of it.
+
+<Demo name="data-grid-demo" props={{ rows: 300 }} />
+
+## Features
+
+One page per feature, each with a live example and its code.
+
+| Feature | What it does |
+| --- | --- |
+| [Columns](/docs/data-grid/columns/) | A typed builder with one call per kind; each kind brings its cell, sort, filter, editor, aggregation and format. |
+| [Sorting](/docs/data-grid/sorting/) | Click a header; shift-click to add a second key; custom sort functions. |
+| [Filtering](/docs/data-grid/filtering/) | Facet, text, number range, date range and boolean filters from the header, with chips in the toolbar. |
+| [Global search](/docs/data-grid/search/) | One box that fuzzy-matches across every searchable column. |
+| [Pagination](/docs/data-grid/pagination/) | Page size, page position, go-to, first/last, the selected count. |
+| [Row selection and bulk actions](/docs/data-grid/selection/) | Checkboxes, shift-click ranges, select the page, a bar with your actions. |
+| [Row actions](/docs/data-grid/row-actions/) | A menu per row, row click, row tinting. |
+| [Column visibility](/docs/data-grid/visibility/) | The View popover, hide from the header menu, start hidden. |
+| [Column pinning](/docs/data-grid/pinning/) | Pin columns to the start or end; they stay put while the rest scroll. |
+| [Column reordering](/docs/data-grid/reordering/) | Drag a header, or move left and right from its menu. |
+| [Column resizing](/docs/data-grid/resizing/) | Drag the edge; double-click to fit to content. |
+| [Expanding and tree data](/docs/data-grid/expanding/) | Nested rows from `getSubRows`, with an expander column. |
+| [Grouping and aggregation](/docs/data-grid/grouping/) | Group by any column; sums, means, counts and ranges in the group rows. |
+| [Virtualization](/docs/data-grid/virtualization/) | Only the rows in view are in the DOM, automatically past 200 rows. |
+| [Inline editing](/docs/data-grid/editing/) | Text, number, select, checkbox, date and textarea editors; validation; `onCellEdit`. |
+| [Cell selection and clipboard](/docs/data-grid/cell-selection/) | Focus a cell, drag or shift-arrow a range, copy it as TSV. |
+| [Keyboard navigation](/docs/data-grid/keyboard/) | Arrows, Home/End, PageUp/PageDown, Enter, Space, Escape. |
+| [Export](/docs/data-grid/export/) | CSV, JSON and clipboard, formatted or raw, selected rows only. |
+| [Density](/docs/data-grid/density/) | Compact, comfortable or spacious rows. |
+| [Row pinning](/docs/data-grid/row-pinning/) | Keep a row at the top or bottom while you scroll and page. |
+| [Loading and empty states](/docs/data-grid/states/) | A progress bar, a spinner, an empty state and an error state with retry. |
+| [Saved views and persistence](/docs/data-grid/persistence/) | Remember the user's view in storage; let them name and switch between views. |
+| [URL state](/docs/data-grid/url-state/) | Filters, search, sort and page in the address bar. |
+| [Server-side data](/docs/data-grid/server-side/) | The server pages, sorts and filters; the grid renders what it is given. |
+| [Accessibility](/docs/data-grid/accessibility/) | A `grid` role, `aria-sort`, live announcements, focus that stays where you left it. |
+| [Internationalisation](/docs/data-grid/i18n/) | Every string in one `labels` object; numbers and dates through `Intl`. |
+| [Composition and custom layouts](/docs/data-grid/composition/) | Place the parts yourself inside `DataGridRoot`. |
+| [API reference](/docs/data-grid/api/) | Every option, prop and type. |
+
+## Anatomy
+
+`<DataGrid>` renders these parts, top to bottom. Each is a component you can also render yourself,
+and each has a `data-slot` attribute you can style by.
+
+- **`DataGridRoot`** (`data-slot="data-grid"`): the provider and frame. Holds the grid api, the
+  fullscreen state, the loading and error state, and the live region that announces changes.
+  - **`DataGridToolbar`** (`data-grid-toolbar`): on the left, `DataGridSearch`, then
+    `DataGridFilterChips` (one chip per active column filter) and `DataGridGroupingBar` (one chip
+    per grouped column). On the right, your `toolbarActions`, then `DataGridViewsMenu` (with
+    `persist`), `DataGridGroupMenu`, `DataGridViewOptions`, `DataGridDensityMenu`,
+    `DataGridExportMenu` and `DataGridFullscreenToggle`.
+  - **`DataGridBulkActions`** (`data-grid-bulk-actions`): appears while rows are selected, with the
+    count, "Clear selection" and whatever you return from `bulkActions`.
+  - **`DataGridTable`** (`data-grid-viewport` around `data-grid-table`): the scroll area and the
+    table. Headers are `DataGridColumnHeader` (title, sort and filter indicators, the column menu,
+    the filter popover, the resize handle). Cells render by column kind, or with your `cell`.
+  - **`DataGridPagination`** (`data-grid-pagination`): the selected count or row count, rows per
+    page, "Page x of y", a go-to box past five pages, and first/previous/next/last.
+
+## Two ways to use it
+
+### All in one
+
+`<DataGrid>` takes the options of `useDataGrid` plus the presentation props and renders every part
+above. This is the one to start with.
+
+```tsx title="customers/page.tsx"
+import { DataGrid, createDataGridColumns } from "@/components/ui/data-grid"
+
+const col = createDataGridColumns<Customer>()
+const columns = col.columns([
+  col.select(),
+  col.text("name", { header: "Name" }),
+  col.currency("mrr", { header: "MRR", currency: "USD" }),
+])
+
+export function Customers({ customers }: { customers: Customer[] }) {
+  return (
+    <DataGrid
+      data={customers}
+      columns={columns}
+      getRowId={(c) => c.id}
+      height={560}
+      bulkActions={(rows) => <Button size="sm">Archive {rows.length}</Button>}
+    />
+  )
+}
+```
+
+### The hook and the parts
+
+`useDataGrid` builds the table and returns the api (`grid.table` is the TanStack table). Render the
+parts yourself inside `DataGridRoot`, in any order, with your own controls between them. Pass the
+same `grid` to `<DataGrid grid={grid}>` when you want the default layout but need the api outside
+the component too.
+
+```tsx title="customers/page.tsx"
+import {
+  DataGridFilterChips,
+  DataGridPagination,
+  DataGridRoot,
+  DataGridSearch,
+  DataGridTable,
+  DataGridViewOptions,
+  useDataGrid,
+} from "@/components/ui/data-grid"
+
+export function Customers({ customers }: { customers: Customer[] }) {
+  const grid = useDataGrid<Customer>({ key: "customers", data: customers, columns, getRowId: (c) => c.id })
+  return (
+    <DataGridRoot grid={grid}>
+      <div className="flex items-center gap-2">
+        <h2 className="font-semibold">Customers</h2>
+        <DataGridSearch />
+        <DataGridFilterChips />
+        <DataGridViewOptions className="ml-auto" />
+        <Button size="sm">New customer</Button>
+      </div>
+      <DataGridTable height={480} />
+      <DataGridPagination />
+    </DataGridRoot>
+  )
+}
+```
+
+[Composition](/docs/data-grid/composition/) covers the parts in detail.
+
+<Aside type="note" title="Name your grids">
+  `name` names the grid for the TanStack devtools and is the default storage key for `persist`. Pass
+  it to `useDataGrid`; two grids on one page should not share one. (React consumes a `name` attribute
+  on `<DataGrid>` itself before the component sees it, so set it in the hook options.)
+</Aside>
+
+## What is on by default
+
+The grid turns on what a console page usually wants. Each default has an option to turn it off.
+
+| Default | What you get | Turn it off |
+| --- | --- | --- |
+| Row selection | `col.select()` renders checkboxes; shift-click selects a range; the header ticks the page. | `selection={false}`, or `selection={{ mode: "single" }}` for one row at a time. |
+| Cell selection | Click a cell to focus it; drag or shift-arrow a range; ⌘C copies it. | `cellSelection={false}`. Rows then toggle selection on click when there is no checkbox column. |
+| Grouping | "Group by" in each header menu, a Group menu in the toolbar, aggregated group rows. | `grouping={false}`; `groupable: false` on one column. |
+| Fuzzy search | The toolbar search box matches by rank across every searchable column. | `globalFilter="includesString"` for plain substring matching, or `globalFilter={false}` to remove the box. |
+| Pagination, 10 rows | A pager with 10, 20, 50 and 100 as the choices. | `pagination={false}` shows every row; `pagination={{ pageSize: 25, pageSizeOptions: [25, 50] }}` changes the numbers. |
+| Virtualisation past 200 rows | Once the row model holds 200 rows or more, only the rows in view render. Needs a `height` or `fillHeight`. | `virtualize={false}`; `virtualize` for always; `virtualize={{ threshold: 500 }}` to move the line. |
+| Editing, when a column is `editable` | Enter, F2 or double-click opens the editor for that kind. | `editing={false}`. |
+| Toolbar and pager | Both render with every built-in control. | `toolbar={false}`, `toolbar={{ export: false }}`, `pager={false}`. |
+| Column hiding, pinning, resizing, reordering | All on for every data column. | Per column: `enableHiding`, `enablePinning`, `enableResizing`, `draggable`; grid-wide through `table={{ enableColumnResizing: false }}`. |
+
+Off by default: `rowPinning`, `persist`, `server`, `striped`, `fillHeight`.
+
+## What it is built on
+
+TanStack Table v9 is the headless core (row models, state in a store, feature-typed APIs). shadcn/ui
+on Base UI supplies the menus, popovers, selects, checkboxes and buttons. TanStack Virtual renders
+only the rows in view, dnd kit moves the headers, and Tailwind CSS v4 styles it all through your
+theme tokens. The [introduction](/docs/#what-it-is-built-on) has the table and the links.
+
+<Aside type="tip" title="Need a TanStack feature the grid does not use?">
+  Compose your own features object with `tableFeatures({ ...dataGridFeatures, cellSpanningFeature })`
+  and pass it as `table={{ features }}`. `grid.table` is a real TanStack table; anything in the
+  TanStack docs works on it.
+</Aside>
+
+## Next
+
+- [API reference](/docs/data-grid/api/): every option of `useDataGrid`, every prop of `<DataGrid>` and the parts, every exported type.
+- [Type safety](/docs/type-safety/): how the column builder, `DataGridColumnDef<T>` and TanStack v9's feature typing keep a grid typed end to end.
+- [Your first grid in 5 minutes](/docs/quick-start/) if you have not built one yet.

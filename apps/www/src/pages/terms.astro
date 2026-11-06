@@ -1,0 +1,106 @@
+---
+import Base from "../layouts/Base.astro";
+import { SITE } from "../data/site";
+
+const EFFECTIVE = "7 November 2026";
+const prose =
+  "mt-8 text-[15.5px] leading-7 text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 [&_a:hover]:text-foreground [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-foreground [&_h2]:mt-10 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:tracking-tight [&_h2]:text-foreground [&_li]:mt-2 [&_p]:mt-4 [&_strong]:font-medium [&_strong]:text-foreground [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6";
+---
+
+<Base
+  title="Terms"
+  description="The terms for ui.kadal.cc: the Kadal UI code is MIT, the docs text is CC BY 4.0, the site is free and provided as is. No accounts, no payments; sponsorships go through GitHub."
+>
+  <article class="mx-auto max-w-3xl px-4 py-16 sm:px-6 sm:py-24">
+    <p class="font-mono text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">Legal</p>
+    <h1 class="mt-3 text-4xl font-semibold tracking-tight">Terms</h1>
+    <p class="mt-2 font-mono text-xs text-muted-foreground">Effective {EFFECTIVE}</p>
+
+    <div class={prose}>
+      <p>
+        These terms cover the website at <strong>ui.kadal.cc</strong>: the docs, the playground and the component
+        registry it serves. The site is run by <strong>{SITE.seller}</strong>, an individual based in {SITE.location},
+        trading as <strong>{SITE.tradingAs}</strong> ("we", "us"). It is free, has no accounts and sells nothing. By
+        using it you agree to these terms; the software itself is governed by its licence, not by this page.
+      </p>
+
+      <h2>1. The software: MIT</h2>
+      <p>
+        Kadal UI, meaning the components in the registry, the examples and the <code>@kadal/ui</code> CLI, is open source
+        under the <a href={`${SITE.repo}/blob/main/LICENSE`} rel="noopener">MIT licence</a>. You may use, copy, change
+        and sell it, in commercial products included, as long as the licence notice stays with the copies. The licence is
+        the whole agreement for the code: it comes <strong>without warranty of any kind</strong>, and these terms add no
+        promise to it.
+      </p>
+
+      <h2>2. The docs: CC BY 4.0</h2>
+      <p>
+        The text and images on this site are licensed under
+        <a href="https://creativecommons.org/licenses/by/4.0/" rel="noopener">Creative Commons Attribution 4.0</a>, so
+        you may quote, translate and republish them with a credit to Kadal UI and a link back. Code samples in the docs
+        are MIT, like the code they describe. The Kadal name and mark are not licensed: do not use them in a way that
+        suggests we made, endorse or support your product.
+      </p>
+
+      <h2>3. The registry and the playground</h2>
+      <ul>
+        <li>
+          The registry at <code>ui.kadal.cc/r/</code> is what <code>npx shadcn@latest add @kadal/…</code> reads. It is
+          provided as is; we may change, rename or remove items, and we record every change in the
+          <a href="/changelog/">changelog</a>. Your copy of the code is yours and keeps working whatever we do here.
+        </li>
+        <li>
+          The <a href="/playground/">playground</a> runs code in your browser with LiveCodes, loaded from
+          <a href="https://livecodes.io" rel="noopener">livecodes.io</a> under
+          <a href="https://livecodes.io/docs/license/" rel="noopener">its own licence and terms</a>. What you run there
+          is your responsibility.
+        </li>
+        <li>
+          Do not flood, scrape or attack the site or the registry, or use it to distribute anything unlawful. Caching the
+          registry for your own builds is fine.
+        </li>
+      </ul>
+
+      <h2>4. Sponsorships</h2>
+      <p>
+        Sponsorships are made through <a href="/sponsor/">GitHub Sponsors</a> and are a contract between you and GitHub
+        under <a href="https://docs.github.com/en/site-policy/github-terms/github-sponsors-additional-terms" rel="noopener">GitHub's Sponsors terms</a>;
+        GitHub bills you, and any question about a charge goes to GitHub. The perks of each tier are the ones listed on
+        the sponsor page at the time you sponsor. A sponsorship is not a purchase of support, a service level or a
+        licence, none of which the MIT code needs, and we do not take payment for anything on this site directly.
+      </p>
+
+      <h2>5. Contributions</h2>
+      <p>
+        By opening a pull request against <a href={SITE.repo} rel="noopener">kadalcc/ui</a> you agree that your
+        contribution is licensed under the same MIT licence as the project, and that you have the right to contribute
+        it. Issues, Discussions and the Discord follow the project's
+        <a href={`${SITE.repo}/blob/main/CODE_OF_CONDUCT.md`} rel="noopener">code of conduct</a>.
+      </p>
+
+      <h2>6. Disclaimers and liability</h2>
+      <p>
+        The site and everything on it are provided "as is", without warranty. To the extent the law allows, we are not
+        liable for any loss that comes from using the site, the registry or the software, including lost data or lost
+        profits. Nothing here limits liability that cannot be limited by law.
+      </p>
+
+      <h2>7. The law that applies</h2>
+      <p>
+        These terms are governed by the laws of India, and the courts at Chennai, Tamil Nadu have jurisdiction, without
+        taking away any protection the law of your own country gives you.
+      </p>
+
+      <h2>8. Changes</h2>
+      <p>
+        If these terms change in a way that matters, the date above changes with them and the change is noted in the
+        <a href="/changelog/">changelog</a>.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        {SITE.seller}, trading as {SITE.tradingAs}, {SITE.location} · <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+      </p>
+    </div>
+  </article>
+</Base>

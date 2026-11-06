@@ -1,0 +1,122 @@
+---
+title: Row actions
+description: A menu per row with col.actions and a Base UI dropdown, why the column is stable, pinning a row from its menu, onRowClick and getRowClassName for tinting rows.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+`col.actions(cell)` adds a narrow column for a per-row control, usually a ⋯ menu. The grid renders
+it outside the drag-to-reorder machinery so a menu anchored in it opens where it should.
+
+<Demo name="data-grid-row-actions" />
+
+## Use it
+
+Pass a cell renderer. It gets the usual cell context, so `row.original` is your object and `row`
+is the TanStack row with `pin`, `toggleSelected`, `toggleExpanded` and the rest.
+
+```tsx
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
+col.actions(({ row }) => (
+  <span onClick={(e) => e.stopPropagation()}>
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" aria-label="Row actions" />}>
+        <MoreHorizontalIcon />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => edit(row.original)}>Edit</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => row.pin(row.getIsPinned() ? false : "top")}>
+          {row.getIsPinned() ? "Unpin row" : "Pin row to top"}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onClick={() => remove(row.original)}>Delete</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </span>
+))
+```
+
+Put it last in the columns. The column is 56px wide, right-aligned, has an empty header and the id
+`actions`; a second argument takes any TanStack column option (`size`, `header`, `enablePinning`,
+…).
+
+### Why `modal={false}`
+
+A modal menu locks page scrolling and puts a backdrop over everything else while it is open. Inside
+a grid that is its own scroll area, with sticky headers and pinned columns, that is more than you
+want from a row menu: non-modal keeps the page and the grid scrollable, and the menu still closes
+on an outside click or <kbd>Esc</kbd>. The grid's own column menus are non-modal for the same reason.
+
+### Why the column is "stable"
+
+Headers are draggable for [reordering](/docs/data-grid/reordering/). A draggable column carries a
+CSS transform while it moves and re-registers with the drag sensor as the grid changes, which gives
+a popup anchored in one of its cells an unstable position. The utility kinds (`select`, `expander`,
+`rowNumber`, `actions`) are rendered outside that machinery, so a menu in `col.actions` positions
+reliably. If another column's cell opens a popover, give that column `stable: true`.
+
+### Clicks inside the menu
+
+React events bubble through portals, so a click on a menu item reaches the row's `onClick` as well.
+The `stopPropagation` wrapper above keeps a menu click from counting as a row click; the grid's own
+checkbox, link and expander cells do the same.
+
+### Pin a row from its menu
+
+`row.pin("top")`, `row.pin("bottom")` and `row.pin(false)` need row pinning on:
+
+```tsx
+<DataGrid rowPinning />
+```
+
+A pinned row sticks under the header (or above the pager) and stays there while you scroll, sort,
+filter and page. See [row pinning](/docs/data-grid/row-pinning/).
+
+## Row click and row classes
+
+```tsx
+<DataGrid
+  onRowClick={(row, event) => router.push(`/customers/${row.original.id}`)}
+  getRowClassName={(row) => (row.original.status === "churned" ? "opacity-60" : undefined)}
+/>
+```
+
+`onRowClick(row, event)` fires for a click anywhere on the row that nothing inside stopped. It runs
+before the built-in behaviour; call `event.preventDefault()` to stop a click from toggling selection
+on a grid with no checkbox column and cell selection off.
+
+`getRowClassName(row)` returns extra classes for the `<tr>`. It composes with `striped`, the
+selected tint (`data-state="selected"`), the grouped-row style and the pinned-row style. Rows also
+carry `data-row-id`, `data-index`, `data-grouped` and `data-pinned` for CSS.
+
+## How it behaves
+
+- The actions column is never sorted, filtered, searched, grouped, hidden, resized or exported.
+  It can be pinned: `initialState={{ columnPinning: { end: ["actions"] } }}` keeps it in view on a
+  wide grid.
+- Cell selection skips the utility columns, so arrowing across a row stops before the menu, and the
+  menu button is reached with <kbd>Tab</kbd>.
+- Row pinning is off by default. Without `rowPinning`, `row.pin` changes state the table does not
+  render.
+
+## Options
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `col.actions` | builder | | `col.actions(cell, options?)`: `cell` gets the cell context; `options` is any TanStack column option. |
+| `stable` (column) | boolean | `false`; `true` for utility kinds | Render outside the reorder machinery. |
+| `rowPinning` | boolean | `false` | Let rows be pinned with `row.pin`. |
+| `onRowClick` | function | | `(row, event) => void`: a click on the row. |
+| `getRowClassName` | function | | `(row) => string`: extra classes for the row, or nothing. |
+| `striped` | boolean | `false` | Tint every other row. |
+| `labels.rowActions` | string | `"Row actions"` | For your row menu's `aria-label`; the grid's own header menus use `labels.columnMenu`. |
+
+## See also
+
+- [Row selection and bulk actions](/docs/data-grid/selection/): actions on many rows at once.
+- [Row pinning](/docs/data-grid/row-pinning/): what a pinned row does.
+- [Column reordering](/docs/data-grid/reordering/): the drag machinery `stable` opts out of.

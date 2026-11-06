@@ -17,8 +17,46 @@ export default defineConfig({
   build: { format: "directory" },
   compressHTML: true,
   server: { port: 5400 },
+  // Dev only: the playground runs inside LiveCodes' sandbox, another origin, and imports the grid
+  // bundle from the dev server. Astro's dev middleware blocks cross-site subresource requests unless
+  // the Origin is listed here, and Vite must add the CORS header on top. Production is static files
+  // behind the headers in public/_headers, so neither setting matters there.
+  security: {
+    allowedDomains: [
+      { hostname: "livecodes-sandbox.pages.dev", protocol: "https" },
+      { hostname: "livecodes.io", protocol: "https" },
+      { hostname: "**.livecodes.io", protocol: "https" },
+    ],
+  },
   vite: {
     plugins: [tailwindcss()],
+    server: { cors: true },
+    // Everything the islands import, known up front: Vite otherwise discovers them one page at a
+    // time, re-optimises mid-session and hands React to two bundles ("Invalid hook call" in dev).
+    optimizeDeps: {
+      include: [
+        "react",
+        "react-dom",
+        "react-dom/client",
+        "react/jsx-runtime",
+        "@tanstack/react-table",
+        "@tanstack/react-virtual",
+        "@tanstack/react-query",
+        "@dnd-kit/react",
+        "@dnd-kit/react/sortable",
+        "@dnd-kit/dom",
+        "@dnd-kit/dom/modifiers",
+        "@base-ui/react",
+        "@base-ui/react/select",
+        "nuqs",
+        "nuqs/adapters/react",
+        "lucide-react",
+        "cmdk",
+        "cn",
+        "class-variance-authority",
+        "livecodes",
+      ],
+    },
   },
   integrations: [
     react(),

@@ -1,0 +1,218 @@
+---
+title: Type safety
+description: "How the Kadal UI data grid stays typed end to end: column keys checked against your row type, values flowing into format, validate and onEdit, TanStack v9's feature-typed table, and per-table column meta."
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+The grid is typed from one thing, your row type. Column keys are checked against it, each column's
+value type flows into the callbacks that touch it, and TanStack Table v9's feature-typed `Table`
+means `table.getSelectedCellCount()` exists on the type because the grid registered cell selection,
+not because of a global declaration.
+
+## Columns from a row type
+
+```ts
+type Order = {
+  id: string
+  customer: { name: string; email: string }
+  total: number
+  status: "draft" | "paid" | "refunded"
+  tags: string[]
+  placedAt: Date
+}
+
+const col = createDataGridColumns<Order>()
+```
+
+Each builder method is generic over the accessor. A string accessor must be a `DeepKeys<Order>`:
+`"total"`, `"customer.name"`, `"customer.email"`; a typo is a compile error. Its value type is
+`DeepValue<Order, Key>`, so `"customer.name"` is a `string` column and `"placedAt"` a `Date`
+column. A function accessor `(row) => …` gives its return type, and then needs an `id`.
+
+```ts
+col.text("customer.name", { header: "Customer" })          // TValue = string
+col.currency("total", { currency: "EUR" })                   // TValue = number
+col.text((o) => `${o.customer.name} <${o.customer.email}>`, { id: "contact" })
+col.text("customer.phone")                                   // error: not a key of Order
+```
+
+### What the value type reaches
+
+With `TValue` known, the options that touch the value are typed against it:
+
+| Option | Signature |
+| --- | --- |
+| `format` | `(value: TValue, row: TData) => string` |
+| `editable.validate` | `(value: TValue, row: TData) => string \| null \| undefined \| void` |
+| `editable.parse` | `(raw: string, row: TData) => TValue` |
+| `onEdit` | `(edit: DataGridCellEdit<TData, TValue>) => void \| Promise<void>` |
+| `options` | `readonly DataGridOption<TValue>[]`; for an array column (`tags`), `DataGridOption<Item>` |
+| `href` | `(value: TValue, row: TData) => string` |
+| `export` | `boolean \| (value: TValue, row: TData) => unknown` |
+| `cellClassName`, `tooltip` | `(value: TValue, row: TData) => …` |
+
+```ts
+col.enum("status", {
+  options: [{ value: "draft", label: "Draft" }, { value: "paid", label: "Paid" }], // value: Order["status"]
+  editable: { validate: (v, row) => (v === "refunded" && row.total === 0 ? "Nothing to refund" : null) },
+  onEdit: ({ value, previous }) => audit(previous, value),                          // both Order["status"]
+})
+col.date("placedAt", { format: (d) => d.toLocaleDateString() })                     // d: Date
+```
+
+`col.columns([...])` is TanStack's `columns` helper: it keeps every column's own `TValue` instead
+of widening the array to `unknown`, so the array you pass to the grid is as precise as its parts.
+The array's type is `ReadonlyArray<DataGridColumnDef<Order, any>>`, where `DataGridColumnDef` is
+`ColumnDef<DataGridFeatures, TData, TValue>`.
+
+## Feature-typed TanStack
+
+TanStack Table v9 types its `Table`, `Column`, `Row` and `Cell` by the features you register, so a
+method exists on the type only when its feature is present. The grid registers its set once:
+
+```ts
+export const dataGridFeatures = tableFeatures({
+  rowSortingFeature, columnFilteringFeature, globalFilteringFeature, columnFacetingFeature,
+  rowPaginationFeature, rowSelectionFeature, columnVisibilityFeature, columnPinningFeature,
+  columnOrderingFeature, columnSizingFeature, columnResizingFeature, rowExpandingFeature,
+  columnGroupingFeature, rowAggregationFeature, rowPinningFeature, cellSelectionFeature,
+  // row models, sortFns, filterFns, aggregationFns…
+  columnMeta: metaHelper<DataGridColumnMeta>(),
+})
+export type DataGridFeatures = typeof dataGridFeatures
+```
+
+Rather than spelling `DataGridFeatures` into every TanStack generic, use the pre-bound aliases:
+
+| Alias | Is |
+| --- | --- |
+| `DataGridColumnDef<TData, TValue>` | `ColumnDef<DataGridFeatures, TData, TValue>` |
+| `DataGridRow<TData>` | `Row<DataGridFeatures, TData>` |
+| `DataGridCell<TData, TValue>` | `Cell<DataGridFeatures, TData, TValue>` |
+| `DataGridColumn<TData, TValue>` | `Column<DataGridFeatures, TData, TValue>` |
+| `DataGridHeader<TData, TValue>` | `Header<DataGridFeatures, TData, TValue>` |
+| `DataGridCellContext<TData, TValue>` | `CellContext<DataGridFeatures, TData, TValue>` |
+| `DataGridHeaderContext<TData, TValue>` | `HeaderContext<DataGridFeatures, TData, TValue>` |
+| `DataGridState` | `TableState<DataGridFeatures>` |
+| `DataGridTableOptions<TData>` | `TableOptions<DataGridFeatures, TData>` |
+| `DataGridTableInstance<TData>` / `DataGridReactTable<TData>` | `Table<…>` / `ReactTable<…>` |
+
+A custom cell or a part of your own is typed with them:
+
+```tsx
+function AmountCell({ getValue, row }: DataGridCellContext<Order, number>) {
+  return <span className={row.original.status === "refunded" ? "line-through" : ""}>{getValue()}</span>
+}
+col.currency("total", { cell: AmountCell })
+
+function Summary({ grid }: { grid: DataGridApi<Order> }) {
+  return <p>{grid.table.getSelectedCellCount()} cells, {grid.table.getFilteredRowModel().rows.length} rows</p>
+}
+```
+
+## Column meta without declaration merging
+
+TanStack's `columnDef.meta` is `unknown` unless you tell it otherwise. The usual way is a global
+`declare module "@tanstack/react-table" { interface ColumnMeta … }`, which leaks into every table in
+your app. The grid uses v9's `metaHelper` instead: `columnMeta: metaHelper<DataGridColumnMeta>()` in
+the feature set types `meta` as `DataGridColumnMeta` on **these** tables only.
+
+The builder lifts the grid's meta out of `meta` so a column reads as one flat object; anything you
+put in `meta` yourself is merged last and typed as `Partial<DataGridColumnMeta> & Record<string, unknown>`:
+
+```ts
+col.text("customer.name", { header: "Customer", meta: { helpText: "From the billing contact" } })
+
+// Read it back where you have the column:
+const help = column.columnDef.meta?.helpText as string | undefined
+```
+
+For the grid's own meta, prefer `grid.metaFor(columnId)`: it is the resolved object, with `kind`
+inferred from the data when the column did not declare one.
+
+## Edits
+
+A column's `onEdit` knows its value type. The grid's `onCellEdit` sees every column, so its value is
+`unknown` on purpose:
+
+```ts
+interface DataGridCellEdit<TData, TValue = unknown> {
+  rowId: string; rowIndex: number; row: TData; columnId: string; value: TValue; previous: TValue
+}
+```
+
+Narrow on `columnId` with a small predicate, and the value follows:
+
+```ts
+function editOf<K extends keyof Order>(
+  edit: DataGridCellEdit<Order, unknown>,
+  key: K,
+): edit is DataGridCellEdit<Order, Order[K]> {
+  return edit.columnId === key
+}
+
+useDataGrid<Order>({
+  data,
+  columns,
+  onCellEdit: async (edit) => {
+    if (editOf(edit, "total")) await repriceOrder(edit.rowId, edit.value)       // number
+    else if (editOf(edit, "status")) await setStatus(edit.rowId, edit.value)    // Order["status"]
+    else await patchOrder(edit.rowId, { [edit.columnId]: edit.value })
+  },
+})
+```
+
+For a nested key (`"customer.name"`) the column id is the path; compare against the string and cast
+once, or keep such edits in the column's own `onEdit` where the type is already right.
+
+## Custom features
+
+Need a TanStack feature the grid does not register, cell spanning say? The hook passes
+`dataGridFeatures` as `features` and the `table` escape hatch deliberately omits `features`, so the
+place to add one is your copy of `data-grid-features.ts`:
+
+```ts title="components/ui/data-grid/data-grid-features.ts" ins={1,5}
+import { cellSpanningFeature } from "@tanstack/react-table"
+
+export const dataGridFeatures = tableFeatures({
+  // …the existing features
+  cellSpanningFeature,
+})
+```
+
+`DataGridFeatures` is `typeof dataGridFeatures`, so every alias above picks the feature up:
+`spanRows` and `spanColumns` become valid column options, `cell.getRowSpan()`, `cell.getColSpan()`
+and `cell.getIsCovered()` appear on `DataGridCell`, and the grid's own code keeps compiling because
+it only uses what it already needed. Rendering the spans is then a small edit to the `<td>` in your
+copy of `data-grid-table.tsx` (`rowSpan`, `colSpan`, skip covered cells).
+
+Options for a feature go through `table`, which is `Partial<Omit<DataGridTableOptions<TData>, "data" | "columns" | "features">>`
+and is applied last:
+
+```ts
+col.text("region", { spanRows: true })
+useDataGrid<Order>({ data, columns, table: { enableCellSpanning: true } })
+```
+
+## What is `unknown`, and why
+
+- `onCellEdit`'s `value` and `previous`: the grid cannot know which column fired. Narrow as above.
+- `exportTable().rows` is `unknown[][]`: formatted strings by default, raw values with
+  `formatted: false`, whatever your `export` function returns otherwise.
+- `DataGridColumnMeta`'s callbacks (`format`, `href`, `cellClassName`…) are typed with `any` in the
+  meta interface itself, because meta is where every column's options meet. You never write them
+  there: the builder's options are the typed surface.
+- `DataGridColumnDef<TData, any>` in `UseDataGridOptions.columns`: the array holds columns of
+  different value types; each column stays precise inside `col.columns`.
+
+<Aside type="note" title="Compiler settings">
+  The source compiles under `strict`, `noUncheckedIndexedAccess` and `verbatimModuleSyntax` with
+  TypeScript 5.5 or later, so it will not loosen a strict project.
+</Aside>
+
+## See also
+
+- [Columns](/docs/data-grid/columns/): every builder option.
+- [API reference](/docs/data-grid/api/): every type to import.
+- [Inline editing](/docs/data-grid/editing/)

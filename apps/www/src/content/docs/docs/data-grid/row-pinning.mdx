@@ -1,0 +1,86 @@
+---
+title: Row pinning
+description: Pin a row to the top or bottom of the grid from a row-actions menu; sticky rendering, pinned rows that survive filters and pages, and how they behave with virtualization.
+---
+
+import { Aside } from "@astrojs/starlight/components";
+import Demo from "../../../../components/docs/Demo.astro";
+
+Pin a row and it stays at the top or the bottom of the grid while the others scroll, and stays
+there through sorting, filtering and paging. There is no built-in button for it: you call `row.pin`
+from your own row-actions menu.
+
+<Demo name="data-grid-row-pinning" />
+
+## Use it
+
+Turn it on with `rowPinning`, then call `row.pin("top" | "bottom" | false)` from a
+[row-actions](/docs/data-grid/row-actions/) menu; `row.getIsPinned()` tells you the current state
+so the menu can offer the right items:
+
+```tsx
+col.actions(({ row }) => {
+  const pinned = row.getIsPinned() // "top" | "bottom" | false
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" aria-label="Row actions" />}>
+        <MoreHorizontalIcon />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {pinned !== "top" && <DropdownMenuItem onClick={() => row.pin("top")}>Pin row to top</DropdownMenuItem>}
+        {pinned !== "bottom" && <DropdownMenuItem onClick={() => row.pin("bottom")}>Pin row to bottom</DropdownMenuItem>}
+        {pinned && <DropdownMenuItem onClick={() => row.pin(false)}>Unpin row</DropdownMenuItem>}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+})
+
+<DataGrid data={data} columns={columns} getRowId={(row) => row.id} rowPinning height={400} />
+```
+
+Start with rows pinned through `initialState.rowPinning: { top: [ids], bottom: [ids] }`. From code:
+`table.setRowPinning(...)`, `table.resetRowPinning()`, `table.getTopRows()`, `table.getCenterRows()`,
+`table.getBottomRows()`. `labels.pinRowTop`, `pinRowBottom` and `unpinRow` hold the suggested
+wording.
+
+## How it behaves
+
+- **Where they render.** The body is the top-pinned rows, then the centre rows (the page, or every
+  row without a pager), then the bottom-pinned rows. A top-pinned row is `position: sticky` just
+  under the header, with a border along its bottom edge; a bottom-pinned row sticks to the bottom
+  of the scroll area with a border along its top. Both have an opaque background and carry
+  `data-pinned="top"` or `"bottom"` for your styling.
+- **They survive filters and pages.** The grid sets `keepPinnedRows: true`: a pinned row stays
+  visible when a filter would remove it and shows on every page. Pass
+  `table={{ keepPinnedRows: false }}` to let filters and paging hide it like any other row.
+- **Trees.** `row.pin(position, includeLeafRows, includeParentRows)` can take a row's descendants or
+  its ancestors along.
+- **Not remembered.** Row pinning is about particular rows, not the user's view of the grid, so it is
+  not part of the [persisted view](/docs/data-grid/persistence/) and resets on reload. Control
+  `table.state.rowPinning` with `table.onRowPinningChange` if you want to keep it.
+- **Everything else works** in a pinned row: selection, editing, cell selection, the row menu.
+
+- **Pinned rows live outside the virtual list.** With `virtualize` they are always in the DOM and
+  stay stuck at their edge however far the rest scrolls.
+- **Several per edge stack.** Each top-pinned row sticks just below the ones pinned before it, and
+  each bottom-pinned row just above the ones after it (and above the footer, when there is one).
+
+## Options
+
+Grid options:
+
+| Option | Type | Default | What it does |
+| --- | --- | --- | --- |
+| `rowPinning` | `boolean` | `false` | Enables `row.pin` and the sticky rendering. |
+| `initialState.rowPinning` | `RowPinningState` | empty | Rows pinned at the start, by id: `{ top: ["p1"], bottom: [] }`. |
+| `table.enableRowPinning` | `boolean` or predicate | `rowPinning` | `(row) => boolean` decides per row (`row.getCanPin()`). |
+| `table.keepPinnedRows` | `boolean` | `true` | Show pinned rows even when filtered or paged out. |
+
+Row api (TanStack): `row.pin(position, includeLeafRows?, includeParentRows?)`, `row.getIsPinned()`,
+`row.getCanPin()`, `row.getPinnedIndex()`.
+
+## See also
+
+- [Row actions](/docs/data-grid/row-actions/): the menu the pin items live in.
+- [Column pinning](/docs/data-grid/pinning/): the same idea for columns.
+- [Virtualization](/docs/data-grid/virtualization/).

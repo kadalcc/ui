@@ -1,0 +1,135 @@
+---
+/**
+ * A live example in the docs: the registry example rendered as a React island, with its source
+ * under a "Code" tab (the exact file `shadcn add @kadal/<name>` installs) and a link to open it in
+ * the playground. ExampleHost.astro is generated from the examples folder (scripts/gen-examples.mjs).
+ */
+import { Code } from "@astrojs/starlight/components";
+import ExampleHost from "./ExampleHost.astro";
+
+interface Props {
+  /** The example's file name under registry/kadal/examples/, without the extension. */
+  name: string;
+  /** Height of the preview pane. */
+  height?: string;
+  /** Show the code tab open by default. */
+  code?: boolean;
+  /** Extra props for the example component. */
+  props?: Record<string, unknown>;
+}
+const { name, height, code = false, props = {} } = Astro.props;
+
+const sources = import.meta.glob("../../../registry/kadal/examples/*.tsx", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+const source = sources[`../../../registry/kadal/examples/${name}.tsx`];
+if (!source) throw new Error(`No example named "${name}" in registry/kadal/examples/.`);
+
+// What the reader's project will have, not what this repo has.
+const installed = source
+  .replace(/@\/registry\/kadal\/ui\/data-grid\b/g, "@/components/ui/data-grid")
+  .replace(/@\/registry\/kadal\/ui\//g, "@/components/ui/")
+  .replace(/@\/registry\/kadal\/hooks\//g, "@/hooks/")
+  .replace(/@\/registry\/kadal\/lib\//g, "@/lib/")
+  .replace(/^"use client";\n\n/, "");
+const id = `demo-${name}`;
+---
+
+<div class="demo not-content" data-demo={name}>
+  <div class="demo-bar">
+    <div class="demo-tabs" role="tablist" aria-label="Preview or code">
+      <button type="button" role="tab" aria-selected={!code} aria-controls={`${id}-preview`} data-tab="preview">Preview</button>
+      <button type="button" role="tab" aria-selected={code} aria-controls={`${id}-code`} data-tab="code">Code</button>
+    </div>
+    <div class="demo-actions">
+      <a href={`/playground/?example=${name}`} title="Open in the playground">Open in playground ↗</a>
+      <a href={`https://github.com/kadalcc/ui/blob/main/apps/www/registry/kadal/examples/${name}.tsx`} rel="noopener" title="Source on GitHub">GitHub</a>
+    </div>
+  </div>
+  <div id={`${id}-preview`} role="tabpanel" data-panel="preview" hidden={code} class="demo-preview" style={height ? `min-height:${height}` : undefined}>
+    <ExampleHost name={name} props={props} />
+  </div>
+  <div id={`${id}-code`} role="tabpanel" data-panel="code" hidden={!code} class="demo-code">
+    <Code code={installed} lang="tsx" title={`components/examples/${name}.tsx`} />
+  </div>
+</div>
+
+<script>
+  for (const demo of document.querySelectorAll<HTMLElement>("[data-demo]")) {
+    const tabs = demo.querySelectorAll<HTMLButtonElement>("[data-tab]");
+    for (const tab of tabs) {
+      tab.addEventListener("click", () => {
+        for (const t of tabs) t.setAttribute("aria-selected", String(t === tab));
+        for (const panel of demo.querySelectorAll<HTMLElement>("[data-panel]")) {
+          panel.hidden = panel.dataset.panel !== tab.dataset.tab;
+        }
+      });
+    }
+  }
+</script>
+
+<style>
+  .demo {
+    margin: 1.5rem 0;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background: var(--sl-color-bg);
+  }
+  .demo-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid var(--sl-color-hairline);
+    background: var(--sl-color-bg-nav);
+    font-size: var(--sl-text-xs);
+  }
+  .demo-tabs {
+    display: flex;
+    gap: 0.25rem;
+  }
+  .demo-tabs button {
+    border: 0;
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.65rem;
+    background: transparent;
+    color: var(--sl-color-gray-2);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .demo-tabs button[aria-selected="true"] {
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-white);
+  }
+  .demo-actions {
+    display: flex;
+    gap: 0.75rem;
+  }
+  .demo-actions a {
+    color: var(--sl-color-gray-2);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .demo-actions a:hover {
+    color: var(--sl-color-white);
+  }
+  .demo-preview {
+    padding: 1rem;
+  }
+  .demo-preview[hidden],
+  .demo-code[hidden] {
+    display: none;
+  }
+  .demo-code :global(.expressive-code) {
+    margin: 0;
+  }
+  .demo-code :global(.expressive-code .frame) {
+    border-radius: 0;
+    box-shadow: none;
+  }
+</style>
