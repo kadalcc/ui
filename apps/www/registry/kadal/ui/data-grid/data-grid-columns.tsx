@@ -174,7 +174,7 @@ export function kindDefaults(kind: DataGridColumnKind): Partial<DataGridColumnDe
         filterFn: "facet",
         aggregationFn: "uniqueCount",
         // Each tag becomes its own facet value instead of the array as one opaque value.
-        getUniqueValues: (row: unknown, _index: number) => [] as unknown[],
+        getUniqueValues: (_row: unknown, _index: number) => [] as unknown[],
         meta: { kind, filter: "facet", groupable: false },
       };
     case "link":

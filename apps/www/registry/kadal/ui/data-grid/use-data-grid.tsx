@@ -11,7 +11,6 @@ import {
   type PaginationState,
   type RowData,
   type SortingState,
-  type Updater,
 } from "@tanstack/react-table";
 
 import { DataGridAggregatedCell, DataGridDefaultCell } from "./data-grid-cells";
@@ -279,9 +278,6 @@ function inferKind(value: unknown): DataGridColumnMeta["kind"] {
   return "text";
 }
 
-const resolve = <T,>(updater: Updater<T>, old: T): T =>
-  typeof updater === "function" ? (updater as (o: T) => T)(old) : updater;
-
 /** The state slices a persisted view owns; everything else in `initialState` passes straight through. */
 const VIEW_KEYS = [
   "sorting",
@@ -342,23 +338,32 @@ export function useDataGrid<TData extends RowData>(
   const labels = React.useMemo(() => resolveLabels(labelsOption), [labelsOption]);
 
   // ── Pagination ───────────────────────────────────────────────────────────────────────────────
-  const pagination: false | Required<DataGridPaginationOptions> =
-    paginationOption === false
-      ? false
-      : {
-          pageSize: paginationOption?.pageSize ?? initialState?.pagination?.pageSize ?? 10,
-          pageSizeOptions: paginationOption?.pageSizeOptions ?? DEFAULT_PAGE_SIZES,
-        };
+  // Derived option objects are memoised on their inputs so the api objects built from them
+  // (editing, views) keep their identity between renders.
+  const initialPageSize = initialState?.pagination?.pageSize;
+  const pagination = React.useMemo(
+    (): false | Required<DataGridPaginationOptions> =>
+      paginationOption === false
+        ? false
+        : {
+            pageSize: paginationOption?.pageSize ?? initialPageSize ?? 10,
+            pageSizeOptions: paginationOption?.pageSizeOptions ?? DEFAULT_PAGE_SIZES,
+          },
+    [paginationOption, initialPageSize],
+  );
 
   // ── Persistence ──────────────────────────────────────────────────────────────────────────────
-  const persistOptions: DataGridPersistOptions | null =
-    persist === false || persist === undefined
-      ? null
-      : persist === true
-        ? {}
-        : typeof persist === "string"
-          ? { key: persist }
-          : persist;
+  const persistOptions = React.useMemo(
+    (): DataGridPersistOptions | null =>
+      persist === false || persist === undefined
+        ? null
+        : persist === true
+          ? {}
+          : typeof persist === "string"
+            ? { key: persist }
+            : persist,
+    [persist],
+  );
   const storage = persistOptions?.storage ?? localStorageStorage;
   const storageKey = storageKeyFor(persistOptions?.key ?? key, persistOptions?.scope);
   // What "Reset view" returns to and what a first visit shows: the defaults, with `initialState`'s
@@ -415,18 +420,24 @@ export function useDataGrid<TData extends RowData>(
   );
 
   // ── Editing ──────────────────────────────────────────────────────────────────────────────────
-  const editingOptions: DataGridEditingOptions<TData> | null =
-    editingOption === false
-      ? null
-      : typeof editingOption === "object"
-        ? { ...editingOption, onCellEdit: editingOption.onCellEdit ?? onCellEdit }
-        : { onCellEdit };
+  const editingOptions = React.useMemo(
+    (): DataGridEditingOptions<TData> | null =>
+      editingOption === false
+        ? null
+        : typeof editingOption === "object"
+          ? { ...editingOption, onCellEdit: editingOption.onCellEdit ?? onCellEdit }
+          : { onCellEdit },
+    [editingOption, onCellEdit],
+  );
   const [editingCell, setEditingCell] = React.useState<DataGridEditingCell | null>(null);
   const [editError, setEditError] = React.useState<string | null>(null);
 
   // ── Table ────────────────────────────────────────────────────────────────────────────────────
-  const selectionOptions: DataGridSelectionOptions<TData> | null =
-    selection === false ? null : selection === true ? {} : selection;
+  const selectionOptions = React.useMemo(
+    (): DataGridSelectionOptions<TData> | null =>
+      selection === false ? null : selection === true ? {} : selection,
+    [selection],
+  );
 
   const isServer = Boolean(server);
   const metaCache = React.useRef(new Map<string, DataGridColumnMeta>());
