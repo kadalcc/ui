@@ -1,0 +1,49 @@
+name: Report a bug
+description: Something in a Kadal UI component does not work as documented.
+title: "[data-grid] "
+labels: ["bug", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. A reproduction we can open is the most useful thing you can give us:
+        fork the [playground](https://ui.kadal.cc/playground/) or a [StackBlitz](https://stackblitz.com/), paste the link below.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Data grid
+        - CLI (@kadal/ui)
+        - Registry / installation
+        - Docs site
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, what you saw instead.
+    validations:
+      required: true
+  - type: input
+    id: repro
+    attributes:
+      label: Reproduction
+      description: A playground or StackBlitz link, or a repo and the steps.
+      placeholder: https://ui.kadal.cc/playground/#…
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Output of `npx shadcn@latest info` and the registry item version from your `components.json`, plus browser and OS.
+      placeholder: "react 19.3.1, @tanstack/react-table 9.3.1, @base-ui/react 1.9.0, Chrome 158 on macOS 15"
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched the existing issues.
+          required: true
+        - label: I'm on the latest registry version (`npx shadcn@latest add @kadal/data-grid --overwrite --diff` shows no changes).

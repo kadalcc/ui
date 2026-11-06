@@ -1,0 +1,37 @@
+{
+  "name": "kadal-ui-monorepo",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter www dev",
+    "build": "bun run --filter './packages/*' build && bun run registry:build && bun run --filter www build",
+    "registry:build": "bun run --filter www registry:build",
+    "typecheck": "bun run --filter '*' typecheck",
+    "test": "bun run --filter '*' test",
+    "test:e2e": "bun run --filter www test:e2e",
+    "lint": "oxlint apps packages tools",
+    "format": "oxfmt apps packages tools",
+    "format:check": "oxfmt --check apps packages tools",
+    "changeset": "changeset",
+    "release": "bun run --filter './packages/*' build && node tools/publish.mjs",
+    "deploy": "bun run --filter www deploy"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^3.0.3",
+    "@types/node": "^25.9.3",
+    "bun-types": "^1.4.4",
+    "oxfmt": "^0.77.0",
+    "oxlint": "^1.92.0",
+    "typescript": "^7.0.2"
+  },
+  "packageManager": "bun@1.3.14",
+  "trustedDependencies": [
+    "esbuild",
+    "sharp",
+    "workerd"
+  ]
+}

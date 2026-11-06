@@ -1,0 +1,22 @@
+---
+// A bare page for driving the grid in a real browser during development and in the e2e tests.
+import "../../styles/global.css";
+import DataGridDemo from "@/registry/kadal/examples/data-grid-demo";
+const rows = Number(Astro.url.searchParams.get("rows") ?? 500) || 500;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Data grid · dev</title>
+    <meta name="robots" content="noindex" />
+  </head>
+  <body class="p-6">
+    <main class="mx-auto flex max-w-[1400px] flex-col gap-4">
+      <h1 class="text-lg font-semibold">Data grid · dev</h1>
+      <DataGridDemo client:only="react" rows={rows} />
+    </main>
+  </body>
+</html>

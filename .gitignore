@@ -1,0 +1,13 @@
+node_modules/
+dist/
+*.tgz
+.DS_Store
+.astro/
+.wrangler/
+coverage/
+test-results/
+playwright-report/
+# Built by `shadcn build` and the playground bundler on every build; never hand-edited.
+apps/www/public/r/
+apps/www/public/play/
+.tmp/

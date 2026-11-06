@@ -1,0 +1,19 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "src/**/*", "registry/**/*", "scripts/**/*", "e2e/**/*", "registry.json"],
+  "exclude": ["dist", "public"],
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/registry/*": ["./registry/*"]
+    },
+    "types": ["@types/react", "@types/react-dom", "bun-types"]
+  }
+}

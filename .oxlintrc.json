@@ -1,0 +1,9 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "ignorePatterns": ["**/dist/**", "**/.astro/**", "**/public/r/**", "**/public/play/**"],
+  "plugins": ["react", "typescript", "unicorn", "oxc"],
+  "rules": {
+    "no-await-in-loop": "off",
+    "react/jsx-key": "error"
+  }
+}

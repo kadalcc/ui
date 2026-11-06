@@ -1,0 +1,56 @@
+{
+  "name": "@kadal/ui",
+  "version": "0.1.0",
+  "description": "The Kadal UI CLI: add power-user React components, starting with the data grid, to your own source code through the shadcn registry at ui.kadal.cc.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "kadal-ui": "dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "types": "./dist/index.d.ts",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "tsdown": "^0.23.7",
+    "typescript": "^7.0.2"
+  },
+  "keywords": [
+    "kadal",
+    "shadcn",
+    "registry",
+    "data-grid",
+    "datagrid",
+    "table",
+    "react",
+    "tanstack-table",
+    "base-ui",
+    "tailwind"
+  ],
+  "homepage": "https://ui.kadal.cc",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kadalcc/ui.git",
+    "directory": "packages/cli"
+  },
+  "bugs": "https://github.com/kadalcc/ui/issues",
+  "funding": "https://github.com/sponsors/pmithunish",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

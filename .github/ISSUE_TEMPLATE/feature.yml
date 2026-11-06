@@ -1,0 +1,42 @@
+name: Request a feature
+description: Something the grid (or the CLI) should do and does not.
+title: "[data-grid] "
+labels: ["enhancement", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tell us about the problem first, the solution second: there may be a way the component
+        already covers it, or a smaller change that gets you there.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Data grid
+        - A new component
+        - CLI (@kadal/ui)
+        - Docs site
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The job, in your words. Screenshots of other tools that do it are welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: How would you like it to work?
+      description: An API sketch, a prop name, a menu item, anything.
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Would you be up for building it?
+      options:
+        - "Yes, with some guidance"
+        - "Yes, on my own"
+        - "No, just suggesting"
