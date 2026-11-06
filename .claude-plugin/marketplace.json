@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "kadal-ui",
+  "owner": {
+    "name": "Kadal",
+    "email": "hello@kadal.cc",
+    "url": "https://kadal.cc"
+  },
+  "metadata": {
+    "description": "Kadal UI for AI agents: add the data grid to a shadcn/ui project and wire it up properly, from typed columns to saved views."
+  },
+  "plugins": [
+    {
+      "name": "kadal-ui",
+      "displayName": "Kadal UI",
+      "source": "./",
+      "description": "Use Kadal UI's data grid (a power-user React data grid on TanStack Table v9 and shadcn/ui with Base UI) in a project: the kadal-ui skill covers installing it from the registry, the column builder, the <DataGrid> props and the composable parts, URL state and server-side mode, with a checklist. Adding items from the registry itself goes through the shadcn MCP server (`npx @kadal/ui mcp`), which serves every registry in components.json.",
+      "category": "development",
+      "keywords": ["react", "data-grid", "table", "shadcn", "tanstack-table", "base-ui", "tailwind"],
+      "homepage": "https://ui.kadal.cc",
+      "repository": "https://github.com/kadalcc/ui",
+      "license": "MIT",
+      "author": { "name": "Kadal", "email": "hello@kadal.cc", "url": "https://kadal.cc" },
+      "strict": false,
+      "skills": ["./skills/kadal-ui"]
+    }
+  ]
+}

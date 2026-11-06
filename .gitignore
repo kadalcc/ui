@@ -11,3 +11,8 @@ playwright-report/
 apps/www/public/r/
 apps/www/public/play/
 .tmp/
+apps/www/play/.entries/
+apps/www/play/.dts/
+# Screenshots the smoke scripts write.
+apps/www/shots/
+apps/www/shots-demos/

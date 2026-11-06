@@ -1,0 +1,64 @@
+name: Deploy ui.kadal.cc
+
+# The site and the registry are one static build (apps/www/dist), served by the `kadal-ui` Worker
+# (apps/www/wrangler.jsonc). Every push to main that could change it redeploys; a dispatch
+# redeploys by hand. CI has already built and browser-tested the same commit by the time this
+# runs, but the two don't wait on each other: a red CI shows on the commit either way.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/www/**"
+      # The CLI's README and version are shown on the site.
+      - "packages/**"
+      - ".github/workflows/deploy.yml"
+      - ".github/actions/setup/action.yml"
+  workflow_dispatch:
+
+# Deploys queue rather than cancel: a cancelled `wrangler deploy` can leave the new version
+# uploaded but not live.
+concurrency:
+  group: deploy-ui
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: github.repository == 'kadalcc/ui'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # Secrets can't be read in a job-level `if`, so the first step reads them into outputs and
+      # every other step keys off that. A fork, or the repo before its secrets are set, gets one
+      # notice and a green run rather than a red one.
+      - id: cloudflare
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "$TOKEN" ] && [ -n "$ACCOUNT" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Deploy skipped::CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are not both set as repository secrets, so nothing was deployed. Add them under Settings → Secrets and variables → Actions, then re-run this workflow."
+          fi
+      - if: steps.cloudflare.outputs.configured == 'true'
+        uses: actions/checkout@v4
+      - if: steps.cloudflare.outputs.configured == 'true'
+        uses: ./.github/actions/setup
+      # gen:examples → registry:build → play:build → astro build (apps/www/package.json).
+      - if: steps.cloudflare.outputs.configured == 'true'
+        run: bun run build
+        working-directory: apps/www
+      # wrangler-action runs the wrangler in apps/www's package.json, so the version that deploys
+      # is the one that's reviewed in bun.lock.
+      - if: steps.cloudflare.outputs.configured == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/www
+          command: deploy

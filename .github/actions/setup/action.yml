@@ -1,0 +1,62 @@
+name: Set up the workspace
+description: >
+  Bun (pinned) and Node, the workspace installed from bun.lock with Bun's download cache restored,
+  and optionally Playwright's three browsers with the system packages they need.
+
+inputs:
+  playwright:
+    description: Install Playwright's Chromium, Firefox and WebKit and the system packages they need
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - uses: oven-sh/setup-bun@v2
+      with:
+        # The one Bun every workflow here uses (release.yml and deploy.yml too): bun.lock is written
+        # by it, and package.json's `packageManager` names it.
+        bun-version: 1.3.14
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - uses: actions/cache@v4
+      with:
+        path: ~/.bun/install/cache
+        key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+        restore-keys: bun-${{ runner.os }}-
+    - shell: bash
+      run: bun install --frozen-lockfile
+
+    # `playwright install --with-deps` spends most of its time on apt: fonts, xvfb and the GTK and
+    # WebKit libraries from the Ubuntu mirror, a minute or more depending on the mirror. apt-get
+    # keeps what it downloads in its archive directory; pointed at a cached one, a warm run
+    # downloads nothing. The same packages are installed either way, so the browsers render the
+    # same pixels as before.
+    - if: inputs.playwright == 'true'
+      id: pw
+      shell: bash
+      run: |
+        # The version the site's tests depend on (@playwright/test, resolved from apps/www: Bun
+        # hoists it to the root node_modules, but that is its business, not this script's).
+        echo "version=$(node -p "require(require.resolve('@playwright/test/package.json', { paths: ['apps/www'] })).version")" >> "$GITHUB_OUTPUT"
+        # The runner image (ImageOS/ImageVersion are the runner's own variables, not in `env`).
+        echo "image=${ImageOS:-unknown}" >> "$GITHUB_OUTPUT"
+        echo "image-version=${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
+        mkdir -p ~/.cache/apt-archives/partial
+        echo "Dir::Cache::Archives \"$HOME/.cache/apt-archives/\";" | sudo tee /etc/apt/apt.conf.d/99-cached-archives > /dev/null
+    - if: inputs.playwright == 'true'
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/ms-playwright
+          ~/.cache/apt-archives/*.deb
+        # A new runner image restores the last image's packages and adds what changed.
+        key: playwright-${{ steps.pw.outputs.image }}-${{ steps.pw.outputs.version }}-${{ steps.pw.outputs.image-version }}
+        restore-keys: playwright-${{ steps.pw.outputs.image }}-${{ steps.pw.outputs.version }}-
+    # All three engines: the grid's keyboard handling and sticky headers have differed between them
+    # before, and the e2e suite runs on each.
+    - if: inputs.playwright == 'true'
+      shell: bash
+      working-directory: apps/www
+      run: npx playwright install --with-deps chromium firefox webkit

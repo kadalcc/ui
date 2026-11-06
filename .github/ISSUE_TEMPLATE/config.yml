@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Send feedback
-    url: https://github.com/kadalcc/ui/discussions/new?category=feedback
+    url: https://github.com/kadalcc/ui/discussions/new?category=general
     about: Tell us what works, what doesn't, and what you'd change. No template, no pressure.
   - name: Ask a question
     url: https://github.com/kadalcc/ui/discussions/new?category=q-a

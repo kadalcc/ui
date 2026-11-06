@@ -1,0 +1,133 @@
+name: CI
+
+# Every check runs in its own job, all at once, on GitHub's hosted runners (free for a public
+# repo), so the wall time is the slowest job rather than the sum. Each job installs for itself
+# (~20 s from the Bun cache); only the site build is handed on, because the browser tests need
+# the same dist/ the site job checked.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - ".changeset/*.md"
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - ".changeset/*.md"
+  # release.yml starts this on the "Version packages" branch. That PR is opened with GITHUB_TOKEN,
+  # so its pull_request run waits for a maintainer to approve it, and ends as a failure when the
+  # PR is merged or updated first; a dispatched run is allowed to start on its own.
+  workflow_dispatch:
+
+# One run per branch or PR: a newer push cancels the one in flight. main's runs all finish.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: typecheck · lint · test · packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      # TypeScript 7 (tsgo) has no `astro check` yet, so www's typecheck is `tsc` over the React
+      # source and the registry; the .astro files are checked by the build in the site job.
+      - run: bun run typecheck
+      - run: bun run lint
+      - run: bun run test
+      # npm silently rewrites (and for `./` bin paths, drops) what it doesn't like at publish time.
+      # `npm pkg fix` applies the same normalisation; any diff means a package.json would ship
+      # different from what's in the repo.
+      - name: package.json files are already what npm publishes
+        run: |
+          npm install -g npm@^11.15.0
+          for d in packages/*/; do (cd "$d" && npm pkg fix); done
+          git diff --exit-code -- 'packages/*/package.json'
+
+  registry:
+    name: registry · shadcn build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      # What `npx shadcn add @kadal/data-grid` downloads: public/r is gitignored and built here
+      # from registry.json and the source under registry/kadal.
+      - run: bun run registry:build
+        working-directory: apps/www
+      - name: The index and the data grid are there, parse, and agree with the manifest
+        working-directory: apps/www
+        run: |
+          node -e '
+            const { readFileSync } = require("node:fs");
+            const read = (f) => JSON.parse(readFileSync(f, "utf8"));
+            const index = read("public/r/registry.json");
+            const grid = read("public/r/data-grid.json");
+            const manifest = read("registry.json").items.find((i) => i.name === "data-grid");
+            if (!Array.isArray(index.items) || !index.items.length) throw new Error("registry.json has no items");
+            if (grid.name !== "data-grid") throw new Error(`data-grid.json is for ${grid.name}`);
+            if (grid.files.length !== manifest.files.length)
+              throw new Error(`data-grid.json has ${grid.files.length} files, the manifest ${manifest.files.length}`);
+            const empty = grid.files.filter((f) => !f.content);
+            if (empty.length) throw new Error(`files without content: ${empty.map((f) => f.path).join(", ")}`);
+            console.log(`${index.items.length} items; data-grid: ${grid.files.length} files, version ${grid.meta?.version}`);
+          '
+
+  site:
+    name: site · astro build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      # gen:examples → registry:build → play:build → astro build (apps/www/package.json).
+      - run: bun run build
+        working-directory: apps/www
+      # What would go live, for looking at (deploy.yml builds its own from the same commit).
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site-dist
+          path: apps/www/dist
+          retention-days: 3
+          if-no-files-found: error
+
+  # `needs: site` is a gate, not a hand-off: when the site doesn't build there is nothing to test,
+  # and three browsers' worth of minutes are saved. The suite builds its own copy (below).
+  e2e:
+    name: e2e · playwright (chromium, firefox, webkit)
+    needs: site
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          playwright: true
+      # playwright.config.ts's webServer runs gen-examples, `astro build` and `astro preview`
+      # itself, but not these two: public/r (the registry JSON) and public/play (the playground
+      # bundle) are gitignored, so without them the site it builds would be missing /r/*.json and
+      # the playground.
+      - run: bun run registry:build && bun run play:build
+        working-directory: apps/www
+      # Every project in the config (chromium, firefox, webkit, and the @mobile subset); which
+      # browsers run is the config's decision, not this file's.
+      - run: bun run test:e2e
+        working-directory: apps/www
+        env:
+          CI: "true"
+      - name: The report and traces, for looking at
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            apps/www/playwright-report
+            apps/www/test-results
+          retention-days: 7
+          if-no-files-found: ignore

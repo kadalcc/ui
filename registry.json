@@ -1,0 +1,6 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "kadal",
+  "homepage": "https://ui.kadal.cc",
+  "include": ["apps/www/registry.json"]
+}
