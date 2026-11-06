@@ -8,7 +8,7 @@
     "dev": "astro dev --port 5400",
     "build": "bun run gen:examples && bun run registry:build && bun run play:build && astro build",
     "preview": "astro preview --port 5400",
-    "typecheck": "node scripts/gen-examples.mjs && tsc --noEmit -p tsconfig.json",
+    "typecheck": "node scripts/gen-examples.mjs && astro sync && tsc --noEmit -p tsconfig.json",
     "registry:build": "shadcn build registry.json -o public/r",
     "play:build": "bun scripts/build-playground.ts",
     "og": "bun scripts/og.ts",

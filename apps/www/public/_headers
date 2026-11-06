@@ -7,6 +7,12 @@
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=3600, stale-while-revalidate=86400
 
+# The editor's type declarations: a .ts extension is otherwise served as MPEG transport stream.
+/play/kadal-ui.d.ts
+  Content-Type: text/plain; charset=utf-8
+/play/empty.d.ts
+  Content-Type: text/plain; charset=utf-8
+
 /r/*
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=300, stale-while-revalidate=3600
