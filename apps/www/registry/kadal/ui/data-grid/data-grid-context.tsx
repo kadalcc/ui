@@ -50,6 +50,7 @@ export const DataGridUiProvider = DataGridUiContext.Provider;
 
 export function useDataGridUi(): DataGridUiState {
   const ctx = React.useContext(DataGridUiContext);
-  if (!ctx) throw new Error("Data grid parts must be rendered inside <DataGrid> or <DataGridRoot>.");
+  if (!ctx)
+    throw new Error("Data grid parts must be rendered inside <DataGrid> or <DataGridRoot>.");
   return ctx;
 }

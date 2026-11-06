@@ -1,0 +1,753 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "kadal",
+  "homepage": "https://ui.kadal.cc",
+  "items": [
+    {
+      "name": "data-grid",
+      "type": "registry:ui",
+      "title": "Data Grid",
+      "description": "A power-user data grid on TanStack Table v9 and shadcn/ui (Base UI): typed columns, sorting, faceted and typed filters, fuzzy search, pagination, selection and bulk actions, row actions, visibility, pinning, drag reorder, resizing, tree data, grouping with aggregation, virtualization, inline editing, cell selection with keyboard navigation and clipboard, export, density, row pinning, persisted and saved views.",
+      "author": "Kadal <hello@kadal.cc>",
+      "categories": [
+        "data-display",
+        "table"
+      ],
+      "dependencies": [
+        "@tanstack/react-table@^9.3.1",
+        "@tanstack/react-virtual@^3.14.26",
+        "@dnd-kit/react@^0.5.3",
+        "@dnd-kit/dom@^0.5.3",
+        "lucide-react"
+      ],
+      "registryDependencies": [
+        "badge",
+        "button",
+        "checkbox",
+        "dialog",
+        "dropdown-menu",
+        "empty",
+        "input",
+        "label",
+        "popover",
+        "select",
+        "spinner",
+        "textarea",
+        "tooltip"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/ui/data-grid/index.ts",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/index.ts"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid.tsx",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid.tsx"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-cells.tsx",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-cells.tsx"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-column-header.tsx",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-column-header.tsx"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-columns.tsx",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-columns.tsx"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-context.tsx",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-context.tsx"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-editing.tsx",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-editing.tsx"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-export.ts",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-export.ts"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-features.ts",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-features.ts"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-filters.tsx",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-filters.tsx"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-format.ts",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-format.ts"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-keyboard.ts",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-keyboard.ts"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-labels.ts",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-labels.ts"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-pagination.tsx",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-pagination.tsx"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-persist.ts",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-persist.ts"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-pinning.ts",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-pinning.ts"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-table.tsx",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-table.tsx"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-toolbar.tsx",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-toolbar.tsx"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-types.ts",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-types.ts"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/data-grid-utils.ts",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/data-grid-utils.ts"
+        },
+        {
+          "path": "registry/kadal/ui/data-grid/use-data-grid.tsx",
+          "type": "registry:ui",
+          "target": "@ui/data-grid/use-data-grid.tsx"
+        }
+      ],
+      "docs": "Docs: https://ui.kadal.cc/docs/data-grid/ · Built for the Base UI flavour of shadcn/ui (npx shadcn init -b base). Import from \"@/components/ui/data-grid\".",
+      "meta": {
+        "version": "0.1.0",
+        "base": "base",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "data-grid-url-state",
+      "type": "registry:hook",
+      "title": "Data Grid URL state",
+      "description": "Keeps the grid's filters, search and page in the URL with nuqs, so a view can be shared and survives a refresh.",
+      "author": "Kadal <hello@kadal.cc>",
+      "categories": [
+        "data-display",
+        "table"
+      ],
+      "dependencies": [
+        "nuqs@^2.10.2"
+      ],
+      "registryDependencies": [
+        "@kadal/data-grid"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/hooks/use-data-grid-url-state.ts",
+          "type": "registry:hook",
+          "target": "@hooks/use-data-grid-url-state.ts"
+        }
+      ],
+      "docs": "Docs: https://ui.kadal.cc/docs/data-grid/url-state/ · Wrap your app in the nuqs adapter for your router.",
+      "meta": {
+        "version": "0.1.0",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "data-grid-demo-data",
+      "type": "registry:lib",
+      "title": "Data Grid demo data",
+      "description": "The seeded demo dataset the Kadal UI examples use: people with statuses, plans, money, dates and tags.",
+      "author": "Kadal <hello@kadal.cc>",
+      "files": [
+        {
+          "path": "registry/kadal/lib/data-grid-demo-data.ts",
+          "type": "registry:lib",
+          "target": "@lib/data-grid-demo-data.ts"
+        }
+      ],
+      "meta": {
+        "version": "0.1.0",
+        "license": "MIT"
+      }
+    },
+    {
+      "name": "data-grid-demo",
+      "type": "registry:example",
+      "title": "Data Grid: everything on",
+      "description": "The kitchen-sink example from the docs: every feature on one grid.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-demo.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-demo.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-basic",
+      "type": "registry:example",
+      "title": "Data Grid: basic",
+      "description": "Columns, data, done.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-basic.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-basic.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-virtualized",
+      "type": "registry:example",
+      "title": "Data Grid: 50,000 rows",
+      "description": "Virtualized rows with no pager.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-virtualized.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-virtualized.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-tree",
+      "type": "registry:example",
+      "title": "Data Grid: tree data",
+      "description": "Nested rows with the expander column.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-tree.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-tree.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-server",
+      "type": "registry:example",
+      "title": "Data Grid: server-side with TanStack Query",
+      "description": "Paging, sorting and filtering on the server; the grid renders one page.",
+      "dependencies": [
+        "@tanstack/react-query"
+      ],
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-server.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-server.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-composed",
+      "type": "registry:example",
+      "title": "Data Grid: your own layout",
+      "description": "The parts, arranged your way.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-composed.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-composed.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-url-state-example",
+      "type": "registry:example",
+      "title": "Data Grid: URL state",
+      "description": "Filters, search and page in the URL.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-url-state",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-url-state.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-url-state.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-cell-selection",
+      "type": "registry:example",
+      "title": "Data Grid: cell selection",
+      "description": "Spreadsheet ranges with a live count and a copy-as-TSV button.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data",
+        "button"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-cell-selection.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-cell-selection.tsx"
+        }
+      ],
+      "dependencies": [
+        "lucide-react"
+      ]
+    },
+    {
+      "name": "data-grid-columns",
+      "type": "registry:example",
+      "title": "Data Grid: columns",
+      "description": "Most column kinds on one grid, with a group header, a custom cell and a plain TanStack def.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-columns.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-columns.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-custom-part",
+      "type": "registry:example",
+      "title": "Data Grid: custom toolbar part",
+      "description": "A Reset everything button built with useDataGridContext.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data",
+        "button"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-custom-part.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-custom-part.tsx"
+        }
+      ],
+      "dependencies": [
+        "lucide-react"
+      ]
+    },
+    {
+      "name": "data-grid-density",
+      "type": "registry:example",
+      "title": "Data Grid: density",
+      "description": "Controlled density from a toggle outside the grid.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data",
+        "toggle-group"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-density.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-density.tsx"
+        }
+      ],
+      "dependencies": [
+        "lucide-react"
+      ]
+    },
+    {
+      "name": "data-grid-editing",
+      "type": "registry:example",
+      "title": "Data Grid: inline editing",
+      "description": "Typed editors per kind, validation, async save errors and an edit log.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-editing.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-editing.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-export",
+      "type": "registry:example",
+      "title": "Data Grid: export",
+      "description": "The Export menu plus a custom raw-CSV button through the api, with export: false and an export function.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data",
+        "button"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-export.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-export.tsx"
+        }
+      ],
+      "dependencies": [
+        "lucide-react"
+      ]
+    },
+    {
+      "name": "data-grid-filtering",
+      "type": "registry:example",
+      "title": "Data Grid: filtering",
+      "description": "Every filter kind, an enum with icons and colours, a facet filter applied at start.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-filtering.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-filtering.tsx"
+        }
+      ],
+      "dependencies": [
+        "lucide-react"
+      ]
+    },
+    {
+      "name": "data-grid-grouping",
+      "type": "registry:example",
+      "title": "Data Grid: grouping and aggregation",
+      "description": "Grouped by team with aggregates, a custom aggregatedCell and footer totals.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-grouping.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-grouping.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-i18n",
+      "type": "registry:example",
+      "title": "Data Grid: i18n",
+      "description": "French labels and fr-FR formatting.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-i18n.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-i18n.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-keyboard",
+      "type": "registry:example",
+      "title": "Data Grid: keyboard",
+      "description": "A plain grid with the keys to try.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-keyboard.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-keyboard.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-pagination",
+      "type": "registry:example",
+      "title": "Data Grid: pagination",
+      "description": "300 rows, 25 a page, custom size options, opened on page 3.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-pagination.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-pagination.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-persistence",
+      "type": "registry:example",
+      "title": "Data Grid: persistence",
+      "description": "The view survives a reload (sessionStorage) and saved views.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-persistence.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-persistence.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-pinning",
+      "type": "registry:example",
+      "title": "Data Grid: column pinning",
+      "description": "Checkbox and Name pinned to the start, the actions menu to the end.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data",
+        "button"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-pinning.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-pinning.tsx"
+        }
+      ],
+      "dependencies": [
+        "lucide-react"
+      ]
+    },
+    {
+      "name": "data-grid-reordering",
+      "type": "registry:example",
+      "title": "Data Grid: column reordering",
+      "description": "Drag headers or use Move left/right; a starting order and a non-draggable column.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-reordering.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-reordering.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-resizing",
+      "type": "registry:example",
+      "title": "Data Grid: column resizing",
+      "description": "size, minSize, maxSize, a fixed column, and double-click to fit.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-resizing.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-resizing.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-row-actions",
+      "type": "registry:example",
+      "title": "Data Grid: row actions",
+      "description": "A row menu with pin-to-top, onRowClick and row tinting.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data",
+        "button",
+        "dropdown-menu"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-row-actions.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-row-actions.tsx"
+        }
+      ],
+      "dependencies": [
+        "lucide-react"
+      ]
+    },
+    {
+      "name": "data-grid-row-pinning",
+      "type": "registry:example",
+      "title": "Data Grid: row pinning",
+      "description": "Pin rows to the top or bottom from a row-actions menu.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data",
+        "button",
+        "dropdown-menu"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-row-pinning.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-row-pinning.tsx"
+        }
+      ],
+      "dependencies": [
+        "lucide-react"
+      ]
+    },
+    {
+      "name": "data-grid-search",
+      "type": "registry:example",
+      "title": "Data Grid: global search",
+      "description": "Fuzzy search with a column excluded and a query applied at start.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-search.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-search.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-selection",
+      "type": "registry:example",
+      "title": "Data Grid: selection and bulk actions",
+      "description": "Checkboxes, ranges, per-row rules, bulk actions that change local state.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data",
+        "button"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-selection.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-selection.tsx"
+        }
+      ],
+      "dependencies": [
+        "lucide-react"
+      ]
+    },
+    {
+      "name": "data-grid-sorting",
+      "type": "registry:example",
+      "title": "Data Grid: sorting",
+      "description": "Initial sort, an unsortable column, a custom sort by string length, shift-click multi-sort.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-sorting.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-sorting.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-states",
+      "type": "registry:example",
+      "title": "Data Grid: loading and empty states",
+      "description": "Loaded, refetching, first load, error and empty, switched by buttons.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data",
+        "button",
+        "button-group"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-states.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-states.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-theming",
+      "type": "registry:example",
+      "title": "Data Grid: theming",
+      "description": "Striped, compact, brand header and tinted selected rows with Tailwind classes.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-theming.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-theming.tsx"
+        }
+      ]
+    },
+    {
+      "name": "data-grid-visibility",
+      "type": "registry:example",
+      "title": "Data Grid: column visibility",
+      "description": "Columns hidden at start, one that cannot be hidden, the View popover.",
+      "registryDependencies": [
+        "@kadal/data-grid",
+        "@kadal/data-grid-demo-data"
+      ],
+      "files": [
+        {
+          "path": "registry/kadal/examples/data-grid-visibility.tsx",
+          "type": "registry:example",
+          "target": "@components/examples/data-grid-visibility.tsx"
+        }
+      ]
+    }
+  ]
+}

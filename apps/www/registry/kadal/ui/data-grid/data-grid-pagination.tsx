@@ -40,8 +40,10 @@ export function DataGridPagination<TData extends RowData>({
   const { pageIndex, pageSize } = table.state.pagination;
   const pageCount = Math.max(1, table.getPageCount());
   const total = table.getRowCount();
-  const selected = grid.selectionEnabled ? Object.keys(table.state.rowSelection).length : 0;
-  const sizes = Array.from(new Set([...grid.pagination.pageSizeOptions, pageSize])).sort((a, b) => a - b);
+  const selected = grid.selectionEnabled ? table.getSelectedRowModel().flatRows.length : 0;
+  const sizes = Array.from(new Set([...grid.pagination.pageSizeOptions, pageSize])).sort(
+    (a, b) => a - b,
+  );
   const [goTo, setGoTo] = React.useState("");
 
   return (
@@ -50,7 +52,7 @@ export function DataGridPagination<TData extends RowData>({
       className={cn("flex flex-wrap items-center justify-between gap-2 px-1 text-sm", className)}
     >
       <div className="text-muted-foreground tabular-nums">
-        {showSelection ?? grid.selectionEnabled
+        {(showSelection ?? grid.selectionEnabled)
           ? labels.selectedOf(selected, total)
           : labels.rowsCount(total)}
       </div>
@@ -75,7 +77,9 @@ export function DataGridPagination<TData extends RowData>({
           </Select>
         </label>
         <div className="flex items-center gap-2">
-          <span className="font-medium tabular-nums">{labels.pageOf(pageIndex + 1, pageCount)}</span>
+          <span className="font-medium tabular-nums">
+            {labels.pageOf(pageIndex + 1, pageCount)}
+          </span>
           {(showGoTo ?? pageCount > 5) ? (
             <Input
               type="number"

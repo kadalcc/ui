@@ -81,9 +81,9 @@ export function sanitizeView(input: unknown, fallback: DataGridView): DataGridVi
       .filter((s) => isRecord(s) && typeof s.id === "string")
       .map((s) => ({ id: s.id as string, desc: Boolean(s.desc) })),
     columnVisibility: isRecord(input.columnVisibility)
-      ? Object.fromEntries(
+      ? (Object.fromEntries(
           Object.entries(input.columnVisibility).filter(([, v]) => typeof v === "boolean"),
-        ) as ColumnVisibilityState
+        ) as ColumnVisibilityState)
       : fallback.columnVisibility,
     columnPinning: {
       start: asStringArray(pinning.start),
@@ -91,11 +91,11 @@ export function sanitizeView(input: unknown, fallback: DataGridView): DataGridVi
     },
     columnOrder: asStringArray(input.columnOrder),
     columnSizing: isRecord(input.columnSizing)
-      ? Object.fromEntries(
+      ? (Object.fromEntries(
           Object.entries(input.columnSizing).filter(
             ([, v]) => typeof v === "number" && Number.isFinite(v),
           ),
-        ) as ColumnSizingState
+        ) as ColumnSizingState)
       : fallback.columnSizing,
     grouping: asStringArray(input.grouping),
     pageSize:

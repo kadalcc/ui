@@ -12,9 +12,7 @@ export function arrayMove<T>(items: readonly T[], from: number, to: number): T[]
 /** `true` when `value` is a plain object (not an array, Date, Map, etc.). */
 export function isPlainObject(value: unknown): value is Record<string, unknown> {
   return (
-    typeof value === "object" &&
-    value !== null &&
-    Object.getPrototypeOf(value) === Object.prototype
+    typeof value === "object" && value !== null && Object.getPrototypeOf(value) === Object.prototype
   );
 }
 

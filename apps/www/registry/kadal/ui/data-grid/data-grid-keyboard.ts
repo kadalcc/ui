@@ -17,7 +17,9 @@ export function findCellElement(root: HTMLElement | null, cellId: string): HTMLE
  * The selected cells as a tab-separated rectangle (rows in display order, columns in visible
  * order, values formatted like the cells). What ⌘C puts on the clipboard.
  */
-export function selectedCellsToTsv<TData extends RowData>(grid: DataGridApi<TData>): {
+export function selectedCellsToTsv<TData extends RowData>(
+  grid: DataGridApi<TData>,
+): {
   text: string;
   count: number;
 } {
@@ -30,10 +32,19 @@ export function selectedCellsToTsv<TData extends RowData>(grid: DataGridApi<TDat
   let count = 0;
   const grid2d = rows.map((row) =>
     columns.map((column) => {
-      const cell = row.getAllCellsByColumnId()[column.id] as DataGridCell<TData, unknown> | undefined;
+      const cell = row.getAllCellsByColumnId()[column.id] as
+        | DataGridCell<TData, unknown>
+        | undefined;
       if (!cell || !cell.getIsSelected()) return "";
       count++;
-      return formatValue(cell.getValue(), grid.metaFor(column.id), row.original, grid.locale, "");
+      return formatValue(
+        cell.getValue(),
+        grid.metaFor(column.id),
+        row.original,
+        grid.locale,
+        "",
+        grid.labels,
+      );
     }),
   );
   return { text: toTsv({ headers: [], rows: grid2d }, { headers: false }), count };
@@ -62,11 +73,18 @@ export function useDataGridKeyboard<TData extends RowData>(
 
   const onKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
-      // An editor, a menu, a filter input: not ours.
+      // An editor, a menu, a filter input, anything in the header: not ours.
       const target = e.target as HTMLElement;
-      if (target.closest("input, textarea, select, [role=menu], [role=listbox], [data-slot=data-grid-filter]")) {
+      if (
+        target.closest(
+          "input, textarea, select, thead, [role=menu], [role=listbox], [role=dialog], [data-slot=data-grid-filter]",
+        )
+      ) {
         return;
       }
+      // A button or link inside a cell keeps Enter and Space for itself; arrows still navigate.
+      if ((e.key === "Enter" || e.key === " ") && target.closest("button, a, [role=button]"))
+        return;
       if (!grid.cellSelectionEnabled) return;
       if (grid.editing.cell) return;
 
@@ -113,7 +131,10 @@ export function useDataGridKeyboard<TData extends RowData>(
           const viewport = scrollRef.current?.clientHeight ?? 400;
           const step = Math.max(1, Math.floor(viewport / grid.rowHeight) - 1);
           const at = focused ? rows.findIndex((r) => r.id === focused.row.id) : 0;
-          const next = rows[Math.min(rows.length - 1, Math.max(0, at + (e.key === "PageDown" ? step : -step)))];
+          const next =
+            rows[
+              Math.min(rows.length - 1, Math.max(0, at + (e.key === "PageDown" ? step : -step)))
+            ];
           const column = focused?.column ?? table.getVisibleLeafColumns()[0];
           if (next && column) table.setFocusedCell(next.id, column.id);
           return;

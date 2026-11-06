@@ -68,10 +68,20 @@ export function DataGridCellEditor<TData extends RowData>({
     return initial === null || initial === undefined ? "" : String(initial);
   });
   const committed = React.useRef(false);
+  // The checkbox is a <span role="checkbox">; React's `autoFocus` only reaches form controls.
+  const checkboxRef = React.useRef<HTMLElement | null>(null);
+  React.useEffect(() => {
+    if (type === "checkbox") checkboxRef.current?.focus();
+  }, [type]);
 
   const commit = async (direction?: "next" | "previous" | "down", override?: unknown) => {
     if (committed.current) return;
-    const value = override !== undefined ? override : parseByType(type, raw, spec, row);
+    const value =
+      override !== undefined
+        ? override
+        : type === "checkbox"
+          ? initial
+          : parseByType(type, raw, spec, row);
     const ok = await editing.commit(value);
     if (ok) {
       committed.current = true;
@@ -111,14 +121,17 @@ export function DataGridCellEditor<TData extends RowData>({
     onKeyDown,
     onBlur: () => void commit(),
     autoFocus: true,
-    className: cn("h-full w-full rounded-sm border-0 bg-background px-1.5 shadow-none ring-2 ring-primary ring-inset focus-visible:ring-primary", error && "ring-destructive"),
+    className: cn(
+      "h-full w-full rounded-sm border-0 bg-background px-1.5 shadow-none ring-2 ring-primary ring-inset focus-visible:ring-primary",
+      error && "ring-destructive",
+    ),
   };
 
   if (type === "checkbox") {
     return (
       <div className="flex h-full items-center justify-center" onKeyDown={onKeyDown}>
         <Checkbox
-          autoFocus
+          ref={checkboxRef as React.Ref<never>}
           checked={Boolean(initial)}
           onCheckedChange={(checked) => void commit(undefined, checked)}
           onBlur={() => cancel()}
@@ -140,7 +153,12 @@ export function DataGridCellEditor<TData extends RowData>({
           if (!open && !committed.current) cancel();
         }}
       >
-        <SelectTrigger size="sm" className={common.className} aria-label={common["aria-label"]} onKeyDown={onKeyDown}>
+        <SelectTrigger
+          size="sm"
+          className={common.className}
+          aria-label={common["aria-label"]}
+          onKeyDown={onKeyDown}
+        >
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -170,7 +188,15 @@ export function DataGridCellEditor<TData extends RowData>({
   return (
     <Input
       {...common}
-      type={type === "number" ? "number" : type === "date" ? "date" : type === "datetime" ? "datetime-local" : "text"}
+      type={
+        type === "number"
+          ? "number"
+          : type === "date"
+            ? "date"
+            : type === "datetime"
+              ? "datetime-local"
+              : "text"
+      }
       inputMode={type === "number" ? "decimal" : undefined}
       min={spec.min}
       max={spec.max}

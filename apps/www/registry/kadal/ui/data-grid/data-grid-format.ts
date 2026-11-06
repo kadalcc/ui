@@ -39,6 +39,8 @@ export function formatValue(
   row: unknown,
   locale: string | undefined,
   blank = "—",
+  /** The words for `true` and `false`; pass the grid's labels so exports and facets translate. */
+  booleans: { yes: string; no: string } = { yes: "Yes", no: "No" },
 ): string {
   if (meta?.format) return meta.format(value, row);
   if (value === null || value === undefined || value === "") return blank;
@@ -85,7 +87,7 @@ export function formatValue(
         : blank;
     }
     case "boolean":
-      return value ? "Yes" : "No";
+      return value ? booleans.yes : booleans.no;
     case "enum": {
       const opt = meta.options?.find((o) => String(o.value) === String(value));
       return opt?.label ?? String(value);

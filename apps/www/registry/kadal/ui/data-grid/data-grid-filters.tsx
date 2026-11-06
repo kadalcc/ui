@@ -97,10 +97,12 @@ export function filterSummary(
   switch (kind) {
     case "facet": {
       const items = Array.isArray(value) ? value : [value];
-      const names = items.map((v) =>
-        meta.options?.find((o) => String(o.value) === String(v))?.label ?? String(v),
+      const names = items.map(
+        (v) => meta.options?.find((o) => String(o.value) === String(v))?.label ?? String(v),
       );
-      return names.length > 2 ? `${names.slice(0, 2).join(", ")} +${names.length - 2}` : names.join(", ");
+      return names.length > 2
+        ? `${names.slice(0, 2).join(", ")} +${names.length - 2}`
+        : names.join(", ");
     }
     case "text": {
       const v = value as DataGridTextFilterValue | string;
@@ -135,7 +137,11 @@ export function filterSummary(
 
 // ── The filter editors ────────────────────────────────────────────────────────────────────────────
 
-function FacetFilter<TData extends RowData>({ column }: { column: DataGridColumn<TData, unknown> }) {
+function FacetFilter<TData extends RowData>({
+  column,
+}: {
+  column: DataGridColumn<TData, unknown>;
+}) {
   const grid = useDataGridContext<TData>();
   const { labels } = grid;
   const meta = grid.metaFor(column.id);
@@ -154,7 +160,12 @@ function FacetFilter<TData extends RowData>({ column }: { column: DataGridColumn
     for (const option of meta.options ?? []) {
       const key = String(option.value);
       seen.add(key);
-      list.push({ key, value: option.value, label: option.label, count: facets.get(option.value) ?? facetCount(facets, key) });
+      list.push({
+        key,
+        value: option.value,
+        label: option.label,
+        count: facets.get(option.value) ?? facetCount(facets, key),
+      });
     }
     for (const [value, count] of facets) {
       const key = String(value);
@@ -191,9 +202,15 @@ function FacetFilter<TData extends RowData>({ column }: { column: DataGridColumn
           aria-label={labels.filterPlaceholder}
         />
       </div>
-      <ul className="-mx-1 max-h-56 overflow-y-auto py-0.5" role="listbox" aria-multiselectable="true">
+      <ul
+        className="-mx-1 max-h-56 overflow-y-auto py-0.5"
+        role="listbox"
+        aria-multiselectable="true"
+      >
         {entries.length === 0 ? (
-          <li className="px-2 py-4 text-center text-sm text-muted-foreground">{labels.filterNoResults}</li>
+          <li className="px-2 py-4 text-center text-sm text-muted-foreground">
+            {labels.filterNoResults}
+          </li>
         ) : (
           entries.map((e) => {
             const checked = selected.has(e.key);
@@ -202,7 +219,9 @@ function FacetFilter<TData extends RowData>({ column }: { column: DataGridColumn
                 <label className="flex cursor-default items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-accent">
                   <Checkbox checked={checked} onCheckedChange={() => toggle(e.key, e.value)} />
                   <span className="min-w-0 flex-1 truncate">{e.label}</span>
-                  <span className="font-mono text-xs text-muted-foreground tabular-nums">{e.count}</span>
+                  <span className="font-mono text-xs text-muted-foreground tabular-nums">
+                    {e.count}
+                  </span>
                 </label>
               </li>
             );
@@ -231,23 +250,32 @@ function facetCount(facets: Map<unknown, number>, key: string): number {
 function TextFilter<TData extends RowData>({ column }: { column: DataGridColumn<TData, unknown> }) {
   const { labels } = useDataGridContext<TData>();
   const raw = column.getFilterValue() as DataGridTextFilterValue | string | undefined;
-  const value: DataGridTextFilterValue =
-    typeof raw === "string" ? { op: "contains", value: raw } : (raw ?? { op: "contains", value: "" });
-  const needsValue = value.op !== "isEmpty" && value.op !== "isNotEmpty";
+  const applied: DataGridTextFilterValue | null =
+    raw === undefined ? null : typeof raw === "string" ? { op: "contains", value: raw } : raw;
+  // An operator with an empty value is no filter at all (the table drops it), so the chosen
+  // operator lives here until the first character arrives.
+  const [pendingOp, setPendingOp] = React.useState<DataGridTextFilterOp>(applied?.op ?? "contains");
+  const op = applied?.op ?? pendingOp;
+  const text = applied?.value ?? "";
+  const needsValue = op !== "isEmpty" && op !== "isNotEmpty";
   const set = (next: DataGridTextFilterValue) => column.setFilterValue(next);
   return (
     <div className="flex flex-col gap-2">
       <Select
-        value={value.op}
-        onValueChange={(op) => set({ ...value, op: op as DataGridTextFilterOp })}
+        value={op}
+        onValueChange={(next) => {
+          const nextOp = next as DataGridTextFilterOp;
+          setPendingOp(nextOp);
+          set({ op: nextOp, value: text });
+        }}
       >
         <SelectTrigger size="sm" className="w-full" aria-label={labels.filter}>
-          <SelectValue>{(op: DataGridTextFilterOp) => opLabel(op, labels)}</SelectValue>
+          <SelectValue>{(current: DataGridTextFilterOp) => opLabel(current, labels)}</SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {TEXT_OPS.map((op) => (
-            <SelectItem key={op} value={op}>
-              {opLabel(op, labels)}
+          {TEXT_OPS.map((o) => (
+            <SelectItem key={o} value={o}>
+              {opLabel(o, labels)}
             </SelectItem>
           ))}
         </SelectContent>
@@ -255,8 +283,8 @@ function TextFilter<TData extends RowData>({ column }: { column: DataGridColumn<
       {needsValue ? (
         <Input
           autoFocus
-          value={value.value}
-          onChange={(e) => set({ ...value, value: e.target.value })}
+          value={text}
+          onChange={(e) => set({ op, value: e.target.value })}
           placeholder={labels.filterPlaceholder}
           className="h-8 text-sm"
           aria-label={labels.filter}
@@ -266,7 +294,11 @@ function TextFilter<TData extends RowData>({ column }: { column: DataGridColumn<
   );
 }
 
-function RangeFilter<TData extends RowData>({ column }: { column: DataGridColumn<TData, unknown> }) {
+function RangeFilter<TData extends RowData>({
+  column,
+}: {
+  column: DataGridColumn<TData, unknown>;
+}) {
   const { labels } = useDataGridContext<TData>();
   const value = (column.getFilterValue() as DataGridRangeFilterValue | undefined) ?? {};
   const [min, max] = column.getFacetedMinMaxValues() ?? [undefined, undefined];
@@ -303,7 +335,11 @@ function RangeFilter<TData extends RowData>({ column }: { column: DataGridColumn
   );
 }
 
-function DateRangeFilter<TData extends RowData>({ column }: { column: DataGridColumn<TData, unknown> }) {
+function DateRangeFilter<TData extends RowData>({
+  column,
+}: {
+  column: DataGridColumn<TData, unknown>;
+}) {
   const grid = useDataGridContext<TData>();
   const { labels } = grid;
   const withTime = grid.metaFor(column.id).kind === "datetime";
@@ -337,7 +373,11 @@ function DateRangeFilter<TData extends RowData>({ column }: { column: DataGridCo
   );
 }
 
-function BooleanFilter<TData extends RowData>({ column }: { column: DataGridColumn<TData, unknown> }) {
+function BooleanFilter<TData extends RowData>({
+  column,
+}: {
+  column: DataGridColumn<TData, unknown>;
+}) {
   const { labels } = useDataGridContext<TData>();
   const value = column.getFilterValue() as boolean | undefined;
   const options: { key: string; label: string; value: boolean | undefined }[] = [
@@ -398,7 +438,10 @@ export function DataGridFilterChips<TData extends RowData>({ className }: { clas
   const filters = table.state.columnFilters;
   if (!filters.length) return null;
   return (
-    <div className={cn("flex flex-wrap items-center gap-1.5", className)} data-slot="data-grid-filter-chips">
+    <div
+      className={cn("flex flex-wrap items-center gap-1.5", className)}
+      data-slot="data-grid-filter-chips"
+    >
       {filters.map((f) => {
         const column = table.getColumn(f.id);
         if (!column) return null;

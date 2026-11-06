@@ -140,13 +140,20 @@ export interface UseDataGridOptions<TData extends RowData> {
   columns: ReadonlyArray<DataGridColumnDef<TData, any>>;
   /**
    * Names this grid: the TanStack devtools label and the default persistence key. Give every grid
-   * on a page its own.
+   * on a page its own. (`key` means the same to the hook, but React keeps `key` for itself on
+   * `<DataGrid>`, so the component only ever sees `name`.)
    */
+  name?: string;
+  /** @deprecated Use `name`; it survives being passed as a prop. */
   key?: string;
   getRowId?: DataGridTableOptions<TData>["getRowId"];
   /** Tree data: where a row's children are. Turns expanding on. */
   getSubRows?: DataGridTableOptions<TData>["getSubRows"];
-  /** Starting state for any slice, plus `density`. Persisted state, if any, wins over this. */
+  /**
+   * Starting state for any slice, plus `density`. A persisted view, if there is one, wins over the
+   * view slices here (sorting, visibility, pinning, order, sizing, grouping); "Reset view" comes
+   * back to these.
+   */
   initialState?: Partial<DataGridState> & { density?: DataGridDensity };
   /** `false` shows every row with no pager. */
   pagination?: false | DataGridPaginationOptions;
@@ -167,7 +174,7 @@ export interface UseDataGridOptions<TData extends RowData> {
   cellSelection?: boolean;
   /** Inline editing of `editable` columns. Default on when any column is editable. */
   editing?: boolean | DataGridEditingOptions<TData>;
-  /** Shorthand for `editing.onCellEdit`. */
+  /** Shorthand for `editing.onCellEdit` (the one inside `editing` wins when both are given). */
   onCellEdit?: (edit: DataGridCellEdit<TData, unknown>) => void | Promise<void>;
   /** Group-by from the column menu and the grouping bar. Default on. */
   grouping?: boolean;
@@ -180,7 +187,10 @@ export interface UseDataGridOptions<TData extends RowData> {
   locale?: string;
   /** Controlled state from elsewhere (the URL). */
   state?: DataGridStateAdapter;
-  /** Any other TanStack table option, applied last. */
+  /**
+   * Any other TanStack table option, applied last. The feature set itself is fixed: it is
+   * `dataGridFeatures` in data-grid-features.ts, which is your file to extend.
+   */
   table?: Partial<Omit<DataGridTableOptions<TData>, "data" | "columns" | "features">>;
 }
 
@@ -272,6 +282,25 @@ function inferKind(value: unknown): DataGridColumnMeta["kind"] {
 const resolve = <T,>(updater: Updater<T>, old: T): T =>
   typeof updater === "function" ? (updater as (o: T) => T)(old) : updater;
 
+/** The state slices a persisted view owns; everything else in `initialState` passes straight through. */
+const VIEW_KEYS = [
+  "sorting",
+  "columnVisibility",
+  "columnPinning",
+  "columnOrder",
+  "columnSizing",
+  "grouping",
+] as const;
+
+function viewSlicesOf(state: Partial<DataGridState> | undefined): Partial<DataGridView> {
+  const out: Partial<DataGridView> = {};
+  if (!state) return out;
+  for (const key of VIEW_KEYS) {
+    if (state[key] !== undefined) (out as Record<string, unknown>)[key] = state[key];
+  }
+  return out;
+}
+
 // ── The hook ──────────────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -284,7 +313,8 @@ export function useDataGrid<TData extends RowData>(
   const {
     data,
     columns,
-    key = "grid",
+    name,
+    key: keyOption,
     getRowId,
     getSubRows,
     initialState,
@@ -307,6 +337,7 @@ export function useDataGrid<TData extends RowData>(
     state: adapter,
     table: tableOverrides,
   } = options;
+  const key = name ?? keyOption ?? "grid";
 
   const labels = React.useMemo(() => resolveLabels(labelsOption), [labelsOption]);
 
@@ -330,12 +361,16 @@ export function useDataGrid<TData extends RowData>(
           : persist;
   const storage = persistOptions?.storage ?? localStorageStorage;
   const storageKey = storageKeyFor(persistOptions?.key ?? key, persistOptions?.scope);
+  // What "Reset view" returns to and what a first visit shows: the defaults, with `initialState`'s
+  // view slices on top.
   const baseView = React.useMemo(
-    () =>
-      defaultView(
+    (): DataGridView => ({
+      ...defaultView(
         pagination === false ? Number.MAX_SAFE_INTEGER : pagination.pageSize,
         defaultDensity ?? initialState?.density ?? "comfortable",
       ),
+      ...viewSlicesOf(initialState),
+    }),
     // The defaults only matter at mount and on reset.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -384,7 +419,7 @@ export function useDataGrid<TData extends RowData>(
     editingOption === false
       ? null
       : typeof editingOption === "object"
-        ? editingOption
+        ? { ...editingOption, onCellEdit: editingOption.onCellEdit ?? onCellEdit }
         : { onCellEdit };
   const [editingCell, setEditingCell] = React.useState<DataGridEditingCell | null>(null);
   const [editError, setEditError] = React.useState<string | null>(null);
@@ -405,6 +440,9 @@ export function useDataGrid<TData extends RowData>(
     getRowId,
     getSubRows,
     initialState: {
+      // The non-view slices (filters, expansion, selection…) start as given; the view comes from
+      // storage when there is one, else from the defaults + `initialState` (see `baseView`).
+      ...stripViewAndDensity(initialState),
       sorting: startView.sorting,
       columnVisibility: startView.columnVisibility,
       columnPinning: startView.columnPinning,
@@ -415,7 +453,6 @@ export function useDataGrid<TData extends RowData>(
         pageIndex: adapter?.pageIndex ?? initialState?.pagination?.pageIndex ?? 0,
         pageSize: pagination === false ? Number.MAX_SAFE_INTEGER : startView.pageSize,
       },
-      ...stripDensity(initialState),
     },
     defaultColumn: {
       size: 160,
@@ -425,6 +462,8 @@ export function useDataGrid<TData extends RowData>(
       // and group rows show the column's aggregate formatted the same way.
       cell: (ctx) => <DataGridDefaultCell {...ctx} />,
       aggregatedCell: (ctx) => <DataGridAggregatedCell {...ctx} />,
+      // A plain TanStack column gets a filter that follows whatever the header's filter UI sends.
+      filterFn: "byValue",
     },
     // sorting
     enableSorting: true,
@@ -469,6 +508,8 @@ export function useDataGrid<TData extends RowData>(
     enableCellRangeSelection: true,
     enableMultiCellRangeSelection: true,
     enableCellSelectionDrag: true,
+    // An edit changes `data`; the focused cell must not jump back to the top-left for it.
+    autoResetCellSelection: false,
     // columns
     enableHiding: true,
     enableColumnPinning: true,
@@ -489,7 +530,9 @@ export function useDataGrid<TData extends RowData>(
     ...(adapter
       ? {
           state: {
-            ...(adapter.columnFilters !== undefined ? { columnFilters: adapter.columnFilters } : {}),
+            ...(adapter.columnFilters !== undefined
+              ? { columnFilters: adapter.columnFilters }
+              : {}),
             ...(adapter.globalFilter !== undefined ? { globalFilter: adapter.globalFilter } : {}),
             ...(adapter.sorting !== undefined ? { sorting: adapter.sorting } : {}),
             ...(adapter.grouping !== undefined ? { grouping: adapter.grouping } : {}),
@@ -615,7 +658,8 @@ export function useDataGrid<TData extends RowData>(
       remove: (id) => {
         write({
           views: persistedRef.current.views.filter((v) => v.id !== id),
-          activeViewId: persistedRef.current.activeViewId === id ? null : persistedRef.current.activeViewId,
+          activeViewId:
+            persistedRef.current.activeViewId === id ? null : persistedRef.current.activeViewId,
         });
       },
       rename: (id, name) => {
@@ -695,9 +739,17 @@ export function useDataGrid<TData extends RowData>(
     [editingOptions, metaFor],
   );
 
+  // Editing is on when it is not off and some column can be edited; otherwise cells are plain
+  // cells, not "read-only" ones.
+  const anyEditable =
+    Boolean(editingOptions) &&
+    table
+      .getAllLeafColumns()
+      .some((c) => Boolean((c.columnDef.meta as DataGridColumnMeta | undefined)?.editable));
+
   const editing: DataGridEditingApi<TData> = React.useMemo(
     () => ({
-      enabled: Boolean(editingOptions),
+      enabled: anyEditable,
       cell: editingCell,
       error: editError,
       start: (rowId, columnId) => {
@@ -725,6 +777,15 @@ export function useDataGrid<TData extends RowData>(
         if (Object.is(previous, value)) {
           setEditingCell(null);
           return true;
+        }
+        // A number editor's bounds are a rule, not a hint on the input.
+        if (spec?.type === "number" && typeof value === "number") {
+          const below = spec.min !== undefined && value < spec.min;
+          const above = spec.max !== undefined && value > spec.max;
+          if (below || above) {
+            setEditError(labels.outOfRange(spec.min, spec.max));
+            return false;
+          }
         }
         const problem = spec?.validate?.(value, row.original);
         if (problem) {
@@ -754,23 +815,27 @@ export function useDataGrid<TData extends RowData>(
       isEditable: (cell) => editorFor(cell) !== null,
       editorFor,
     }),
-    [editingOptions, editingCell, editError, table, editorFor, metaFor, labels.invalid],
+    [anyEditable, editingOptions, editingCell, editError, table, editorFor, metaFor, labels],
   );
 
   // ── Export ───────────────────────────────────────────────────────────────────────────────────
   const exportTable = React.useCallback(
     (opts: DataGridExportOptions = {}): ExportTable => {
       const { selectedOnly = false, formatted = true, visibleOnly = true } = opts;
-      const columnsToExport = (visibleOnly ? table.getVisibleLeafColumns() : table.getAllLeafColumns())
-        .filter((c) => {
-          const meta = metaFor(c.id);
-          if (meta.export === false) return false;
-          if (meta.kind && UTILITY_KINDS.has(meta.kind)) return false;
-          return Boolean(c.accessorFn) || typeof meta.export === "function";
-        });
-      const rows = selectedOnly
-        ? table.getFilteredSelectedRowModel().rows
-        : table.getPrePaginatedRowModel().rows.filter((r) => !r.getIsGrouped());
+      const columnsToExport = (
+        visibleOnly ? table.getVisibleLeafColumns() : table.getAllLeafColumns()
+      ).filter((c) => {
+        const meta = metaFor(c.id);
+        if (meta.export === false) return false;
+        if (meta.kind && UTILITY_KINDS.has(meta.kind)) return false;
+        return Boolean(c.accessorFn) || typeof meta.export === "function";
+      });
+      // `flatRows` reaches the leaf rows under groups and the children of tree rows; `rows` would
+      // hold only the top level (group rows, when grouped: nothing to export).
+      const model = selectedOnly
+        ? table.getFilteredSelectedRowModel()
+        : table.getPrePaginatedRowModel();
+      const rows = model.flatRows.filter((r) => !r.getIsGrouped());
       return {
         headers: columnsToExport.map((c) => labelFor(c.id)),
         rows: rows.map((row) =>
@@ -779,12 +844,12 @@ export function useDataGrid<TData extends RowData>(
             const raw = row.getValue(c.id);
             if (typeof meta.export === "function") return meta.export(raw, row.original);
             if (!formatted) return raw;
-            return formatValue(raw, meta, row.original, locale, "");
+            return formatValue(raw, meta, row.original, locale, "", labels);
           }),
         ),
       };
     },
-    [table, metaFor, labelFor, locale],
+    [table, metaFor, labelFor, locale, labels],
   );
 
   const exportCsv = React.useCallback(
@@ -845,11 +910,21 @@ export function useDataGrid<TData extends RowData>(
   };
 }
 
-function stripDensity(
+function stripViewAndDensity(
   state: (Partial<DataGridState> & { density?: DataGridDensity }) | undefined,
 ): Partial<DataGridState> {
   if (!state) return {};
-  const { density: _density, ...rest } = state;
+  const {
+    density: _density,
+    sorting: _sorting,
+    columnVisibility: _visibility,
+    columnPinning: _pinning,
+    columnOrder: _order,
+    columnSizing: _sizing,
+    grouping: _grouping,
+    pagination: _pagination,
+    ...rest
+  } = state;
   return rest;
 }
 

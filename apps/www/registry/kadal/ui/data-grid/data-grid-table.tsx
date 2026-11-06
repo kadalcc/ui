@@ -58,14 +58,12 @@ export function DataGridTable<TData extends RowData>({
   const headerRowRef = React.useRef<HTMLTableRowElement | null>(null);
   const filled = useFillHeight(scrollRef, fillHeight);
 
+  // Pinned rows render outside the virtual list, so they stay mounted (and sticky) however far
+  // the rest scrolls. TanStack memoises these getters; no need to again.
   const rowModel = table.getRowModel();
-  const rows = React.useMemo(
-    () =>
-      grid.rowPinningEnabled
-        ? [...table.getTopRows(), ...table.getCenterRows(), ...table.getBottomRows()]
-        : rowModel.rows,
-    [grid.rowPinningEnabled, table, rowModel],
-  );
+  const topRows = grid.rowPinningEnabled ? table.getTopRows() : NO_ROWS;
+  const bottomRows = grid.rowPinningEnabled ? table.getBottomRows() : NO_ROWS;
+  const rows = grid.rowPinningEnabled ? table.getCenterRows() : rowModel.rows;
   const leafColumns = table.getVisibleLeafColumns();
   const totalRows = table.getRowCount();
 
@@ -146,7 +144,7 @@ export function DataGridTable<TData extends RowData>({
   const hasFooter = leafColumns.some((c) => c.columnDef.footer !== undefined);
 
   const isFiltered = table.state.columnFilters.length > 0 || Boolean(table.state.globalFilter);
-  const empty = rows.length === 0;
+  const empty = rows.length === 0 && topRows.length === 0 && bottomRows.length === 0;
   const overlay: "loading" | "error" | "empty" | null = ui.error
     ? "error"
     : empty && ui.loading
@@ -175,7 +173,8 @@ export function DataGridTable<TData extends RowData>({
         table.setColumnOrder(arrayMove(order, from, to));
       }}
       onDragEnd={(event) => {
-        if (event.canceled && orderBeforeDrag.current) table.setColumnOrder(orderBeforeDrag.current);
+        if (event.canceled && orderBeforeDrag.current)
+          table.setColumnOrder(orderBeforeDrag.current);
         orderBeforeDrag.current = null;
       }}
     >
@@ -185,6 +184,8 @@ export function DataGridTable<TData extends RowData>({
           "relative flex min-h-0 flex-col rounded-lg border bg-background",
           // A fixed height wins over flexing; otherwise fill whatever the parent gives.
           height !== undefined || filled !== undefined ? "flex-none" : "flex-1",
+          // With no rows and no height of its own, leave room for the message below the header.
+          overlay && height === undefined && filled === undefined && "min-h-48",
           className,
         )}
         style={{ height: height ?? filled }}
@@ -192,9 +193,11 @@ export function DataGridTable<TData extends RowData>({
         <div
           ref={scrollRef}
           role="grid"
-          aria-rowcount={totalRows + 1}
+          aria-rowcount={totalRows + headerGroups.length}
           aria-colcount={leafColumns.length}
-          aria-multiselectable={grid.selectionEnabled && table.options.enableMultiRowSelection !== false}
+          aria-multiselectable={
+            grid.selectionEnabled && table.options.enableMultiRowSelection !== false
+          }
           aria-busy={ui.loading || undefined}
           aria-describedby={undefined}
           className="relative flex min-h-0 flex-1 flex-col overflow-auto rounded-[inherit] outline-none"
@@ -202,8 +205,16 @@ export function DataGridTable<TData extends RowData>({
         >
           <table
             data-slot="data-grid-table"
-            className="shrink-0 caption-bottom text-sm"
-            style={{ width: table.getTotalSize(), tableLayout: "fixed", borderCollapse: "separate", borderSpacing: 0 }}
+            className={cn(
+              "shrink-0 caption-bottom text-sm",
+              grid.cellSelectionEnabled && "select-none",
+            )}
+            style={{
+              width: table.getTotalSize(),
+              tableLayout: "fixed",
+              borderCollapse: "separate",
+              borderSpacing: 0,
+            }}
           >
             <thead
               className={cn("bg-background", stickyHeader && "sticky top-0 z-20")}
@@ -223,31 +234,66 @@ export function DataGridTable<TData extends RowData>({
               ))}
             </thead>
             <tbody role="rowgroup">
+              {topRows.map((row, i) => (
+                <DataGridRowView
+                  key={row.id}
+                  row={row}
+                  index={i}
+                  pinnedOffset={i}
+                  striped={striped}
+                  className={getRowClassName?.(row)}
+                  onClick={onRowClick}
+                  onEditorDone={onEditorDone}
+                  headerRows={headerGroups.length}
+                  footerRows={hasFooter ? 1 : 0}
+                />
+              ))}
               {paddingTop > 0 ? (
                 <tr aria-hidden="true">
                   <td style={{ height: paddingTop, padding: 0 }} colSpan={leafColumns.length} />
                 </tr>
               ) : null}
-              {(virtual ? virtualItems.map((item) => ({ row: rows[item.index]!, item })) : rows.map((row) => ({ row, item: null }))).map(
-                ({ row, item }) => (
-                  <DataGridRowView
-                    key={row.id}
-                    row={row}
-                    measureRef={item ? virtualizer.measureElement : undefined}
-                    index={item?.index ?? row.getDisplayIndex()}
-                    striped={striped}
-                    className={getRowClassName?.(row)}
-                    onClick={onRowClick}
-                    onEditorDone={onEditorDone}
-                    headerRows={headerGroups.length}
-                  />
-                ),
-              )}
+              {(virtual
+                ? virtualItems.map((item) => ({
+                    row: rows[item.index]!,
+                    item,
+                    position: item.index,
+                  }))
+                : rows.map((row, position) => ({ row, item: null, position }))
+              ).map(({ row, item, position }) => (
+                <DataGridRowView
+                  key={row.id}
+                  row={row}
+                  measureRef={item ? virtualizer.measureElement : undefined}
+                  index={topRows.length + position}
+                  pinnedOffset={0}
+                  striped={striped}
+                  className={getRowClassName?.(row)}
+                  onClick={onRowClick}
+                  onEditorDone={onEditorDone}
+                  headerRows={headerGroups.length}
+                  footerRows={hasFooter ? 1 : 0}
+                />
+              ))}
               {paddingBottom > 0 ? (
                 <tr aria-hidden="true">
                   <td style={{ height: paddingBottom, padding: 0 }} colSpan={leafColumns.length} />
                 </tr>
               ) : null}
+              {bottomRows.map((row, i) => (
+                <DataGridRowView
+                  key={row.id}
+                  row={row}
+                  index={topRows.length + rows.length + i}
+                  pinnedOffset={bottomRows.length - 1 - i}
+                  striped={striped}
+                  className={getRowClassName?.(row)}
+                  onClick={onRowClick}
+                  onEditorDone={onEditorDone}
+                  headerRows={headerGroups.length}
+                  footerRows={hasFooter ? 1 : 0}
+                />
+              ))}
             </tbody>
             {hasFooter ? (
               <tfoot className="sticky bottom-0 z-10 bg-muted/60 backdrop-blur">
@@ -318,10 +364,12 @@ export function DataGridTable<TData extends RowData>({
                 ) : null}
               </Empty>
             ) : (
-              ui.emptyState ?? (
+              (ui.emptyState ?? (
                 <Empty className="border-0">
                   <EmptyHeader>
-                    <EmptyMedia variant="icon">{isFiltered ? <SearchXIcon /> : <InboxIcon />}</EmptyMedia>
+                    <EmptyMedia variant="icon">
+                      {isFiltered ? <SearchXIcon /> : <InboxIcon />}
+                    </EmptyMedia>
                     <EmptyTitle>{isFiltered ? labels.emptyFiltered : labels.empty}</EmptyTitle>
                   </EmptyHeader>
                   {isFiltered ? (
@@ -337,7 +385,7 @@ export function DataGridTable<TData extends RowData>({
                     </Button>
                   ) : null}
                 </Empty>
-              )
+              ))
             )}
           </div>
         ) : null}
@@ -348,32 +396,41 @@ export function DataGridTable<TData extends RowData>({
 
 // ── Rows and cells ────────────────────────────────────────────────────────────────────────────────
 
+const NO_ROWS: never[] = [];
+
 interface DataGridRowViewProps<TData extends RowData> {
   row: DataGridRow<TData>;
   index: number;
+  /** For a pinned row: how many pinned rows sit between it and the edge it sticks to. */
+  pinnedOffset: number;
   measureRef?: (el: HTMLTableRowElement | null) => void;
   striped: boolean;
   className?: string;
   onClick?: (row: DataGridRow<TData>, event: React.MouseEvent) => void;
   onEditorDone: (direction?: "next" | "previous" | "down") => void;
   headerRows: number;
+  footerRows: number;
 }
 
 function DataGridRowView<TData extends RowData>({
   row,
   index,
+  pinnedOffset,
   measureRef,
   striped,
   className,
   onClick,
   onEditorDone,
   headerRows,
+  footerRows,
 }: DataGridRowViewProps<TData>) {
   const grid = useDataGridContext<TData>();
   const { table } = grid;
   const selected = row.getIsSelected();
   const pinned = grid.rowPinningEnabled ? row.getIsPinned() : false;
-  const hasSelectColumn = table.getVisibleLeafColumns().some((c) => grid.metaFor(c.id).kind === "select");
+  const hasSelectColumn = table
+    .getVisibleLeafColumns()
+    .some((c) => grid.metaFor(c.id).kind === "select");
   const grouped = row.getIsGrouped();
 
   return (
@@ -395,21 +452,38 @@ function DataGridRowView<TData extends RowData>({
         grouped && "bg-muted/30 font-medium",
         selected && "bg-primary/5 hover:bg-primary/10",
         pinned === "top" && "sticky z-10 bg-background shadow-[inset_0_-1px_0_0_var(--border)]",
-        pinned === "bottom" && "sticky bottom-0 z-10 bg-background shadow-[inset_0_1px_0_0_var(--border)]",
+        pinned === "bottom" && "sticky z-10 bg-background shadow-[inset_0_1px_0_0_var(--border)]",
         className,
       )}
-      style={pinned === "top" ? { top: `calc(var(--dg-row-height) * ${headerRows})` } : undefined}
+      // Each pinned row sticks just past the ones before it (and the header, or the footer).
+      style={
+        pinned === "top"
+          ? { top: `calc(var(--dg-row-height) * ${headerRows + pinnedOffset})` }
+          : pinned === "bottom"
+            ? { bottom: `calc(var(--dg-row-height) * ${footerRows + pinnedOffset})` }
+            : undefined
+      }
       onClick={(e) => {
         onClick?.(row, e);
         if (e.defaultPrevented) return;
         // No checkbox column: the row itself toggles selection.
-        if (grid.selectionEnabled && !hasSelectColumn && !grid.cellSelectionEnabled && row.getCanSelect()) {
+        if (
+          grid.selectionEnabled &&
+          !hasSelectColumn &&
+          !grid.cellSelectionEnabled &&
+          row.getCanSelect()
+        ) {
           row.getToggleSelectedHandler()(e);
         }
       }}
     >
       {row.getVisibleCells().map((cell, colIndex) => (
-        <DataGridCellView key={cell.id} cell={cell} colIndex={colIndex} onEditorDone={onEditorDone} />
+        <DataGridCellView
+          key={cell.id}
+          cell={cell}
+          colIndex={colIndex}
+          onEditorDone={onEditorDone}
+        />
       ))}
     </tr>
   );
@@ -432,11 +506,14 @@ function DataGridCellView<TData extends RowData>({
   const isSelected = cellSelection && cell.getIsSelected();
   const isFocused = cellSelection && cell.getIsFocused();
   const edges = isSelected ? cell.getSelectionEdges() : null;
-  const isEditing = grid.editing.cell?.rowId === row.id && grid.editing.cell?.columnId === column.id;
+  const isEditing =
+    grid.editing.cell?.rowId === row.id && grid.editing.cell?.columnId === column.id;
   const editor = grid.editing.enabled && !row.getIsGrouped() ? grid.editing.editorFor(cell) : null;
   const value = cell.getValue();
   const extraClass =
-    typeof meta.cellClassName === "function" ? meta.cellClassName(value, row.original) : meta.cellClassName;
+    typeof meta.cellClassName === "function"
+      ? meta.cellClassName(value, row.original)
+      : meta.cellClassName;
 
   let content: React.ReactNode;
   if (isEditing && editor) {
@@ -444,7 +521,10 @@ function DataGridCellView<TData extends RowData>({
   } else if (cell.getIsGrouped()) {
     content = <DataGridGroupCell {...cell.getContext()} />;
   } else if (cell.getIsAggregated()) {
-    content = flexRender(column.columnDef.aggregatedCell ?? column.columnDef.cell, cell.getContext());
+    content = flexRender(
+      column.columnDef.aggregatedCell ?? column.columnDef.cell,
+      cell.getContext(),
+    );
   } else if (cell.getIsPlaceholder()) {
     content = null;
   } else {
@@ -466,7 +546,7 @@ function DataGridCellView<TData extends RowData>({
       aria-readonly={grid.editing.enabled && !editor ? true : undefined}
       tabIndex={cellSelection ? cell.getTabIndex() : -1}
       className={cn(
-        "relative h-(--dg-row-height) border-b px-2 align-middle text-sm outline-none",
+        "relative h-(--dg-row-height) overflow-hidden border-b px-2 align-middle text-sm outline-none",
         meta.wrap ? "whitespace-normal" : "whitespace-nowrap",
         alignClass(meta.align),
         pinningClasses(column),
@@ -483,7 +563,9 @@ function DataGridCellView<TData extends RowData>({
       )}
       style={getPinningStyles(column)}
       onMouseDown={cellSelection && !isEditing ? cell.getSelectionStartHandler() : undefined}
-      onMouseEnter={cellSelection && table._isSelectingCells ? cell.getSelectionExtendHandler() : undefined}
+      onMouseEnter={
+        cellSelection && table._isSelectingCells ? cell.getSelectionExtendHandler() : undefined
+      }
       onDoubleClick={
         editor && !isEditing
           ? (e) => {

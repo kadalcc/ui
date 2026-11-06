@@ -83,6 +83,13 @@ export interface DataGridLabels {
   pinRowBottom: string;
   unpinRow: string;
   rowActions: string;
+  columnMenu: string;
+  moveLeft: string;
+  moveRight: string;
+  /** An aggregate of many distinct values, e.g. "12 values". */
+  values: (count: number) => string;
+  /** A number editor's bounds were crossed. Either bound may be missing. */
+  outOfRange: (min: number | undefined, max: number | undefined) => string;
   loading: string;
   empty: string;
   emptyFiltered: string;
@@ -182,6 +189,18 @@ export const defaultLabels: DataGridLabels = {
   pinRowBottom: "Pin row to bottom",
   unpinRow: "Unpin row",
   rowActions: "Row actions",
+  columnMenu: "Column menu",
+  moveLeft: "Move left",
+  moveRight: "Move right",
+  values: (n) => (n === 1 ? "1 value" : `${n} values`),
+  outOfRange: (min, max) =>
+    min !== undefined && max !== undefined
+      ? `Must be between ${min} and ${max}`
+      : min !== undefined
+        ? `Must be at least ${min}`
+        : max !== undefined
+          ? `Must be at most ${max}`
+          : "Out of range",
   loading: "Loading…",
   empty: "No records found.",
   emptyFiltered: "No rows match the current filters.",

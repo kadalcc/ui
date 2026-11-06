@@ -35,7 +35,9 @@ export function DataGridDefaultCell<TData extends RowData, TValue>(
     case "expander":
       return <DataGridExpanderCell {...(ctx as unknown as DataGridCellContext<TData, unknown>)} />;
     case "rowNumber":
-      return <span className="tabular-nums text-muted-foreground">{ctx.row.getDisplayIndex() + 1}</span>;
+      return (
+        <span className="tabular-nums text-muted-foreground">{ctx.row.getDisplayIndex() + 1}</span>
+      );
     case "boolean":
       return (
         <span
@@ -99,7 +101,7 @@ export function DataGridDefaultCell<TData extends RowData, TValue>(
       );
     }
     case "link": {
-      const text = formatValue(value, meta, row, grid.locale, grid.labels.blank);
+      const text = formatValue(value, meta, row, grid.locale, grid.labels.blank, grid.labels);
       if (value === null || value === undefined || value === "") {
         return <span className="text-muted-foreground">{text}</span>;
       }
@@ -109,7 +111,8 @@ export function DataGridDefaultCell<TData extends RowData, TValue>(
           href={href}
           target={meta.target ?? "_blank"}
           rel="noreferrer"
-          className="text-primary underline-offset-4 hover:underline"
+          className="inline-block max-w-full truncate align-bottom text-primary underline-offset-4 hover:underline"
+          title={text}
           onClick={(e) => e.stopPropagation()}
         >
           {text}
@@ -117,7 +120,7 @@ export function DataGridDefaultCell<TData extends RowData, TValue>(
       );
     }
     default: {
-      const text = formatValue(value, meta, row, grid.locale, grid.labels.blank);
+      const text = formatValue(value, meta, row, grid.locale, grid.labels.blank, grid.labels);
       const blank = value === null || value === undefined || value === "";
       const content = (
         <span
@@ -129,7 +132,9 @@ export function DataGridDefaultCell<TData extends RowData, TValue>(
             meta.truncate !== false && !meta.wrap && "block truncate",
             meta.wrap && "whitespace-normal",
           )}
-          title={meta.tooltip ? undefined : meta.truncate !== false && !meta.wrap ? text : undefined}
+          title={
+            meta.tooltip ? undefined : meta.truncate !== false && !meta.wrap ? text : undefined
+          }
         >
           {text}
         </span>
@@ -173,7 +178,9 @@ export function DataGridGroupCell<TData extends RowData, TValue>(
       ) : (
         <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
       )}
-      <span className="truncate">{formatValue(value, meta, ctx.row.original, grid.locale, grid.labels.blank)}</span>
+      <span className="truncate">
+        {formatValue(value, meta, ctx.row.original, grid.locale, grid.labels.blank, grid.labels)}
+      </span>
       <span className="ml-1 tabular-nums text-muted-foreground">({count})</span>
     </button>
   );
@@ -190,19 +197,24 @@ export function DataGridAggregatedCell<TData extends RowData, TValue>(
   const id = fns[0]?.id;
   if (value === undefined || value === null) return null;
   let text: string;
+  const fmt = (v: unknown) =>
+    formatValue(v, meta, ctx.row.original, grid.locale, grid.labels.blank, grid.labels);
   if (Array.isArray(value) && id === "extent") {
     const [min, max] = value as [unknown, unknown];
-    text = `${formatValue(min, meta, ctx.row.original, grid.locale)} – ${formatValue(max, meta, ctx.row.original, grid.locale)}`;
+    text = `${fmt(min)} – ${fmt(max)}`;
   } else if (id === "count" || id === "uniqueCount") {
     text = String(value);
   } else if (Array.isArray(value) && id === "unique") {
-    text = value.length > 3 ? `${value.length} values` : value.map(String).join(", ");
+    text = value.length > 3 ? grid.labels.values(value.length) : value.map(String).join(", ");
   } else {
-    text = formatValue(value, meta, ctx.row.original, grid.locale);
+    text = fmt(value);
   }
   return (
     <span
-      className={cn("text-muted-foreground tabular-nums", alignClass(meta.align) === "text-end" && "block text-end")}
+      className={cn(
+        "text-muted-foreground tabular-nums",
+        alignClass(meta.align) === "text-end" && "block text-end",
+      )}
       title={id ? `${id}` : undefined}
     >
       {text}
@@ -210,7 +222,9 @@ export function DataGridAggregatedCell<TData extends RowData, TValue>(
   );
 }
 
-export function DataGridSelectHeader<TData extends RowData>(ctx: DataGridHeaderContext<TData, unknown>) {
+export function DataGridSelectHeader<TData extends RowData>(
+  ctx: DataGridHeaderContext<TData, unknown>,
+) {
   const grid = useDataGridContext<TData>();
   const { table } = ctx;
   const all = table.getIsAllPageRowsSelected();
@@ -227,7 +241,9 @@ export function DataGridSelectHeader<TData extends RowData>(ctx: DataGridHeaderC
   );
 }
 
-export function DataGridSelectCell<TData extends RowData>(ctx: DataGridCellContext<TData, unknown>) {
+export function DataGridSelectCell<TData extends RowData>(
+  ctx: DataGridCellContext<TData, unknown>,
+) {
   const grid = useDataGridContext<TData>();
   const { row } = ctx;
   if (!row.getCanSelect()) return null;

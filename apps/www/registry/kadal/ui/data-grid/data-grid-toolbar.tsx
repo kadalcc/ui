@@ -124,7 +124,9 @@ export function DataGridViewOptions<TData extends RowData>({ className }: { clas
   const shown = q ? columns.filter((c) => grid.labelFor(c.id).toLowerCase().includes(q)) : columns;
   return (
     <Popover>
-      <PopoverTrigger render={<Button variant="outline" size="sm" className={cn("h-8", className)} />}>
+      <PopoverTrigger
+        render={<Button variant="outline" size="sm" className={cn("h-8", className)} />}
+      >
         <Settings2Icon /> {labels.view}
         {hidden ? (
           <Badge variant="secondary" className="ml-1 h-4 px-1 font-normal">
@@ -145,7 +147,9 @@ export function DataGridViewOptions<TData extends RowData>({ className }: { clas
         </div>
         <ul className="-mx-1 max-h-64 overflow-y-auto" aria-label={labels.viewColumns}>
           {shown.length === 0 ? (
-            <li className="px-2 py-4 text-center text-sm text-muted-foreground">{labels.noColumns}</li>
+            <li className="px-2 py-4 text-center text-sm text-muted-foreground">
+              {labels.noColumns}
+            </li>
           ) : (
             shown.map((column) => {
               const visible = column.getIsVisible();
@@ -172,7 +176,12 @@ export function DataGridViewOptions<TData extends RowData>({ className }: { clas
           )}
         </ul>
         <div className="flex items-center justify-between border-t pt-2">
-          <Button variant="ghost" size="xs" onClick={() => table.toggleAllColumnsVisible(true)} disabled={!hidden}>
+          <Button
+            variant="ghost"
+            size="xs"
+            onClick={() => table.toggleAllColumnsVisible(true)}
+            disabled={!hidden}
+          >
             <EyeIcon /> {labels.showAll}
           </Button>
           {grid.views.enabled ? (
@@ -207,12 +216,19 @@ export function DataGridGroupMenu<TData extends RowData>({ className }: { classN
   if (!grid.groupingEnabled) return null;
   const columns = table
     .getAllLeafColumns()
-    .filter((c) => c.getCanGroup() && grid.metaFor(c.id).groupable !== false && !UTILITY_KINDS.has(grid.metaFor(c.id).kind ?? "custom"));
+    .filter(
+      (c) =>
+        c.getCanGroup() &&
+        grid.metaFor(c.id).groupable !== false &&
+        !UTILITY_KINDS.has(grid.metaFor(c.id).kind ?? "custom"),
+    );
   if (!columns.length) return null;
   const grouping = table.state.grouping;
   return (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger render={<Button variant="outline" size="sm" className={cn("h-8", className)} />}>
+      <DropdownMenuTrigger
+        render={<Button variant="outline" size="sm" className={cn("h-8", className)} />}
+      >
         <GroupIcon /> {labels.group}
         {grouping.length ? (
           <Badge variant="secondary" className="ml-1 h-4 px-1 font-normal">
@@ -254,7 +270,10 @@ export function DataGridGroupingBar<TData extends RowData>({ className }: { clas
   const grouping = table.state.grouping;
   if (!grouping.length) return null;
   return (
-    <div className={cn("flex flex-wrap items-center gap-1.5", className)} data-slot="data-grid-grouping-bar">
+    <div
+      className={cn("flex flex-wrap items-center gap-1.5", className)}
+      data-slot="data-grid-grouping-bar"
+    >
       <span className="text-xs text-muted-foreground">{labels.groupedBy}</span>
       {grouping.map((id) => (
         <Badge key={id} variant="outline" className="h-6 gap-1 pr-1 font-normal">
@@ -289,7 +308,10 @@ export function DataGridDensityMenu<TData extends RowData>({ className }: { clas
         <Icon />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuRadioGroup value={density} onValueChange={(v) => setDensity(v as DataGridDensity)}>
+        <DropdownMenuRadioGroup
+          value={density}
+          onValueChange={(v) => setDensity(v as DataGridDensity)}
+        >
           <DropdownMenuLabel>{labels.density}</DropdownMenuLabel>
           <DropdownMenuRadioItem value="compact">
             <Rows4Icon /> {labels.densityCompact}
@@ -318,7 +340,7 @@ export function DataGridExportMenu<TData extends RowData>({
   const grid = useDataGridContext<TData>();
   const { table, labels } = grid;
   const ui = useDataGridUi();
-  const selectedCount = Object.keys(table.state.rowSelection).length;
+  const selectedCount = table.getSelectedRowModel().flatRows.length;
   const [selectedOnly, setSelectedOnly] = React.useState(false);
   const opts = { selectedOnly: selectedOnly && selectedCount > 0 };
   return (
@@ -358,7 +380,9 @@ export function DataGridExportMenu<TData extends RowData>({
               closeOnClick={false}
             >
               {labels.exportSelectedOnly}
-              {selectedCount ? <span className="ml-auto text-xs text-muted-foreground">{selectedCount}</span> : null}
+              {selectedCount ? (
+                <span className="ml-auto text-xs text-muted-foreground">{selectedCount}</span>
+              ) : null}
             </DropdownMenuCheckboxItem>
           </>
         ) : null}
@@ -379,7 +403,9 @@ export function DataGridViewsMenu<TData extends RowData>({ className }: { classN
   return (
     <>
       <DropdownMenu modal={false}>
-        <DropdownMenuTrigger render={<Button variant="outline" size="sm" className={cn("h-8", className)} />}>
+        <DropdownMenuTrigger
+          render={<Button variant="outline" size="sm" className={cn("h-8", className)} />}
+        >
           <BookmarkIcon /> {active ? active.name : labels.savedViews}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-60">
@@ -426,7 +452,12 @@ export function DataGridViewsMenu<TData extends RowData>({ className }: { classN
               <DialogTitle>{labels.saveView.replace(/…$/, "")}</DialogTitle>
               <DialogDescription>{labels.saveViewPrompt}</DialogDescription>
             </DialogHeader>
-            <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} aria-label={labels.saveViewPrompt} />
+            <Input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              aria-label={labels.saveViewPrompt}
+            />
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setSaveOpen(false)}>
                 {labels.cancel}

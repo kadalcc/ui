@@ -197,6 +197,8 @@ export function kindDefaults(kind: DataGridColumnKind): Partial<DataGridColumnDe
         enableColumnFilter: false,
         enableGrouping: false,
         enablePinning: true,
+        // Arrow keys step over these: a focus ring on a checkbox cell helps nobody.
+        enableCellSelection: false,
         meta: { kind, filter: false, export: false, groupable: false, stable: true },
       };
     default:
@@ -204,22 +206,22 @@ export function kindDefaults(kind: DataGridColumnKind): Partial<DataGridColumnDe
   }
 }
 
-type AccessorValue<TData extends RowData, TAccessor> = TAccessor extends AccessorFn<
-  TData,
-  infer TReturn
->
-  ? TReturn
-  : TAccessor extends DeepKeys<TData>
-    ? DeepValue<TData, TAccessor>
-    : never;
+type AccessorValue<TData extends RowData, TAccessor> =
+  TAccessor extends AccessorFn<TData, infer TReturn>
+    ? TReturn
+    : TAccessor extends DeepKeys<TData>
+      ? DeepValue<TData, TAccessor>
+      : never;
 
-type AccessorResult<TData extends RowData, TAccessor, TValue> = TAccessor extends AccessorFn<TData>
-  ? AccessorFnColumnDef<DataGridFeatures, TData, TValue>
-  : AccessorKeyColumnDef<DataGridFeatures, TData, TValue>;
+type AccessorResult<TData extends RowData, TAccessor, TValue> =
+  TAccessor extends AccessorFn<TData>
+    ? AccessorFnColumnDef<DataGridFeatures, TData, TValue>
+    : AccessorKeyColumnDef<DataGridFeatures, TData, TValue>;
 
-type AccessorOptions<TData extends RowData, TAccessor, TValue> = TAccessor extends AccessorFn<TData>
-  ? DataGridColumnOptions<TData, TValue> & { id: string }
-  : DataGridColumnOptions<TData, TValue>;
+type AccessorOptions<TData extends RowData, TAccessor, TValue> =
+  TAccessor extends AccessorFn<TData>
+    ? DataGridColumnOptions<TData, TValue> & { id: string }
+    : DataGridColumnOptions<TData, TValue>;
 
 /**
  * A typed column builder for one row type. Keys are checked against `TData` (nested paths too),
@@ -255,6 +257,12 @@ export function createDataGridColumns<TData extends RowData>() {
         ...def,
         meta: { ...defaultMeta, ...meta },
       } as Record<string, unknown>;
+      // `filter` names the UI; unless told otherwise, the function that runs is the matching one,
+      // so `col.text("team", { filter: "facet" })` filters by the chosen values.
+      if (meta.filter !== undefined && def.filterFn === undefined) {
+        if (meta.filter === false) merged.enableColumnFilter = false;
+        else merged.filterFn = meta.filter;
+      }
       if (kind === "tags") {
         // The array's items are the facet values.
         merged.getUniqueValues = (row: TData, index: number) => {
@@ -264,7 +272,11 @@ export function createDataGridColumns<TData extends RowData>() {
             : String(accessor)
                 .split(".")
                 .reduce<unknown>((o, k) => (o as Record<string, unknown> | undefined)?.[k], row);
-          return Array.isArray(value) ? value : value === undefined || value === null ? [] : [value];
+          return Array.isArray(value)
+            ? value
+            : value === undefined || value === null
+              ? []
+              : [value];
         };
       }
       // `helper.accessor` is typed over the exact accessor shape; the cast keeps the overload.
@@ -291,10 +303,10 @@ export function createDataGridColumns<TData extends RowData>() {
     return helper.display({ ...def, meta } as never);
   };
 
-  /** A header spanning several columns. */
+  /** A header spanning several columns. Takes typed builder columns as they are. */
   const group = (
     header: string,
-    columns: ReadonlyArray<ColumnDef<DataGridFeatures, TData, unknown>>,
+    columns: ReadonlyArray<ColumnDef<DataGridFeatures, TData, any>>,
     options?: Omit<GroupColumnDef<DataGridFeatures, TData, unknown>, "columns" | "header">,
   ): GroupColumnDef<DataGridFeatures, TData, unknown> =>
     helper.group({ id: options?.id ?? header, header, columns, ...options } as never);
@@ -348,7 +360,12 @@ export function createDataGridColumns<TData extends RowData>() {
       header: "#",
       ...def,
       ...options,
-      meta: { ...meta, align: "end", mono: true, ...(options?.meta as DataGridColumnMeta | undefined) },
+      meta: {
+        ...meta,
+        align: "end",
+        mono: true,
+        ...(options?.meta as DataGridColumnMeta | undefined),
+      },
     } as never);
   };
 

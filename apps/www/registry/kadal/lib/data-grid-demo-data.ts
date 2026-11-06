@@ -27,20 +27,87 @@ export interface Person {
 }
 
 const FIRST = [
-  "Aarav", "Ananya", "Arjun", "Diya", "Ishaan", "Kavya", "Meera", "Rohan", "Saanvi", "Vihaan",
-  "Amelia", "Noah", "Olivia", "Liam", "Sofia", "Mateo", "Chloe", "Lucas", "Yuki", "Haruto",
-  "Zara", "Omar", "Leila", "Idris", "Nia", "Kwame", "Freya", "Elias", "Mia", "Theo",
+  "Aarav",
+  "Ananya",
+  "Arjun",
+  "Diya",
+  "Ishaan",
+  "Kavya",
+  "Meera",
+  "Rohan",
+  "Saanvi",
+  "Vihaan",
+  "Amelia",
+  "Noah",
+  "Olivia",
+  "Liam",
+  "Sofia",
+  "Mateo",
+  "Chloe",
+  "Lucas",
+  "Yuki",
+  "Haruto",
+  "Zara",
+  "Omar",
+  "Leila",
+  "Idris",
+  "Nia",
+  "Kwame",
+  "Freya",
+  "Elias",
+  "Mia",
+  "Theo",
 ];
 const LAST = [
-  "Prabhakaran", "Iyer", "Menon", "Sharma", "Reddy", "Nair", "Patel", "Bose", "Khan", "Das",
-  "Smith", "Garcia", "Müller", "Rossi", "Tanaka", "Kim", "Nguyen", "Silva", "Okafor", "Dubois",
+  "Prabhakaran",
+  "Iyer",
+  "Menon",
+  "Sharma",
+  "Reddy",
+  "Nair",
+  "Patel",
+  "Bose",
+  "Khan",
+  "Das",
+  "Smith",
+  "Garcia",
+  "Müller",
+  "Rossi",
+  "Tanaka",
+  "Kim",
+  "Nguyen",
+  "Silva",
+  "Okafor",
+  "Dubois",
 ];
 const TEAMS = ["Platform", "Growth", "Design", "Data", "Support", "Finance", "Sales", "Research"];
 const ROLES = ["Engineer", "Designer", "PM", "Analyst", "Lead", "Manager", "Intern", "Director"];
 const STATUSES: Status[] = ["active", "active", "active", "invited", "paused", "churned"];
 const PLANS: Plan[] = ["free", "free", "pro", "pro", "team", "enterprise"];
-const TAGS = ["beta", "vip", "eu", "apac", "us", "partner", "trial", "legacy", "nps-9", "churn-risk"];
-const COUNTRIES = ["India", "Germany", "USA", "Japan", "Brazil", "Nigeria", "France", "Canada", "Australia", "Singapore"];
+const TAGS = [
+  "beta",
+  "vip",
+  "eu",
+  "apac",
+  "us",
+  "partner",
+  "trial",
+  "legacy",
+  "nps-9",
+  "churn-risk",
+];
+const COUNTRIES = [
+  "India",
+  "Germany",
+  "USA",
+  "Japan",
+  "Brazil",
+  "Nigeria",
+  "France",
+  "Canada",
+  "Australia",
+  "Singapore",
+];
 const DOMAINS = ["example.com", "mail.test", "corp.example", "team.dev"];
 
 /** mulberry32: small, fast, deterministic. */
@@ -57,7 +124,7 @@ export function seeded(seed: number) {
 
 export function makePeople(count: number, seed = 42, { tree = false } = {}): Person[] {
   const rnd = seeded(seed);
-  const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(rnd() * arr.length)]!;
+  const pick = <T>(arr: readonly T[]): T => arr[Math.floor(rnd() * arr.length)]!;
   const start = Date.UTC(2023, 0, 1);
   const span = Date.UTC(2026, 10, 1) - start;
   const make = (i: number, depth: number): Person => {
@@ -66,8 +133,11 @@ export function makePeople(count: number, seed = 42, { tree = false } = {}): Per
     const status = pick(STATUSES);
     const plan = pick(PLANS);
     const joined = new Date(start + Math.floor(rnd() * span));
-    const lastSeen = new Date(joined.getTime() + Math.floor(rnd() * (Date.UTC(2026, 10, 6) - joined.getTime())));
-    const seats = plan === "free" ? 1 : plan === "pro" ? 1 + Math.floor(rnd() * 4) : 5 + Math.floor(rnd() * 60);
+    const lastSeen = new Date(
+      joined.getTime() + Math.floor(rnd() * (Date.UTC(2026, 10, 6) - joined.getTime())),
+    );
+    const seats =
+      plan === "free" ? 1 : plan === "pro" ? 1 + Math.floor(rnd() * 4) : 5 + Math.floor(rnd() * 60);
     const unit = plan === "free" ? 0 : plan === "pro" ? 12 : plan === "team" ? 29 : 79;
     const tagCount = Math.floor(rnd() * 3);
     const tags = Array.from(new Set(Array.from({ length: tagCount }, () => pick(TAGS))));
@@ -88,7 +158,16 @@ export function makePeople(count: number, seed = 42, { tree = false } = {}): Per
       tags,
       website: `https://${first.toLowerCase()}-${last.toLowerCase().replace(/ü/g, "u")}.example.com`,
       country: pick(COUNTRIES),
-      notes: rnd() > 0.7 ? pick(["Wants SSO.", "Asked about invoices.", "Renewal in Q1.", "Speaks at meetups.", "Needs onboarding call."]) : "",
+      notes:
+        rnd() > 0.7
+          ? pick([
+              "Wants SSO.",
+              "Asked about invoices.",
+              "Renewal in Q1.",
+              "Speaks at meetups.",
+              "Needs onboarding call.",
+            ])
+          : "",
     };
     if (tree && depth === 0 && rnd() > 0.6) {
       const n = 1 + Math.floor(rnd() * 4);
@@ -100,10 +179,22 @@ export function makePeople(count: number, seed = 42, { tree = false } = {}): Per
 }
 
 export const STATUS_OPTIONS: { value: Status; label: string; className?: string }[] = [
-  { value: "active", label: "Active", className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" },
+  {
+    value: "active",
+    label: "Active",
+    className: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  },
   { value: "invited", label: "Invited", className: "bg-sky-500/15 text-sky-700 dark:text-sky-300" },
-  { value: "paused", label: "Paused", className: "bg-amber-500/15 text-amber-700 dark:text-amber-300" },
-  { value: "churned", label: "Churned", className: "bg-rose-500/15 text-rose-700 dark:text-rose-300" },
+  {
+    value: "paused",
+    label: "Paused",
+    className: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  },
+  {
+    value: "churned",
+    label: "Churned",
+    className: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
+  },
 ];
 
 export const PLAN_OPTIONS: { value: Plan; label: string }[] = [

@@ -25,7 +25,9 @@ export function getPinningStyles<TData extends RowData>(
 }
 
 /** Classes that give a pinned column an opaque background and an edge shadow where it ends. */
-export function pinningClasses<TData extends RowData>(column: DataGridColumn<TData, unknown>): string {
+export function pinningClasses<TData extends RowData>(
+  column: DataGridColumn<TData, unknown>,
+): string {
   const pinned = column.getIsPinned();
   if (!pinned) return "";
   const classes = ["bg-background"];

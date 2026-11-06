@@ -6,7 +6,12 @@ import { XIcon } from "lucide-react";
 import { Button } from "@/registry/kadal/ui/button";
 import { TooltipProvider } from "@/registry/kadal/ui/tooltip";
 
-import { DataGridProvider, DataGridUiProvider, useDataGridContext, type DataGridUiState } from "./data-grid-context";
+import {
+  DataGridProvider,
+  DataGridUiProvider,
+  useDataGridContext,
+  type DataGridUiState,
+} from "./data-grid-context";
 import type { DataGridRow } from "./data-grid-features";
 import { DataGridPagination, type DataGridPaginationProps } from "./data-grid-pagination";
 import { DataGridTable, type DataGridTableProps } from "./data-grid-table";
@@ -144,10 +149,12 @@ export function DataGridBulkActions<TData extends RowData>({
 }: DataGridBulkActionsProps<TData>) {
   const grid = useDataGridContext<TData>();
   const { table, labels } = grid;
-  const selectedIds = table.state.rowSelection;
-  const count = Object.keys(selectedIds).length;
+  // Rows that exist and are selected: ids of rows since removed stay in the state but count for
+  // nothing.
+  const selectedRows = table.getSelectedRowModel().flatRows;
+  const count = selectedRows.length;
   if (!count) return null;
-  const rows = table.getSelectedRowModel().rows.map((r) => r.original);
+  const rows = selectedRows.map((r) => r.original);
   return (
     <div
       role="toolbar"
@@ -169,12 +176,10 @@ export function DataGridBulkActions<TData extends RowData>({
 
 // ── All in one ────────────────────────────────────────────────────────────────────────────────────
 
-export interface DataGridProps<TData extends RowData>
-  extends UseDataGridOptions<TData>,
+export interface DataGridPresentationProps<TData extends RowData>
+  extends
     Omit<DataGridTableProps<TData>, "className">,
     Omit<DataGridRootProps<TData>, "grid" | "children" | "className"> {
-  /** An instance from `useDataGrid`, when you need the api outside the component. */
-  grid?: DataGridApi<TData>;
   className?: string;
   /** `false` hides the toolbar; a node replaces it; an object configures it. */
   toolbar?: boolean | React.ReactNode | DataGridToolbarProps;
@@ -189,15 +194,31 @@ export interface DataGridProps<TData extends RowData>
 }
 
 /**
+ * Either the options of `useDataGrid` (the component builds the grid), or an instance from
+ * `useDataGrid` (when you need the api outside the component), plus the presentation props.
+ */
+export type DataGridProps<TData extends RowData> = DataGridPresentationProps<TData> &
+  (
+    | ({ grid: DataGridApi<TData> } & Partial<UseDataGridOptions<TData>>)
+    | ({ grid?: undefined } & UseDataGridOptions<TData>)
+  );
+
+/**
  * The whole grid in one component: toolbar, table, pager and bulk actions, driven by the same
  * options as `useDataGrid`.
  */
 export function DataGrid<TData extends RowData>(props: DataGridProps<TData>) {
   if (props.grid) return <DataGridView {...props} grid={props.grid} />;
-  return <DataGridWithHook {...props} />;
+  return (
+    <DataGridWithHook
+      {...(props as DataGridPresentationProps<TData> & UseDataGridOptions<TData>)}
+    />
+  );
 }
 
-function DataGridWithHook<TData extends RowData>(props: DataGridProps<TData>) {
+function DataGridWithHook<TData extends RowData>(
+  props: DataGridPresentationProps<TData> & UseDataGridOptions<TData> & { grid?: undefined },
+) {
   const {
     className,
     toolbar,
@@ -246,27 +267,9 @@ function DataGridWithHook<TData extends RowData>(props: DataGridProps<TData>) {
   );
 }
 
-type DataGridViewProps<TData extends RowData> = Pick<
-  DataGridProps<TData>,
-  | "className"
-  | "toolbar"
-  | "toolbarActions"
-  | "pager"
-  | "bulkActions"
-  | "tableClassName"
-  | "height"
-  | "fillHeight"
-  | "stickyHeader"
-  | "striped"
-  | "getRowClassName"
-  | "onRowClick"
-  | "loading"
-  | "error"
-  | "onRetry"
-  | "emptyState"
-  | "fullscreen"
-  | "onFullscreenChange"
-> & { grid: DataGridApi<TData> };
+type DataGridViewProps<TData extends RowData> = DataGridPresentationProps<TData> & {
+  grid: DataGridApi<TData>;
+};
 
 function DataGridView<TData extends RowData>({
   grid,
@@ -327,3 +330,25 @@ function DataGridView<TData extends RowData>({
 }
 
 export type { DataGridRow };
+
+// The whole public surface, so `@/components/ui/data-grid` and `@/components/ui/data-grid/data-grid`
+// import the same names (the shadcn CLI rewrites folder imports to this file).
+export * from "./data-grid-cells";
+export * from "./data-grid-column-header";
+export * from "./data-grid-columns";
+export * from "./data-grid-context";
+export * from "./data-grid-editing";
+export * from "./data-grid-export";
+export * from "./data-grid-features";
+export * from "./data-grid-filters";
+export * from "./data-grid-format";
+export * from "./data-grid-keyboard";
+export * from "./data-grid-labels";
+export * from "./data-grid-pagination";
+export * from "./data-grid-persist";
+export * from "./data-grid-pinning";
+export * from "./data-grid-table";
+export * from "./data-grid-toolbar";
+export * from "./data-grid-types";
+export * from "./data-grid-utils";
+export * from "./use-data-grid";

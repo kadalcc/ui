@@ -13,7 +13,12 @@ import {
 } from "@/registry/kadal/ui/dropdown-menu";
 import { DataGrid, createDataGridColumns, useDataGrid } from "@/registry/kadal/ui/data-grid";
 
-import { makePeople, PLAN_OPTIONS, STATUS_OPTIONS, type Person } from "./data";
+import {
+  makePeople,
+  PLAN_OPTIONS,
+  STATUS_OPTIONS,
+  type Person,
+} from "@/registry/kadal/lib/data-grid-demo-data";
 
 const col = createDataGridColumns<Person>();
 
@@ -36,11 +41,15 @@ const columns = col.columns([
   col.text("notes", { header: "Notes", editable: { type: "textarea" }, size: 220, filter: "text" }),
   col.actions(({ row }) => (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" aria-label="Row actions" />}>
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" size="icon-xs" aria-label="Row actions" />}
+      >
         <MoreHorizontalIcon />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => navigator.clipboard?.writeText(row.original.id)}>Copy ID</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigator.clipboard?.writeText(row.original.id)}>
+          Copy ID
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => row.pin(row.getIsPinned() ? false : "top")}>
           {row.getIsPinned() ? "Unpin row" : "Pin row to top"}
         </DropdownMenuItem>
@@ -54,7 +63,7 @@ const columns = col.columns([
 export default function DataGridDemo({ rows = 500 }: { rows?: number }) {
   const [data, setData] = React.useState(() => makePeople(rows));
   const grid = useDataGrid<Person>({
-    key: "demo",
+    name: "demo",
     data,
     columns,
     getRowId: (row) => row.id,
@@ -76,7 +85,11 @@ export default function DataGridDemo({ rows = 500 }: { rows?: number }) {
           <Button variant="outline" size="sm" onClick={() => alert(`Emailing ${selected.length}`)}>
             Email
           </Button>
-          <Button variant="destructive" size="sm" onClick={() => setData((prev) => prev.filter((p) => !selected.includes(p)))}>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setData((prev) => prev.filter((p) => !selected.includes(p)))}
+          >
             Delete
           </Button>
         </>

@@ -108,8 +108,7 @@ const isBlank = (v: unknown) =>
 
 /** Fuzzy, rank-based matching for the global search box. */
 export const filterFn_fuzzy = constructFilterFn({
-  filter: (dataValue, filterValue) =>
-    rankMatch(toText(dataValue), String(filterValue ?? "")) > 0,
+  filter: (dataValue, filterValue) => rankMatch(toText(dataValue), String(filterValue ?? "")) > 0,
   autoRemove: (filterValue) => isBlank(filterValue),
 });
 
@@ -117,51 +116,54 @@ export const filterFn_fuzzy = constructFilterFn({
  * A multi-select facet: the row passes when its value (or one of its values, for an array) is one
  * of the chosen values. Compared as strings so values round-trip through URLs and storage.
  */
+const matchFacet = (dataValue: unknown, filterValue: unknown): boolean => {
+  const chosen = Array.isArray(filterValue) ? filterValue : [filterValue];
+  if (chosen.length === 0) return true;
+  const set = new Set(chosen.map((c) => String(c)));
+  if (Array.isArray(dataValue)) return dataValue.some((v) => set.has(String(v)));
+  return set.has(String(dataValue));
+};
 export const filterFn_facet = constructFilterFn({
-  filter: (dataValue, filterValue: unknown) => {
-    const chosen = Array.isArray(filterValue) ? filterValue : [filterValue];
-    if (chosen.length === 0) return true;
-    const set = new Set(chosen.map((c) => String(c)));
-    if (Array.isArray(dataValue)) return dataValue.some((v) => set.has(String(v)));
-    return set.has(String(dataValue));
-  },
+  filter: matchFacet,
   autoRemove: (filterValue) => isBlank(filterValue),
 });
 
 /** `{ op, value }` text matching, case-insensitive. */
-export const filterFn_textOp = constructFilterFn({
-  filter: (dataValue, filterValue: DataGridTextFilterValue | string | undefined) => {
-    const spec: DataGridTextFilterValue =
-      typeof filterValue === "string"
-        ? { op: "contains", value: filterValue }
-        : (filterValue ?? { op: "contains", value: "" });
-    const haystack = toText(dataValue).toLowerCase();
-    const needle = (spec.value ?? "").toLowerCase();
-    switch (spec.op) {
-      case "isEmpty":
-        return isBlank(dataValue);
-      case "isNotEmpty":
-        return !isBlank(dataValue);
-      case "equals":
-        return haystack === needle;
-      case "startsWith":
-        return haystack.startsWith(needle);
-      case "endsWith":
-        return haystack.endsWith(needle);
-      case "notContains":
-        return !haystack.includes(needle);
-      case "contains":
-      default:
-        return haystack.includes(needle);
-    }
-  },
-  autoRemove: (filterValue: DataGridTextFilterValue | string | undefined) => {
-    if (typeof filterValue === "string") return filterValue === "";
-    if (!filterValue) return true;
-    if (filterValue.op === "isEmpty" || filterValue.op === "isNotEmpty") return false;
-    return filterValue.value === "";
-  },
-});
+const matchText = (
+  dataValue: unknown,
+  filterValue: DataGridTextFilterValue | string | undefined,
+): boolean => {
+  const spec: DataGridTextFilterValue =
+    typeof filterValue === "string"
+      ? { op: "contains", value: filterValue }
+      : (filterValue ?? { op: "contains", value: "" });
+  const haystack = toText(dataValue).toLowerCase();
+  const needle = (spec.value ?? "").toLowerCase();
+  switch (spec.op) {
+    case "isEmpty":
+      return isBlank(dataValue);
+    case "isNotEmpty":
+      return !isBlank(dataValue);
+    case "equals":
+      return haystack === needle;
+    case "startsWith":
+      return haystack.startsWith(needle);
+    case "endsWith":
+      return haystack.endsWith(needle);
+    case "notContains":
+      return !haystack.includes(needle);
+    case "contains":
+    default:
+      return haystack.includes(needle);
+  }
+};
+const textIsBlank = (filterValue: DataGridTextFilterValue | string | undefined): boolean => {
+  if (typeof filterValue === "string") return filterValue === "";
+  if (!filterValue) return true;
+  if (filterValue.op === "isEmpty" || filterValue.op === "isNotEmpty") return false;
+  return filterValue.value === "";
+};
+export const filterFn_textOp = constructFilterFn({ filter: matchText, autoRemove: textIsBlank });
 
 const toNumber = (v: unknown): number | null => {
   if (v === null || v === undefined || v === "") return null;
@@ -170,19 +172,21 @@ const toNumber = (v: unknown): number | null => {
 };
 
 /** `{ min?, max? }`, inclusive; an open end is unbounded. */
-export const filterFn_range = constructFilterFn({
-  filter: (dataValue, filterValue: DataGridRangeFilterValue | undefined) => {
-    const n = toNumber(dataValue);
-    if (n === null) return false;
-    const min = toNumber(filterValue?.min);
-    const max = toNumber(filterValue?.max);
-    if (min !== null && n < min) return false;
-    if (max !== null && n > max) return false;
-    return true;
-  },
-  autoRemove: (filterValue: DataGridRangeFilterValue | undefined) =>
-    !filterValue || (toNumber(filterValue.min) === null && toNumber(filterValue.max) === null),
-});
+const matchRange = (
+  dataValue: unknown,
+  filterValue: DataGridRangeFilterValue | undefined,
+): boolean => {
+  const n = toNumber(dataValue);
+  if (n === null) return false;
+  const min = toNumber(filterValue?.min);
+  const max = toNumber(filterValue?.max);
+  if (min !== null && n < min) return false;
+  if (max !== null && n > max) return false;
+  return true;
+};
+const rangeIsBlank = (filterValue: DataGridRangeFilterValue | undefined): boolean =>
+  !filterValue || (toNumber(filterValue.min) === null && toNumber(filterValue.max) === null);
+export const filterFn_range = constructFilterFn({ filter: matchRange, autoRemove: rangeIsBlank });
 
 const toTime = (v: unknown): number | null => {
   if (v === null || v === undefined || v === "") return null;
@@ -192,28 +196,73 @@ const toTime = (v: unknown): number | null => {
 };
 
 /** `{ from?, to? }` ISO dates, inclusive by calendar day on the `to` end. */
+const matchDateRange = (
+  dataValue: unknown,
+  filterValue: DataGridDateRangeFilterValue | undefined,
+): boolean => {
+  const t = toTime(dataValue);
+  if (t === null) return false;
+  const from = toTime(filterValue?.from);
+  let to = toTime(filterValue?.to);
+  if (to !== null && typeof filterValue?.to === "string" && filterValue.to.length <= 10) {
+    // A bare date means "through the end of that day".
+    to += 24 * 60 * 60 * 1000 - 1;
+  }
+  if (from !== null && t < from) return false;
+  if (to !== null && t > to) return false;
+  return true;
+};
+const dateRangeIsBlank = (filterValue: DataGridDateRangeFilterValue | undefined): boolean =>
+  !filterValue || (toTime(filterValue.from) === null && toTime(filterValue.to) === null);
 export const filterFn_dateRange = constructFilterFn({
-  filter: (dataValue, filterValue: DataGridDateRangeFilterValue | undefined) => {
-    const t = toTime(dataValue);
-    if (t === null) return false;
-    const from = toTime(filterValue?.from);
-    let to = toTime(filterValue?.to);
-    if (to !== null && typeof filterValue?.to === "string" && filterValue.to.length <= 10) {
-      // A bare date means "through the end of that day".
-      to += 24 * 60 * 60 * 1000 - 1;
-    }
-    if (from !== null && t < from) return false;
-    if (to !== null && t > to) return false;
-    return true;
-  },
-  autoRemove: (filterValue: DataGridDateRangeFilterValue | undefined) =>
-    !filterValue || (toTime(filterValue.from) === null && toTime(filterValue.to) === null),
+  filter: matchDateRange,
+  autoRemove: dateRangeIsBlank,
 });
 
 /** `true`/`false`; anything else removes the filter. */
+const matchBoolean = (dataValue: unknown, filterValue: unknown): boolean =>
+  Boolean(dataValue) === Boolean(filterValue);
 export const filterFn_boolean = constructFilterFn({
-  filter: (dataValue, filterValue: unknown) => Boolean(dataValue) === Boolean(filterValue),
+  filter: matchBoolean,
   autoRemove: (filterValue) => typeof filterValue !== "boolean",
+});
+
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v);
+
+/**
+ * Picks the grid's filter by the shape of the value: an array is a facet, a boolean a boolean,
+ * `{ op }` a text match, `{ min, max }` a range, `{ from, to }` a date range, a string "contains".
+ * The default for columns that come as plain TanStack definitions, whose kind the grid infers
+ * from the data: the filter UI the header shows and the function that runs then agree.
+ */
+export const filterFn_byValue = constructFilterFn({
+  filter: (dataValue, filterValue: unknown) => {
+    if (Array.isArray(filterValue)) return matchFacet(dataValue, filterValue);
+    if (typeof filterValue === "boolean") return matchBoolean(dataValue, filterValue);
+    if (isRecord(filterValue)) {
+      if ("op" in filterValue)
+        return matchText(dataValue, filterValue as unknown as DataGridTextFilterValue);
+      if ("min" in filterValue || "max" in filterValue)
+        return matchRange(dataValue, filterValue as DataGridRangeFilterValue);
+      if ("from" in filterValue || "to" in filterValue)
+        return matchDateRange(dataValue, filterValue as DataGridDateRangeFilterValue);
+    }
+    return matchText(dataValue, filterValue as string | undefined);
+  },
+  autoRemove: (filterValue: unknown) => {
+    if (Array.isArray(filterValue)) return filterValue.length === 0;
+    if (typeof filterValue === "boolean") return false;
+    if (isRecord(filterValue)) {
+      if ("op" in filterValue)
+        return textIsBlank(filterValue as unknown as DataGridTextFilterValue);
+      if ("min" in filterValue || "max" in filterValue)
+        return rangeIsBlank(filterValue as DataGridRangeFilterValue);
+      if ("from" in filterValue || "to" in filterValue)
+        return dateRangeIsBlank(filterValue as DataGridDateRangeFilterValue);
+    }
+    return isBlank(filterValue);
+  },
 });
 
 // ── The features preset ───────────────────────────────────────────────────────────────────────────
@@ -223,8 +272,8 @@ export const filterFn_boolean = constructFilterFn({
  * may refer to by string. Registered once here, so each grid bundles exactly this and the type of
  * `columnDef.meta` is {@link DataGridColumnMeta} on every column, with no declaration merging.
  *
- * Need a feature the grid does not use (cell spanning, say)? Compose your own with
- * `tableFeatures({ ...dataGridFeatures, cellSpanningFeature })` and pass it as `features`.
+ * Need a feature the grid does not use (cell spanning, say)? This file is yours: add it to the
+ * object below and every grid, and every type in this folder, picks it up.
  */
 export const dataGridFeatures = tableFeatures({
   rowSortingFeature,
@@ -269,6 +318,7 @@ export const dataGridFeatures = tableFeatures({
     range: filterFn_range,
     dateRange: filterFn_dateRange,
     boolean: filterFn_boolean,
+    byValue: filterFn_byValue,
   },
   aggregationFns: {
     sum: aggregationFn_sum,
