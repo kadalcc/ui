@@ -200,7 +200,14 @@ export function DataGridTable<TData extends RowData>({
           }
           aria-busy={ui.loading || undefined}
           aria-describedby={undefined}
-          className="relative flex min-h-0 flex-1 flex-col overflow-auto rounded-[inherit] outline-none"
+          className={cn(
+            "relative flex min-h-0 flex-1 flex-col overflow-auto rounded-[inherit] outline-none",
+            // A scrollbar that is there before the reader scrolls: macOS hides the native one until
+            // then, and a grid wider than its box looked cut off, not scrollable.
+            "[&::-webkit-scrollbar]:size-2.5 [&::-webkit-scrollbar-track]:bg-transparent",
+            "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-[3px] [&::-webkit-scrollbar-thumb]:border-solid [&::-webkit-scrollbar-thumb]:border-transparent [&::-webkit-scrollbar-thumb]:bg-foreground/25 [&::-webkit-scrollbar-thumb]:bg-clip-padding hover:[&::-webkit-scrollbar-thumb]:bg-foreground/40",
+            "[&::-webkit-scrollbar-corner]:bg-transparent",
+          )}
           onKeyDown={onKeyDown}
         >
           <table
@@ -210,7 +217,12 @@ export function DataGridTable<TData extends RowData>({
               grid.cellSelectionEnabled && "select-none",
             )}
             style={{
-              width: table.getTotalSize(),
+              // Fill the box when the columns are narrower than it (the extra width is shared out
+              // in proportion), never shrink below their sum: that is when the box scrolls. Widths
+              // come from the header cells, not a <colgroup>: with one, dnd-kit drops a dragged
+              // header one column short in Firefox.
+              width: "100%",
+              minWidth: table.getTotalSize(),
               tableLayout: "fixed",
               borderCollapse: "separate",
               borderSpacing: 0,
@@ -322,7 +334,7 @@ export function DataGridTable<TData extends RowData>({
           <div
             aria-hidden="true"
             className="min-h-0 flex-1 bg-[radial-gradient(color-mix(in_oklch,var(--foreground)_14%,transparent)_0.5px,transparent_0.5px)] bg-[size:3px_3px]"
-            style={{ width: table.getTotalSize() }}
+            style={{ minWidth: table.getTotalSize() }}
           />
         </div>
 

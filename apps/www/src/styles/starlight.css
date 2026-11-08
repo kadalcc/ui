@@ -6,7 +6,7 @@
   --sl-font: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --sl-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --sl-color-accent-low: oklch(0.93 0.03 215);
-  --sl-color-accent: oklch(0.55 0.11 215);
+  --sl-color-accent: oklch(0.5 0.11 215);
   --sl-color-accent-high: oklch(0.35 0.08 215);
   --sl-content-width: 50rem;
 }
@@ -20,13 +20,6 @@
 .sl-markdown-content .demo {
   max-width: none;
 }
-@media (min-width: 72rem) {
-  .sl-markdown-content .demo[data-demo] {
-    width: calc(100% + 4rem);
-    margin-inline-start: -2rem;
-  }
-}
-
 /* Keyboard shortcut tables */
 .sl-markdown-content kbd {
   display: inline-block;
@@ -41,4 +34,70 @@
 /* Prop tables: a long type union wraps at its spaces instead of pushing the last column off-screen. */
 .sl-markdown-content table code {
   white-space: normal;
+}
+
+/* Starlight's greys carry a blue tint (hue 224); the grid's shadcn tokens are neutral. Inside a demo
+   that read as a mismatched card, so the docs chrome takes the same neutral scale, lightness for
+   lightness, with the page and the grid sharing one background. */
+:root[data-theme="dark"] {
+  --sl-color-white: hsl(0 0% 100%);
+  --sl-color-gray-1: hsl(0 0% 94%);
+  --sl-color-gray-2: hsl(0 0% 77%);
+  --sl-color-gray-3: hsl(0 0% 56%);
+  --sl-color-gray-4: hsl(0 0% 36%);
+  --sl-color-gray-5: oklch(0.269 0 0);
+  --sl-color-gray-6: oklch(0.205 0 0);
+  --sl-color-black: var(--background);
+}
+:root[data-theme="light"] {
+  --sl-color-white: var(--foreground);
+  --sl-color-gray-1: hsl(0 0% 16%);
+  --sl-color-gray-2: hsl(0 0% 23%);
+  --sl-color-gray-3: hsl(0 0% 36%);
+  --sl-color-gray-4: hsl(0 0% 56%);
+  --sl-color-gray-5: hsl(0 0% 77%);
+  --sl-color-gray-6: hsl(0 0% 94%);
+  --sl-color-gray-7: hsl(0 0% 97%);
+  --sl-color-black: var(--background);
+}
+
+/* On a phone a four-column prop table scrolls sideways with its description off-screen; stack each
+   row instead, every cell led by its column heading (rehype-table-labels.mjs puts it in data-label). */
+@media (max-width: 40rem) {
+  .sl-markdown-content table:not(:where(.not-content *)),
+  .sl-markdown-content table:not(:where(.not-content *)) > tbody,
+  .sl-markdown-content table:not(:where(.not-content *)) > tbody > tr,
+  .sl-markdown-content table:not(:where(.not-content *)) > tbody > tr > td {
+    display: block;
+  }
+  .sl-markdown-content table:not(:where(.not-content *)) > thead {
+    display: none;
+  }
+  .sl-markdown-content table:not(:where(.not-content *)) > tbody > tr {
+    padding: 0.6rem 0;
+    border-top: 1px solid var(--sl-color-hairline);
+  }
+  .sl-markdown-content table:not(:where(.not-content *)) > tbody > tr:last-child {
+    border-bottom: 1px solid var(--sl-color-hairline);
+  }
+  .sl-markdown-content table:not(:where(.not-content *)) > tbody > tr > td {
+    padding: 0.15rem 0;
+    border: 0;
+  }
+  .sl-markdown-content table:not(:where(.not-content *)) > tbody > tr > td:empty {
+    display: none;
+  }
+  .sl-markdown-content table:not(:where(.not-content *)) > tbody > tr > td[data-label]::before {
+    content: attr(data-label) ": ";
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    color: var(--sl-color-gray-3);
+  }
+  .sl-markdown-content
+    table:not(:where(.not-content *))
+    > tbody
+    > tr
+    > td:first-child[data-label]::before {
+    content: none;
+  }
 }

@@ -12,12 +12,12 @@ import {
 const col = createDataGridColumns<Person>();
 
 const columns = col.columns([
-  col.text("name", { header: "Name" }),
-  col.link("email", { header: "Email", href: (v) => `mailto:${v}` }),
-  col.enum("status", { header: "Status", options: STATUS_OPTIONS }),
-  col.enum("plan", { header: "Plan", options: PLAN_OPTIONS }),
-  col.currency("mrr", { header: "MRR", currency: "USD" }),
-  col.date("joinedAt", { header: "Joined" }),
+  col.text("name", { header: "Name", size: 136 }),
+  col.link("email", { header: "Email", href: (v) => `mailto:${v}`, size: 186 }),
+  col.enum("status", { header: "Status", options: STATUS_OPTIONS, size: 100 }),
+  col.enum("plan", { header: "Plan", options: PLAN_OPTIONS, size: 100 }),
+  col.currency("mrr", { header: "MRR", currency: "USD", size: 96 }),
+  col.date("joinedAt", { header: "Joined", size: 118 }),
 ]);
 
 const data = makePeople(120, 7);

@@ -144,7 +144,7 @@
       ],
       "docs": "Docs: https://ui.kadal.cc/docs/data-grid/ · Built for the Base UI flavour of shadcn/ui (npx shadcn init -b base). Import from \"@/components/ui/data-grid\".",
       "meta": {
-        "version": "0.1.0",
+        "version": "0.1.1",
         "base": "base",
         "license": "MIT"
       }

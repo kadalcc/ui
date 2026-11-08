@@ -86,8 +86,8 @@ const extra = schema ? (Array.isArray(schema) ? schema : [schema]) : [];
          choice should hold across the whole site, so both are read and both are written. -->
     <script is:inline>
       try {
-        const t = localStorage.getItem("theme") || localStorage.getItem("starlight-theme");
-        const dark = t === "dark" || (!t && matchMedia("(prefers-color-scheme: dark)").matches);
+        const t = localStorage.getItem("starlight-theme") || localStorage.getItem("theme");
+        const dark = t === "dark" || ((!t || t === "auto") && matchMedia("(prefers-color-scheme: dark)").matches);
         document.documentElement.classList.toggle("dark", dark);
         document.documentElement.dataset.theme = dark ? "dark" : "light";
       } catch {}

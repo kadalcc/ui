@@ -30,6 +30,20 @@ const bugUrl = `${SITE.newBug}&title=${encodeURIComponent(`[docs] ${Astro.url.pa
   </ul>
 </nav>
 
+<script>
+  // Copy each prose table's column headings onto its cells, so the phone stylesheet can stack a
+  // wide table into labelled rows (starlight.css) without losing what each cell means.
+  for (const table of document.querySelectorAll<HTMLTableElement>(".sl-markdown-content table")) {
+    if (table.closest(".not-content")) continue;
+    const headings = [...(table.tHead?.rows[0]?.cells ?? [])].map((c) => c.textContent?.trim() ?? "");
+    for (const body of table.tBodies)
+      for (const row of body.rows)
+        [...row.cells].forEach((cell, i) => {
+          if (headings[i]) cell.dataset.label = headings[i];
+        });
+  }
+</script>
+
 <style>
   .kd-fb {
     display: flex;

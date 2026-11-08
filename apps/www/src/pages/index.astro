@@ -53,8 +53,11 @@ export const columns = col.columns([
   col.actions(({ row }) => <OrderMenu order={row.original} />),
 ])
 
-<DataGrid data={orders} columns={columns}
-  onCellEdit={({ row, columnId, value }) => save(row.id, columnId, value)} />`
+<DataGrid
+  data={orders}
+  columns={columns}
+  onCellEdit={({ row, columnId, value }) => save(row.id, columnId, value)}
+/>`
 
 ---
 
@@ -138,7 +141,7 @@ export const columns = col.columns([
           <li class="flex gap-2"><Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" /> shadcn/ui on Base UI, the new default</li>
           <li class="flex gap-2"><Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" /> TanStack Table v9: tree-shaken features, store-based state</li>
           <li class="flex gap-2"><Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" /> Works with Next.js, Vite, Astro, Remix, TanStack Start</li>
-          <li class="flex gap-2"><Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" /> <code class="font-mono">kadal-ui diff</code> shows what changed upstream</li>
+          <li class="flex gap-2"><Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" /> <code class="font-mono whitespace-nowrap">kadal-ui diff</code> shows what changed upstream</li>
           <li class="flex gap-2"><Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" /> MIT, no licence keys, no enterprise tier</li>
         </ul>
       </div>

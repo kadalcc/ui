@@ -37,6 +37,7 @@ export default function DataGridDensity() {
         variant="outline"
         size="sm"
         aria-label="Row density"
+        className="flex-wrap"
       >
         <ToggleGroupItem value="compact">
           <Rows4Icon /> Compact

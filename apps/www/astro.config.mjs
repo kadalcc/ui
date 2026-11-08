@@ -81,10 +81,14 @@ export default defineConfig({
       },
       sidebar,
       head: [
-        { tag: "meta", attrs: { property: "og:image", content: "https://ui.kadal.cc/og/docs.png" } },
+        {
+          tag: "meta",
+          attrs: { property: "og:image", content: "https://ui.kadal.cc/og/docs.png" },
+        },
         { tag: "meta", attrs: { name: "twitter:card", content: "summary_large_image" } },
       ],
     }),
-    sitemap(),
+    // The /dev/ pages exist for the smoke and e2e runs; they are not for readers or crawlers.
+    sitemap({ filter: (page) => !page.includes("/dev/") }),
   ],
 });

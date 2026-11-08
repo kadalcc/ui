@@ -3,7 +3,7 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:is(.dark *, [data-theme="dark"] *));
 
 /* The registry source lives outside src/, so Tailwind must be told to scan it. */
 @source "../../registry";
@@ -86,7 +86,9 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-.dark {
+/* The landing toggles a `.dark` class; Starlight (the docs) sets `data-theme`. Both must flip the tokens. */
+.dark,
+[data-theme="dark"] {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -141,6 +143,27 @@
 .code-shiki span {
   color: var(--shiki-light);
 }
-.dark .code-shiki span {
+:is(.dark, [data-theme="dark"]) .code-shiki span {
   color: var(--shiki-dark);
+}
+
+/* A scrollbar that shows before the reader scrolls, for blocks that scroll sideways (code, the
+   install command): macOS hides the native one until then, and a clipped line looks like a cut. */
+@utility scrollbar-visible {
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+    background-color: color-mix(in oklab, var(--foreground) 25%, transparent);
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklab, var(--foreground) 40%, transparent);
+  }
 }

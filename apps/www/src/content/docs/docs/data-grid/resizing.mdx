@@ -37,11 +37,12 @@ grid.table.resetColumnSizing()
 
 ## How it behaves
 
-- **Fixed layout.** The table uses `table-layout: fixed` and is exactly as wide as the sum of its
-  visible columns (`table.getTotalSize()`). A column is its size, never squeezed to make room for the
-  others, and columns never stretch to fill a wide viewport: if the sizes add up to less than the
-  grid's width, the table ends early. Size your columns for the data, and give a long text column
-  the room it needs.
+- **Fixed layout.** The table uses `table-layout: fixed`, takes its column widths from the header
+  cells, and is never narrower than the sum of their sizes (`table.getTotalSize()`): a column is
+  its size, never squeezed to make room for the others, and when the sum is wider than the grid,
+  the grid scrolls sideways. When the sum is narrower, the table fills the grid and the spare width
+  is shared out in proportion to the sizes, so a grid never ends early with a blank strip beside
+  it. Size your columns for the data, and give a long text column the room it needs.
 - **Live.** `columnResizeMode` is `"onChange"`, so the column follows the pointer while you drag,
   and the columns after it move with it. Pinned columns update their sticky offsets as you go.
 - **Fit to content** (`autosizeColumn`) measures the text and inline content (badges, icons, links)

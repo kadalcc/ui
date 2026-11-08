@@ -502,7 +502,12 @@ export function DataGridColumnHeader<TData extends RowData>({
           onDoubleClick={() => autosizeColumn(ui.rootRef.current, column)}
           onClick={(e) => e.stopPropagation()}
           className={cn(
-            "absolute top-0 -right-px z-10 h-full w-2 cursor-col-resize touch-none select-none",
+            "absolute top-0 z-10 h-full w-2 cursor-col-resize touch-none select-none",
+            // Straddle the border between columns; on the last column stay inside the table, or the
+            // overhanging pixel is a horizontal scrollbar on a grid that fits its box exactly.
+            header.index === (header.headerGroup?.headers.length ?? 0) - 1
+              ? "right-0"
+              : "-right-px",
             "after:absolute after:top-1/4 after:right-[3px] after:h-1/2 after:w-px after:rounded-full after:bg-border after:opacity-0 after:transition-opacity group-hover/head:after:opacity-100",
             resizing && "after:bg-primary after:opacity-100",
           )}

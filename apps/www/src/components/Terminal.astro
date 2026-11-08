@@ -56,5 +56,5 @@ const rendered = await Promise.all(
       </div>
     ) : null
   }
-  <pre class="code-shiki overflow-x-auto p-4 font-mono text-[13px] leading-6"><code set:html={rendered.join("\n")} /></pre>
+  <pre class="code-shiki scrollbar-visible overflow-x-auto p-4 font-mono text-[13px] leading-6 max-sm:whitespace-pre-wrap max-sm:[overflow-wrap:anywhere]"><code set:html={rendered.join("\n")} /></pre>
 </div>

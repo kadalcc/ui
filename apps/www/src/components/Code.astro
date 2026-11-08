@@ -34,5 +34,5 @@ const html = await codeToHtml(code.trim(), {
       </div>
     ) : null
   }
-  <div class="code-shiki overflow-x-auto p-4 font-mono text-[13px] leading-6" set:html={html} />
+  <div class="code-shiki scrollbar-visible overflow-x-auto p-4 font-mono text-[13px] leading-6 max-sm:[overflow-wrap:anywhere] max-sm:[&_pre]:whitespace-pre-wrap" set:html={html} />
 </div>

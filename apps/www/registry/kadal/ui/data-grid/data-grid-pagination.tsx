@@ -19,6 +19,7 @@ import {
 } from "@/registry/kadal/ui/select";
 
 import { useDataGridContext } from "./data-grid-context";
+import type { DataGridColumnMeta } from "./data-grid-types";
 
 export interface DataGridPaginationProps {
   className?: string;
@@ -41,6 +42,14 @@ export function DataGridPagination<TData extends RowData>({
   const pageCount = Math.max(1, table.getPageCount());
   const total = table.getRowCount();
   const selected = grid.selectionEnabled ? table.getSelectedRowModel().flatRows.length : 0;
+  // "0 of 120 selected" only reads right when the reader can see how to select: a checkbox
+  // column, or rows already chosen by click or keyboard. A plain grid says how many rows it has.
+  const selectionVisible =
+    grid.selectionEnabled &&
+    (selected > 0 ||
+      table
+        .getAllLeafColumns()
+        .some((c) => (c.columnDef.meta as DataGridColumnMeta | undefined)?.kind === "select"));
   const sizes = Array.from(new Set([...grid.pagination.pageSizeOptions, pageSize])).sort(
     (a, b) => a - b,
   );
@@ -52,7 +61,7 @@ export function DataGridPagination<TData extends RowData>({
       className={cn("flex flex-wrap items-center justify-between gap-2 px-1 text-sm", className)}
     >
       <div className="text-muted-foreground tabular-nums">
-        {(showSelection ?? grid.selectionEnabled)
+        {(showSelection ?? selectionVisible)
           ? labels.selectedOf(selected, total)
           : labels.rowsCount(total)}
       </div>

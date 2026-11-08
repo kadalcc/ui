@@ -35,7 +35,7 @@ export default function DataGridStates() {
   const data = state === "loading" || state === "empty" ? [] : rows;
   return (
     <div className="flex flex-col gap-3">
-      <ButtonGroup aria-label="Grid state">
+      <ButtonGroup aria-label="Grid state" className="flex-wrap">
         {STATES.map(([value, label]) => (
           <Button
             key={value}

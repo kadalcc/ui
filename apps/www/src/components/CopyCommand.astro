@@ -41,7 +41,7 @@ const highlighted = await Promise.all(
   id={id}
 >
   <span class="select-none text-muted-foreground" aria-hidden="true">$</span>
-  <code class="code-shiki min-w-0 flex-1 overflow-x-auto whitespace-nowrap" data-cmd data-forms={JSON.stringify(forms)}>
+  <code class="code-shiki min-w-0 flex-1 overflow-x-auto whitespace-nowrap max-sm:whitespace-pre-wrap" data-cmd data-forms={JSON.stringify(forms)}>
     {highlighted.map(([pm, html]) => <span data-form={pm} hidden={pm !== "npm"} set:html={html} />)}
   </code>
   <div class="hidden items-center gap-0.5 rounded-md border border-border bg-background p-0.5 text-[11px] sm:flex" role="group" aria-label="Package manager">
