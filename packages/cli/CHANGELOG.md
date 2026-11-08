@@ -1,5 +1,13 @@
 # @kadal/ui
 
+## 0.1.1
+
+### Patch Changes
+
+- 2e0b2ce: Published through npm trusted publishing from the repository's release workflow, so the package
+  carries a provenance attestation that links the tarball on npm to the commit and workflow run in
+  kadalcc/ui that built it. No change to the commands.
+
 ## 0.1.0
 
 ### Minor Changes

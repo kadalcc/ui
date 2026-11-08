@@ -1,6 +1,6 @@
 {
   "name": "@kadal/ui",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The Kadal UI CLI: add power-user React components, starting with the data grid, to your own source code through the shadcn registry at ui.kadal.cc.",
   "license": "MIT",
   "type": "module",
