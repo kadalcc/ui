@@ -1,6 +1,6 @@
 ---
 title: Row pinning
-description: Pin a row to the top or bottom of the grid from a row-actions menu; sticky rendering, pinned rows that survive filters and pages, and how they behave with virtualization.
+description: Pin a row to the top or bottom of the grid from a row-actions menu; sticky rendering, pinned rows that survive filters and pages, and how they behave with virtualisation.
 ---
 
 import { Aside } from "@astrojs/starlight/components";
@@ -59,7 +59,6 @@ wording.
   not part of the [persisted view](/docs/data-grid/persistence/) and resets on reload. Control
   `table.state.rowPinning` with `table.onRowPinningChange` if you want to keep it.
 - **Everything else works** in a pinned row: selection, editing, cell selection, the row menu.
-
 - **Pinned rows live outside the virtual list.** With `virtualize` they are always in the DOM and
   stay stuck at their edge however far the rest scrolls.
 - **Several per edge stack.** Each top-pinned row sticks just below the ones pinned before it, and
@@ -83,4 +82,4 @@ Row api (TanStack): `row.pin(position, includeLeafRows?, includeParentRows?)`, `
 
 - [Row actions](/docs/data-grid/row-actions/): the menu the pin items live in.
 - [Column pinning](/docs/data-grid/pinning/): the same idea for columns.
-- [Virtualization](/docs/data-grid/virtualization/).
+- [Virtualisation](/docs/data-grid/virtualization/).

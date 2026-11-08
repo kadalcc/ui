@@ -64,8 +64,10 @@ it belongs in your app, with the toolbar, pager, selection and editing on.
    }
    ```
 
-4. **Save edits.** `onCellEdit` fires after a cell is committed, with the row, the column id and
-   the typed value. Throw (or return a rejected promise) to keep the editor open with the message.
+4. **Save edits.** `onCellEdit` fires after a cell is committed, with the row, the column id, the
+   new value and the previous one. Throw (or return a rejected promise) to keep the editor open
+   with the message. The value is `unknown` here because any column can fire it; a column's own
+   `onEdit` knows its type ([type safety](/docs/type-safety/#edits)).
 
    ```tsx title="customers/page.tsx" ins={4-7}
    <DataGrid

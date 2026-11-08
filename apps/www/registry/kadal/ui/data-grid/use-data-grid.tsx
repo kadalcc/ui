@@ -52,7 +52,7 @@ import {
   type DataGridDensity,
   type DataGridEditorSpec,
 } from "./data-grid-types";
-import { humanize, useControllableState } from "./data-grid-utils";
+import { humanize, useCoarsePointer, useControllableState } from "./data-grid-utils";
 
 // ── Options ───────────────────────────────────────────────────────────────────────────────────────
 
@@ -288,6 +288,8 @@ const VIEW_KEYS = [
   "grouping",
 ] as const;
 
+const subscribeToNothing = () => () => {};
+
 function viewSlicesOf(state: Partial<DataGridState> | undefined): Partial<DataGridView> {
   const out: Partial<DataGridView> = {};
   if (!state) return out;
@@ -336,6 +338,13 @@ export function useDataGrid<TData extends RowData>(
   const key = name ?? keyOption ?? "grid";
 
   const labels = React.useMemo(() => resolveLabels(labelsOption), [labelsOption]);
+  // `false` only while React is hydrating server-rendered markup: that render must match the
+  // server, which knew nothing of this browser's storage. A client-only render is `true` at once.
+  const hydrated = React.useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false,
+  );
 
   // ── Pagination ───────────────────────────────────────────────────────────────────────────────
   // Derived option objects are memoised on their inputs so the api objects built from them
@@ -410,9 +419,13 @@ export function useDataGrid<TData extends RowData>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 
-  const startView = persisted.current;
+  // During hydration the table starts from the defaults (what the server rendered); the saved
+  // view is applied by the effect below once the client owns the DOM.
+  const startView = hydrated ? persisted.current : baseView;
 
   // ── Density ──────────────────────────────────────────────────────────────────────────────────
+  // On a touch screen every density grows to a 44 px row, the smallest comfortable target.
+  const coarsePointer = useCoarsePointer();
   const [density, setDensity] = useControllableState<DataGridDensity>(
     densityProp,
     startView.density,
@@ -443,11 +456,20 @@ export function useDataGrid<TData extends RowData>(
   const metaCache = React.useRef(new Map<string, DataGridColumnMeta>());
   metaCache.current.clear();
 
+  // With selection off, the checkbox column has nothing to show: leave it out entirely.
+  const tableColumns = React.useMemo(
+    () =>
+      selectionOptions
+        ? columns
+        : columns.filter((c) => (c.meta as DataGridColumnMeta | undefined)?.kind !== "select"),
+    [columns, selectionOptions],
+  );
+
   const tableOptions: DataGridTableOptions<TData> = {
     features: dataGridFeatures,
     key,
     data,
-    columns,
+    columns: tableColumns,
     getRowId,
     getSubRows,
     initialState: {
@@ -505,7 +527,7 @@ export function useDataGrid<TData extends RowData>(
         ? (row) => selectionOptions.enable!(row.original)
         : true
       : false,
-    enableMultiRowSelection: selectionOptions?.mode !== "single",
+    enableMultiRowSelection: selectionOptions ? selectionOptions.mode !== "single" : false,
     enableRowRangeSelection: selectionOptions?.range !== false,
     enableSubRowSelection: selectionOptions?.subRows !== false,
     isRowRangeSelectionEvent: (e) => Boolean((e as MouseEvent).shiftKey),
@@ -642,6 +664,14 @@ export function useDataGrid<TData extends RowData>(
     },
     [table, pagination, setDensity],
   );
+
+  // Server-rendered pages: apply the saved view after hydration (see `startView`).
+  const appliedAfterHydration = React.useRef(hydrated);
+  React.useEffect(() => {
+    if (appliedAfterHydration.current || !hydrated) return;
+    appliedAfterHydration.current = true;
+    if (persistOptions) applyView(persistedRef.current.current);
+  }, [hydrated, persistOptions, applyView]);
 
   const views: DataGridViewsApi = React.useMemo(
     () => ({
@@ -900,7 +930,9 @@ export function useDataGrid<TData extends RowData>(
     locale,
     density,
     setDensity,
-    rowHeight: DENSITY_ROW_HEIGHT[density],
+    rowHeight: coarsePointer
+      ? Math.max(DENSITY_ROW_HEIGHT[density], 44)
+      : DENSITY_ROW_HEIGHT[density],
     pagination,
     isServer,
     virtualizeRows,

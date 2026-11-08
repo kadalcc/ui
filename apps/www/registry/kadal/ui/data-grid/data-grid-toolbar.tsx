@@ -363,7 +363,7 @@ export function DataGridExportMenu<TData extends RowData>({
           <DropdownMenuItem
             onClick={() =>
               void grid.copyToClipboard(opts).then((ok) => {
-                if (ok) ui.announce(labels.copied(grid.exportTable(opts).rows.length));
+                if (ok) ui.announce(labels.copiedRows(grid.exportTable(opts).rows.length));
               })
             }
           >
@@ -538,7 +538,8 @@ export function DataGridToolbar<TData extends RowData>({
       data-slot="data-grid-toolbar"
       className={cn("flex flex-wrap items-center justify-between gap-2", className)}
     >
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+      {/* A minimum width for the search side, so on a phone the menus wrap under it instead of over it. */}
+      <div className="flex min-w-64 flex-1 flex-wrap items-center gap-2">
         {search ? <DataGridSearch /> : null}
         {start}
         {filters ? <DataGridFilterChips /> : null}

@@ -39,7 +39,7 @@ options, so a persisted or initial size never shows as blank.
 
 | Part | What it shows |
 | --- | --- |
-| The count | "x of y row(s) selected." when selection is on, otherwise "y rows". `y` is the row count after filtering. |
+| The count | "x of y row(s) selected." when selection is on, otherwise "y rows". `y` is the number of top-level rows after filtering (group rows, when grouped). |
 | Rows per page | A select over `pageSizeOptions`. The label hides on narrow screens; the select stays. |
 | Page x of y | The position. |
 | Go to page | A number box, shown once there are more than five pages. Type a page and press <kbd>Enter</kbd>. |
@@ -97,6 +97,6 @@ below the table. It renders nothing when `pagination` is `false`.
 
 ## See also
 
-- [Virtualization](/docs/data-grid/virtualization/): the other way to handle many rows.
+- [Virtualisation](/docs/data-grid/virtualization/): the other way to handle many rows.
 - [Server-side data](/docs/data-grid/server-side/): when the server pages.
 - [URL state](/docs/data-grid/url-state/): the page in the address bar.

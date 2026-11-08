@@ -198,8 +198,8 @@ useDataGrid<Order>({ data, columns, table: { enableCellSpanning: true } })
 ## What is `unknown`, and why
 
 - `onCellEdit`'s `value` and `previous`: the grid cannot know which column fired. Narrow as above.
-- `exportTable().rows` is `unknown[][]`: formatted strings by default, raw values with
-  `formatted: false`, whatever your `export` function returns otherwise.
+- `exportTable().rows` is `ReadonlyArray<ReadonlyArray<unknown>>`: formatted strings by default,
+  raw values with `formatted: false`, whatever your `export` function returns otherwise.
 - `DataGridColumnMeta`'s callbacks (`format`, `href`, `cellClassName`…) are typed with `any` in the
   meta interface itself, because meta is where every column's options meet. You never write them
   there: the builder's options are the typed surface.

@@ -1,5 +1,9 @@
 ---
-/** A one-line shell command with a copy button, in the reader's package manager. */
+/**
+ * A one-line shell command with a copy button, in the reader's package manager. Every form is
+ * highlighted at build time (Shiki, both themes) and the switcher shows one at a time.
+ */
+import { codeToHtml } from "shiki";
 import Icon from "./Icon.astro";
 
 interface Props {
@@ -15,6 +19,17 @@ const forms = {
   yarn: command.replace(/^npx /, "yarn dlx "),
   bun: command.replace(/^npx /, "bunx --bun "),
 };
+const highlighted = await Promise.all(
+  (Object.keys(forms) as (keyof typeof forms)[]).map(async (pm) => {
+    const html = await codeToHtml(forms[pm], {
+      lang: "bash",
+      themes: { light: "github-light", dark: "github-dark" },
+      defaultColor: false,
+    });
+    // Only the tokens: the <code> below is the element.
+    return [pm, html.replace(/^<pre[^>]*><code[^>]*>/, "").replace(/<\/code><\/pre>\s*$/, "")] as const;
+  }),
+);
 ---
 
 <div
@@ -26,7 +41,9 @@ const forms = {
   id={id}
 >
   <span class="select-none text-muted-foreground" aria-hidden="true">$</span>
-  <code class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap" data-cmd data-forms={JSON.stringify(forms)}>{command}</code>
+  <code class="code-shiki min-w-0 flex-1 overflow-x-auto whitespace-nowrap" data-cmd data-forms={JSON.stringify(forms)}>
+    {highlighted.map(([pm, html]) => <span data-form={pm} hidden={pm !== "npm"} set:html={html} />)}
+  </code>
   <div class="hidden items-center gap-0.5 rounded-md border border-border bg-background p-0.5 text-[11px] sm:flex" role="group" aria-label="Package manager">
     {
       (["npm", "pnpm", "yarn", "bun"] as const).map((pm) => (
@@ -59,7 +76,8 @@ const forms = {
     for (const box of all) {
       const code = box.querySelector<HTMLElement>("[data-cmd]")!;
       const forms = JSON.parse(code.dataset.forms ?? "{}") as Record<string, string>;
-      code.textContent = forms[pm] ?? forms.npm ?? code.textContent;
+      const shown = pm in forms ? pm : "npm";
+      for (const form of code.querySelectorAll<HTMLElement>("[data-form]")) form.hidden = form.dataset.form !== shown;
       for (const b of box.querySelectorAll<HTMLButtonElement>("[data-pm]")) {
         b.setAttribute("aria-pressed", String(b.dataset.pm === pm));
       }
@@ -81,7 +99,10 @@ const forms = {
       });
     }
     box.querySelector<HTMLButtonElement>("[data-copy]")?.addEventListener("click", async () => {
-      const text = box.querySelector("[data-cmd]")?.textContent ?? "";
+      const code = box.querySelector<HTMLElement>("[data-cmd]");
+      const forms = JSON.parse(code?.dataset.forms ?? "{}") as Record<string, string>;
+      const shown = code?.querySelector<HTMLElement>("[data-form]:not([hidden])")?.dataset.form ?? "npm";
+      const text = forms[shown] ?? code?.textContent?.trim() ?? "";
       try {
         await navigator.clipboard.writeText(text);
         box.dataset.copied = "";

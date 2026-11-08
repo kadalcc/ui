@@ -103,8 +103,8 @@ grid.table.getRow(id).toggleSelected(true)    // select one
 - Selected rows get `data-state="selected"` and `aria-selected`, and the grid sets
   `aria-multiselectable` on its `role="grid"` element. Style them with
   `[data-state=selected]` or through `getRowClassName`.
-- `selection={false}` turns the whole thing off: no checkboxes, no bar, no count in the pager, and
-  the `select` column, if you left it in, renders empty.
+- `selection={false}` turns the whole thing off: no row checkboxes, no bar, no count in the pager,
+  and a `select` column you left in is dropped from the table.
 
 ## Keyboard
 

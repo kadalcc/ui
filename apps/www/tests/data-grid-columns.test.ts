@@ -17,11 +17,16 @@ interface Person {
   address: { city: string };
 }
 
-const defOf = (column: unknown) => column as Record<string, unknown> & { meta: Record<string, unknown> };
+const defOf = (column: unknown) =>
+  column as Record<string, unknown> & { meta: Record<string, unknown> };
 
 describe("kindDefaults", () => {
   test("each kind brings its sort, filter and aggregation", () => {
-    expect(kindDefaults("number")).toMatchObject({ sortFn: "basic", filterFn: "range", aggregationFn: "sum" });
+    expect(kindDefaults("number")).toMatchObject({
+      sortFn: "basic",
+      filterFn: "range",
+      aggregationFn: "sum",
+    });
     expect(kindDefaults("percent").aggregationFn).toBe("mean");
     expect(kindDefaults("date")).toMatchObject({ sortFn: "datetime", filterFn: "dateRange" });
     expect(kindDefaults("enum")).toMatchObject({ filterFn: "facet", meta: { filter: "facet" } });
@@ -52,7 +57,13 @@ describe("splitColumnOptions", () => {
       meta: { wrap: true },
     });
     expect(def).toEqual({ header: "Name", size: 120 });
-    expect(meta).toEqual({ kind: "text", wrap: true, label: "Full name", align: "end", editable: true });
+    expect(meta).toEqual({
+      kind: "text",
+      wrap: true,
+      label: "Full name",
+      align: "end",
+      editable: true,
+    });
   });
 });
 
@@ -64,7 +75,12 @@ describe("createDataGridColumns", () => {
     expect(def.accessorKey).toBe("mrr");
     expect(def.sortFn).toBe("basic");
     expect(def.filterFn).toBe("range");
-    expect(def.meta).toMatchObject({ kind: "currency", currency: "EUR", align: "end", filter: "range" });
+    expect(def.meta).toMatchObject({
+      kind: "currency",
+      currency: "EUR",
+      align: "end",
+      filter: "range",
+    });
   });
 
   test("nested keys and accessor functions work", () => {
@@ -91,7 +107,9 @@ describe("createDataGridColumns", () => {
   });
 
   test("a group takes typed builder columns as they are", () => {
-    const group = defOf(col.group("Money", [col.currency("mrr"), col.number("mrr", { id: "seats" })]));
+    const group = defOf(
+      col.group("Money", [col.currency("mrr"), col.number("mrr", { id: "seats" })]),
+    );
     expect(group.id).toBe("Money");
     expect((group.columns as unknown[]).length).toBe(2);
   });
@@ -99,6 +117,8 @@ describe("createDataGridColumns", () => {
   test("tags columns expose each item as a facet value", () => {
     const tags = defOf(col.tags("team"));
     const getUniqueValues = tags.getUniqueValues as (row: Person, index: number) => unknown[];
-    expect(getUniqueValues({ id: "1", name: "A", team: "x", mrr: 0, address: { city: "" } }, 0)).toEqual(["x"]);
+    expect(
+      getUniqueValues({ id: "1", name: "A", team: "x", mrr: 0, address: { city: "" } }, 0),
+    ).toEqual(["x"]);
   });
 });

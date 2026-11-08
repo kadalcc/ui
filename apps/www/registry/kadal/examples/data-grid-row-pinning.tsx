@@ -69,7 +69,7 @@ const data = makePeople(40, 31);
 export default function DataGridRowPinning() {
   return (
     <DataGrid
-      key="row-pinning"
+      name="row-pinning"
       data={data}
       columns={columns}
       getRowId={(row) => row.id}

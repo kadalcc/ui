@@ -52,7 +52,7 @@ const data = makePeople(80, 29);
 export default function DataGridGrouping() {
   return (
     <DataGrid
-      key="grouping"
+      name="grouping"
       data={data}
       columns={columns}
       getRowId={(row) => row.id}

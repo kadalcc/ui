@@ -1,8 +1,120 @@
 ---
 title: AI agents and MCP
-description: AI agents and MCP in the Kadal UI data grid.
+description: "Let Claude Code, Cursor or any MCP client add the Kadal UI data grid to a project and use it well: the shadcn MCP server, the kadal-ui Agent Skill, and llms.txt."
 ---
 
-{/* STUB: written next; keep the frontmatter. */}
+import { Aside, Steps, Tabs, TabItem } from "@astrojs/starlight/components";
 
-This page is being written. In the meantime the [overview](/docs/data-grid/) and the [API reference](/docs/data-grid/api/) cover it.
+Because the grid is source in your repository, an agent can read it, change it and reason about
+it like the rest of your code. Three things make that go well: an MCP server so the agent can add
+items from the registry, a skill that teaches it the grid's API, and a plain-text index of these
+docs it can read.
+
+## The MCP server
+
+The [shadcn MCP server](https://ui.shadcn.com/docs/mcp) exposes every registry in your
+`components.json`, so once the `@kadal` registry is registered the agent can search it and add
+items without you typing the command.
+
+<Steps>
+  1. Register the registry and configure the server for your client:
+
+     <Tabs syncKey="agent">
+       <TabItem label="Claude Code">
+         ```sh
+         npx @kadal/ui mcp --client claude
+         ```
+       </TabItem>
+       <TabItem label="Cursor">
+         ```sh
+         npx @kadal/ui mcp --client cursor
+         ```
+       </TabItem>
+       <TabItem label="VS Code">
+         ```sh
+         npx @kadal/ui mcp --client vscode
+         ```
+       </TabItem>
+     </Tabs>
+
+     This runs `shadcn mcp init --client <name>`, which writes the server into the client's MCP
+     configuration (`.mcp.json` for Claude Code, `.cursor/mcp.json` for Cursor, `.vscode/mcp.json`
+     for VS Code). Commit that file if your team shares it.
+
+  2. Restart the client, then ask:
+
+     > Add the `@kadal/data-grid` component and show me a grid of our customers.
+
+     The agent lists the registry, adds the item (the same files `npx shadcn add` copies) and
+     writes the page. Ask for `@kadal/data-grid-url-state` when the filters should live in the URL.
+</Steps>
+
+<Aside type="tip">
+  Already using the shadcn MCP server? Nothing to install: add
+  `"@kadal": "https://ui.kadal.cc/r/{name}.json"` under `registries` in `components.json` and the
+  server picks it up on its next start.
+</Aside>
+
+## The Agent Skill
+
+An [Agent Skill](https://agentskills.io) is a Markdown file an agent loads when a task matches
+its description. The `kadal-ui` skill covers installing the grid, the column builder, the
+`<DataGrid>` props and the composable parts, URL state, server-side paging, and a checklist to run
+before calling a grid done. It is written against the source, so the names in it are the names in
+your files.
+
+<Tabs syncKey="agent">
+  <TabItem label="Claude Code">
+    The repository is a plugin marketplace with one plugin, so:
+
+    ```text
+    /plugin marketplace add kadalcc/ui
+    /plugin install kadal-ui@kadal-ui
+    ```
+
+    From then on, "add a data grid of the orders" loads the skill.
+  </TabItem>
+  <TabItem label="Any agent">
+    Copy [`skills/kadal-ui/SKILL.md`](https://github.com/kadalcc/ui/blob/main/skills/kadal-ui/SKILL.md)
+    into wherever your agent reads skills (`.claude/skills/kadal-ui/`, `.cursor/rules/`, an
+    `AGENTS.md` section). It is one file with no dependencies.
+  </TabItem>
+</Tabs>
+
+## llms.txt
+
+[`ui.kadal.cc/llms.txt`](https://ui.kadal.cc/llms.txt) is a plain-text index of this site: what
+the grid is, the install command, every registry item, every docs page in sidebar order, the CLI
+commands and the sponsor tiers. Point an agent at it when it needs the docs and has no browser.
+The docs pages are also readable as Markdown through the "Edit page" link on each one, which goes
+to the source file on GitHub.
+
+## What to tell the agent
+
+The source is the truth, and the agent can read it, so most prompts need little context. A few
+things it does not know unless you say them:
+
+- The grid is named with `name`, not `key` (React keeps `key` for itself).
+- Columns come from `createDataGridColumns<T>()`; a kind per column, and `filter`, `editable`,
+  `format` as flat options.
+- Compose with `useDataGrid` + `DataGridRoot` when the page needs its own layout; otherwise
+  `<DataGrid>`.
+- Server-side data goes through `server={{ rowCount }}` with the state handed back by the
+  `table.on*Change` callbacks; see [server-side](/docs/data-grid/server-side/).
+- Prefer the options to patching the files, so `npx @kadal/ui diff data-grid` stays readable.
+
+All of this is in the skill, which is why the skill is worth installing.
+
+## Writing agent-friendly code with the grid
+
+- Keep the column definitions in their own file (`columns.tsx`) so an agent can change a column
+  without touching the page.
+- Give rows a stable `getRowId`; selection, editing and pinning are keyed by it.
+- When an agent adds an `onCellEdit` handler, have it narrow on `columnId`; the
+  [type-safety](/docs/type-safety/) page shows the pattern.
+
+## See also
+
+- [CLI reference](/docs/cli/): the `mcp` command and the rest.
+- [Installation](/docs/installation/): the registry by hand.
+- [Composition](/docs/data-grid/composition/): the parts an agent can arrange.

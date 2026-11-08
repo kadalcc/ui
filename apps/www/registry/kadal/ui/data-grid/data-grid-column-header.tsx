@@ -327,7 +327,11 @@ export function DataGridColumnHeader<TData extends RowData>({
 
         <div
           data-active={isFiltered || menuOpen || filterOpen || undefined}
-          className="absolute inset-y-0 right-1 flex items-center gap-0.5 bg-background/95 pl-1 opacity-0 transition-opacity group-hover/head:opacity-100 focus-within:opacity-100 data-active:opacity-100"
+          className={cn(
+            "absolute inset-y-0 flex items-center gap-0.5 bg-background/95 opacity-0 transition-opacity group-hover/head:opacity-100 focus-within:opacity-100 data-active:opacity-100",
+            // On the side away from the title, so an end-aligned title stays readable on hover.
+            meta.align === "end" ? "left-1 pr-1" : "right-1 pl-1",
+          )}
         >
           {canFilter ? (
             <Popover open={filterOpen} onOpenChange={setFilterOpen}>

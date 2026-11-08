@@ -22,7 +22,7 @@ const data = makePeople(40, 3, { tree: true });
 export default function DataGridTree() {
   return (
     <DataGrid
-      key="tree"
+      name="tree"
       data={data}
       columns={columns}
       getRowId={(row) => row.id}

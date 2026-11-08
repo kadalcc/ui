@@ -1,6 +1,8 @@
 ---
 import Base from "../layouts/Base.astro";
 import CopyCommand from "../components/CopyCommand.astro";
+import Code from "../components/Code.astro";
+import Terminal from "../components/Terminal.astro";
 import Icon from "../components/Icon.astro";
 import { SITE } from "../data/site";
 import { PAID_PRODUCTS, linkTo } from "../data/network";
@@ -11,7 +13,7 @@ const FEATURES: { title: string; line: string; href: string }[] = [
   { title: "Sorting", line: "Click to sort, shift-click to add a second key, each key numbered in the header.", href: "/docs/data-grid/sorting/" },
   { title: "Filters by type", line: "Facets with counts, text operators, number and date ranges, booleans, chips to clear.", href: "/docs/data-grid/filtering/" },
   { title: "Fuzzy search", line: "One box over every column, ranked so the best matches come first.", href: "/docs/data-grid/search/" },
-  { title: "50,000 rows", line: "Virtualized rows with the sticky header and pinning intact, or a pager when you'd rather.", href: "/docs/data-grid/virtualization/" },
+  { title: "50,000 rows", line: "Virtualised rows with the sticky header and pinning intact, or a pager when you'd rather.", href: "/docs/data-grid/virtualization/" },
   { title: "Selection and bulk actions", line: "Checkboxes, shift-click ranges, select all on the page, and a bar for what happens next.", href: "/docs/data-grid/selection/" },
   { title: "Pin, reorder, resize", line: "Pin columns to either end, drag headers into place, drag edges or double-click to fit.", href: "/docs/data-grid/pinning/" },
   { title: "Group and aggregate", line: "Group by any column; sums, means, counts and ranges in the group rows, formatted like the column.", href: "/docs/data-grid/grouping/" },
@@ -21,7 +23,7 @@ const FEATURES: { title: string; line: string; href: string }[] = [
   { title: "Export", line: "CSV and JSON of what's on screen, or the selected rows, with the values as you see them.", href: "/docs/data-grid/export/" },
   { title: "Saved views and URL state", line: "The user's columns, sort and density remembered; filters and the page shareable in the URL.", href: "/docs/data-grid/persistence/" },
   { title: "Server-side ready", line: "Hand it a page and a row count; sort and filter state comes back for your query.", href: "/docs/data-grid/server-side/" },
-  { title: "Accessible", line: "A real grid: roles, aria-sort, roving focus, live announcements, 40 px targets on touch.", href: "/docs/data-grid/accessibility/" },
+  { title: "Accessible", line: "A real grid: roles, aria-sort, roving focus, live announcements, 44 px rows on touch screens.", href: "/docs/data-grid/accessibility/" },
   { title: "Yours to change", line: "Every label translatable, every part composable, every file in your repo. No prop-drilling into a black box.", href: "/docs/data-grid/composition/" },
 ];
 
@@ -37,6 +39,23 @@ const SHORTCUTS: [string, string][] = [
   ["⌘ C", "Copy as tab-separated text"],
   ["Esc", "Clear the selection"],
 ];
+// The typed-columns sample on the landing page.
+const TYPED_SAMPLE = `const col = createDataGridColumns<Order>()
+
+export const columns = col.columns([
+  col.select(),
+  col.text("customer", { header: "Customer", editable: true }),
+  col.enum("status", { options: STATUS, editable: true }),
+  col.currency("total", { currency: "EUR" }),
+  col.percent("margin"),
+  col.date("placedAt", { header: "Placed" }),
+  col.tags("labels"),
+  col.actions(({ row }) => <OrderMenu order={row.original} />),
+])
+
+<DataGrid data={orders} columns={columns}
+  onCellEdit={({ row, columnId, value }) => save(row.id, columnId, value)} />`
+
 ---
 
 <Base>
@@ -56,7 +75,7 @@ const SHORTCUTS: [string, string][] = [
           The data grid your power users keep asking for.
         </h1>
         <p class="mt-5 text-lg text-pretty text-muted-foreground sm:text-xl">
-          Sorting, faceted filters, grouping, 50,000 virtualized rows, inline editing, keyboard ranges and
+          Sorting, faceted filters, grouping, 50,000 virtualised rows, inline editing, keyboard ranges and
           clipboard, saved views. Typed end to end. One command copies the source into your project, so
           the code is yours.
         </p>
@@ -123,26 +142,26 @@ const SHORTCUTS: [string, string][] = [
           <li class="flex gap-2"><Icon name="check" size={18} class="mt-0.5 shrink-0 text-emerald-600" /> MIT, no licence keys, no enterprise tier</li>
         </ul>
       </div>
-      <div class="overflow-hidden rounded-2xl border border-border bg-background text-sm shadow-sm">
-        <div class="flex items-center gap-2 border-b border-border px-4 py-2 font-mono text-xs text-muted-foreground">
-          <Icon name="terminal" size={14} /> what the command does
-        </div>
-        <pre class="overflow-x-auto p-4 font-mono text-[13px] leading-6"><code>$ npx shadcn@latest add @kadal/data-grid
-✔ Checking registry.
-✔ Installing dependencies.
-  @tanstack/react-table@^9.3.1 @tanstack/react-virtual@^3.14.26
-  @dnd-kit/react@^0.5.3 lucide-react
-✔ Created 34 files:
-  src/components/ui/data-grid/data-grid.tsx
-  src/components/ui/data-grid/use-data-grid.tsx
-  src/components/ui/data-grid/data-grid-columns.tsx
-  src/components/ui/data-grid/data-grid-filters.tsx
-  …
-  src/components/ui/button.tsx   src/components/ui/popover.tsx
-  src/components/ui/select.tsx   src/components/ui/tooltip.tsx
-
-Docs: https://ui.kadal.cc/docs/data-grid/</code></pre>
-      </div>
+      <Terminal
+        title="what the command does"
+        lines={[
+          "$ npx shadcn@latest add @kadal/data-grid",
+          "✔ Checking registry.",
+          "✔ Installing dependencies.",
+          "  @tanstack/react-table@^9.3.1 @tanstack/react-virtual@^3.14.26",
+          "  @dnd-kit/react@^0.5.3 lucide-react",
+          "✔ Created 34 files:",
+          "  src/components/ui/data-grid/data-grid.tsx",
+          "  src/components/ui/data-grid/use-data-grid.tsx",
+          "  src/components/ui/data-grid/data-grid-columns.tsx",
+          "  src/components/ui/data-grid/data-grid-filters.tsx",
+          "  …",
+          "  src/components/ui/button.tsx   src/components/ui/popover.tsx",
+          "  src/components/ui/select.tsx   src/components/ui/tooltip.tsx",
+          "",
+          "Docs: https://ui.kadal.cc/docs/data-grid/",
+        ]}
+      />
     </div>
   </section>
 
@@ -170,26 +189,7 @@ Docs: https://ui.kadal.cc/docs/data-grid/</code></pre>
   <!-- Typed -->
   <section class="border-t border-border">
     <div class="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-center">
-      <div class="overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
-        <div class="flex items-center gap-2 border-b border-border px-4 py-2 font-mono text-xs text-muted-foreground">
-          <Icon name="code" size={14} /> columns.tsx
-        </div>
-        <pre class="overflow-x-auto p-4 font-mono text-[13px] leading-6"><code>const col = createDataGridColumns&lt;Order&gt;()
-
-export const columns = col.columns([
-  col.select(),
-  col.text("customer", {'{'} header: "Customer", editable: true {'}'}),
-  col.enum("status", {'{'} options: STATUS, editable: true {'}'}),
-  col.currency("total", {'{'} currency: "EUR" {'}'}),
-  col.percent("margin"),
-  col.date("placedAt", {'{'} header: "Placed" {'}'}),
-  col.tags("labels"),
-  col.actions(({'{'} row {'}'}) =&gt; &lt;OrderMenu order={'{'}row.original{'}'} /&gt;),
-])
-
-&lt;DataGrid data={'{'}orders{'}'} columns={'{'}columns{'}'}
-  onCellEdit={'{'}({'{'} row, columnId, value {'}'}) =&gt; save(row.id, columnId, value){'}'} /&gt;</code></pre>
-      </div>
+      <Code title="columns.tsx" lang="tsx" code={TYPED_SAMPLE} />
       <div>
         <p class="font-mono text-xs font-medium tracking-[0.14em] text-muted-foreground uppercase">Type safety</p>
         <h2 class="mt-3 text-3xl font-semibold tracking-tight">Columns that know your rows.</h2>

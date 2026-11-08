@@ -15,7 +15,8 @@ it; shift-click another header to sort by both.
 
 There is nothing to turn on. Sorting is on for every column with an accessor, and the kind picks
 the function: `basic` for numbers, currencies, percentages and booleans, `datetime` for dates,
-`alphanumeric` for everything else.
+`alphanumeric` for text, links, enums and tags. A `custom` column, or a plain TanStack def, is
+left on TanStack's `auto`, which picks by the first values it sees.
 
 ### From the header
 
@@ -67,8 +68,8 @@ col.text("email", {
 
 ## How it behaves
 
-- Sorting runs on the filtered rows, before grouping and pagination, so a sort reorders the whole
-  result and the pager goes back to page 1.
+- Sorting runs after filtering and grouping and before pagination, so a sort reorders the whole
+  result, not just the page, and the pager goes back to page 1.
 - With [grouping](/docs/data-grid/grouping/) on, the grouped column moves to the front and sorting
   it orders the groups; sorting another column orders the rows inside each group.
 - Sorting sees the raw value, not the formatted one: a `currency` column sorts numerically, a
@@ -113,7 +114,7 @@ col.text("email", {
 ### Grid options
 
 Set these through the `table` escape hatch, `table={{ ... }}` on `<DataGrid>` or `table: { ... }`
-on `useDataGrid`.
+on `useDataGrid`. `initialState` and `server` are options of the hook itself.
 
 | Option | Type | Default | What it does |
 | --- | --- | --- | --- |
@@ -124,7 +125,8 @@ on `useDataGrid`.
 | `maxMultiSortColCount` | `number` | unlimited | Cap on sort keys. |
 | `sortDescFirst` | `boolean` | auto | The first direction for every column. |
 | `isMultiSortEvent` | `(e) => boolean` | `e.shiftKey` | Which click or key adds a key. |
-| `initialState.sorting` | `{ id: string; desc: boolean }[]` | `[]` | The starting sort. |
+| `manualSorting` | `boolean` | `false`; `true` with `server` | Leave the rows in the order they came; the state still changes. |
+| `initialState.sorting` (hook) | `{ id: string; desc: boolean }[]` | `[]` | The starting sort. |
 
 ## See also
 

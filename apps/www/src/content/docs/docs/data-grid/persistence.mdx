@@ -26,7 +26,7 @@ useDataGrid({
   data,
   columns,
   persist: {
-    name: "customers",
+    key: "customers",
     scope: user.id,            // one view per signed-in user on a shared browser
     storage: sessionStorage,   // see below; default localStorage
     savedViews: false,         // keep the current view, drop the Views menu
@@ -35,7 +35,7 @@ useDataGrid({
 ```
 
 <Aside type="note" title="Name the grid with `name`">
-  React reserves the `name` prop, so `<DataGrid key="customers" persist>` would store under
+  React keeps the `key` prop for itself, so `<DataGrid key="customers" persist>` would store under
   `"grid"`. Write `<DataGrid name="customers" persist>` (or `persist="customers"` to name only the
   storage key).
 </Aside>
@@ -63,6 +63,10 @@ to look, and belong in the URL ([URL state](/docs/data-grid/url-state/)) or nowh
 
 - The stored view is read synchronously before the first render, so there is no flash of the
   defaults. Async storages land after mount and the view is applied then.
+- Server rendering has no storage, so once a view is stored the first client render differs from
+  the server HTML and React reports a hydration mismatch. Render a persisted grid on the client
+  only (`next/dynamic` with `ssr: false`, `client:only="react"` in Astro), or give it an async
+  storage, which keeps the first render at the defaults.
 - Every change to the view is written 300 ms after the last one (resizing writes once, not per
   pixel).
 - Whatever is in storage is sanitised: unknown fields are dropped, wrong types fall back to the
@@ -159,10 +163,11 @@ The same from code, on `grid.views`:
 ### Reset view
 
 The **View** popover (columns) has a **Reset view** button. With `persist` it calls `views.reset()`
-and restores every field above to its default: no sorting, all columns visible, nothing pinned,
-natural order, default widths, no grouping, the `pagination.pageSize`, and `defaultDensity`
-(falling back to `initialState.density`, then `"comfortable"`). Without `persist` the same button
-only resets column visibility, order, sizing and pinning.
+and restores the base view: the defaults (no sorting, all columns visible, nothing pinned, natural
+order, default widths, no grouping, the `pagination.pageSize`, and `defaultDensity` falling back to
+`initialState.density`, then `"comfortable"`) with the view slices of `initialState` on top, so a
+grid that starts sorted by name resets to sorted by name. Without `persist` the same button only
+resets column visibility, order, sizing and pinning.
 
 ## Options
 
@@ -170,7 +175,7 @@ only resets column visibility, order, sizing and pinning.
 
 | Option | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `name` | `string` | the grid `name` | Storage key stem. |
+| `key` | `string` | the grid `name` | Storage key stem. |
 | `storage` | `DataGridStorage` | `localStorageStorage` | Where the record lives. |
 | `scope` | `string \| null` | `"anon"` | Namespaces the key, usually the user id. |
 | `savedViews` | `boolean` | `true` | The Views menu. `false` still persists the current view. |

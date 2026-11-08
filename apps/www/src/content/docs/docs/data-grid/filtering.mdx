@@ -14,10 +14,10 @@ like "starts with" for text. Active filters show as chips in the toolbar.
 
 ## Use it
 
-Hover a header and click the funnel, or pick **Filter…** from the ⋮ menu (a right-click on the header
-opens it too). The popover is titled with the column's name, has a clear button once a value is set,
-and shows the editor for the column's filter kind. The funnel stays visible while a filter is active;
-for a facet with several values it turns into a count badge.
+Hover a header and click the funnel, or pick **Filter…** from the column menu (the ⋮ button; a
+right-click on the header opens it too). The popover is titled **Filter: Name**, has a clear button
+once a value is set, and shows the editor for the column's filter kind. The funnel stays visible while
+a filter is active; for a facet with several values it turns into a count badge.
 
 ### The five kinds
 
@@ -45,7 +45,10 @@ col.text("notes", { filter: false })                     // no filter in the hea
   A kind sets both to match, and `filter` on its own switches both: `filter: "facet"` on a text
   column gives it the facet editor and the `facet` function. Pass `filterFn` as well only when you
   want a different function from the UI's (yours, usually). The names line up one to one: `facet`,
-  `text`, `range`, `dateRange`, `boolean`.
+  `text`, `range`, `dateRange`, `boolean`. A plain TanStack column definition, with no builder and
+  no `filterFn`, gets `byValue` instead: it reads the shape of the value the header's editor sends
+  (an array, a boolean, `{ op }`, `{ min, max }`, `{ from, to }` or a string) and runs the matching
+  function, so the editor the grid infers from the data and the function that runs agree.
 </Aside>
 
 ### Chips and clearing
@@ -109,7 +112,8 @@ col.text("name", {
 })
 ```
 
-The names available are the grid's `facet`, `text`, `range`, `dateRange` and `boolean`, and
+The names available are the grid's `facet`, `text`, `range`, `dateRange` and `boolean`, plus
+`byValue` (picks one of those by the value's shape) and `fuzzy` (the search box's matcher), and
 TanStack's `includesString`, `equals` and `weakEquals`. A custom function still gets its value from
 the header's editor, so match the shape of the column's filter kind.
 
@@ -122,8 +126,10 @@ the header's editor, so match the shape of the column's filter kind.
   that is the current page, so the counts describe the page, not the whole result.
 - Filtering compares raw values, not formatted ones. A `format` on a column changes what the chips
   and facet labels show, not what the filter compares.
-- `column.getCanFilter()` is true for any column with an accessor; `filter: false` only removes the
-  header UI, so you can still filter such a column in code.
+- `column.getCanFilter()` is true for any column with an accessor unless `enableColumnFilter` is
+  `false`. On a builder column, `filter: false` sets that too (unless you also pass a `filterFn`):
+  the header loses its funnel and its **Filter…** item, and the grid's own UI never filters the
+  column.
 
 ## Options
 
@@ -131,9 +137,9 @@ the header's editor, so match the shape of the column's filter kind.
 
 | Option | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `filter` | string or `false` | by kind | The editor in the header: `"facet"`, `"text"`, `"range"`, `"dateRange"` or `"boolean"`; `false` removes it. |
-| `filterFn` | string or function | by kind | How a row is tested against the value: a registered name, or `(row, columnId, value) => boolean`. |
-| `enableColumnFilter` | boolean | `true` | `false` makes `getCanFilter()` false as well, so neither the UI nor code can filter the column. |
+| `filter` | string or `false` | by kind | The editor in the header: `"facet"`, `"text"`, `"range"`, `"dateRange"` or `"boolean"`; `false` removes it (and, with no `filterFn`, sets `enableColumnFilter: false`). |
+| `filterFn` | string or function | by kind (`byValue` on a plain column def) | How a row is tested against the value: a registered name, or `(row, columnId, value) => boolean`. |
+| `enableColumnFilter` | boolean | `true` | `false` makes `column.getCanFilter()` false: no funnel, no **Filter…** item. |
 | `options` | array | | Orders, labels and styles the facet entries. |
 
 ### Grid options

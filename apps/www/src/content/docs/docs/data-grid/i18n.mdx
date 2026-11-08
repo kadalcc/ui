@@ -159,11 +159,12 @@ The `DataGridLabels` keys with their English defaults. Functions receive the num
 | `error` | Something went wrong. |
 | `retry` | Retry |
 | `copied` | `(n) => "Copied 1 cell" \| "Copied n cells"` |
+| `copiedRows` | `(n) => "Copied 1 row" \| "Copied n rows"` (the toolbar's Copy to clipboard) |
 | `edit` | Edit |
 | `save` / `cancel` | Save / Cancel |
 | `invalid` | Invalid value |
 | `keyboardHint` | Use the arrow keys to move, Enter to edit, Space to select. |
-| `yes` / `no` | Yes / No |
+| `yes` / `no` | Yes / No (the words for `true` and `false`: the boolean cell's label, and the value in exports, copies and filter lists) |
 | `blank` | — |
 
 `defaultLabels` and `resolveLabels(partial)` are exported, and the merged set is on `grid.labels`

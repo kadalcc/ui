@@ -1,8 +1,108 @@
 ---
 title: Compared with other grids
-description: Compared with other grids in the Kadal UI data grid.
+description: "How the Kadal UI data grid compares with TanStack Table, the shadcn data-table recipe, AG Grid, MUI X Data Grid, Glide Data Grid and others, and when to pick each."
 ---
 
-{/* STUB: written next; keep the frontmatter. */}
+import { Aside } from "@astrojs/starlight/components";
 
-This page is being written. In the meantime the [overview](/docs/data-grid/) and the [API reference](/docs/data-grid/api/) cover it.
+There are good React grids. This page is about which one fits, not which one wins. The short
+version: Kadal UI is for teams on shadcn/ui who want a grid with the power-user features built
+in, as source they own, under MIT. If you need a pivot table or a spreadsheet engine, you want
+something else, and the last section says what.
+
+## At a glance
+
+| | Kadal UI | TanStack Table | shadcn data-table | AG Grid | MUI X Data Grid |
+| --- | --- | --- | --- | --- | --- |
+| What it is | A grid, as source in your repo | A headless engine | A recipe to assemble | A grid component | A grid component |
+| Licence | MIT | MIT | MIT | MIT core; Enterprise needs a key | MIT core; Pro and Premium need a key |
+| Styling | Your Tailwind theme | Yours | Your Tailwind theme | Its themes | MUI theme |
+| Sort, filter, page | Built in, by kind | Headless | Assemble it | Built in | Built in |
+| Grouping, aggregation | Built in | Headless | No | Enterprise | Premium |
+| Virtualisation | Built in | Pair with TanStack Virtual | No | Built in | Built in |
+| Inline editing | Built in, by kind | Yours | No | Built in | Built in |
+| Cell ranges, clipboard | Built in | Headless | No | Enterprise | Premium |
+| Pivot, Excel export | No | No | No | Enterprise | Premium |
+| Server-side data | Manual modes | Manual modes | Yours | Enterprise row model | Pro data source |
+| Change the internals | Edit the files | n/a | Edit the files | Override | Override |
+
+Glide Data Grid, Handsontable and react-data-grid are canvas or spreadsheet grids; they are
+compared in prose below because the table's questions do not fit them.
+
+Feature tiers are as published on the vendors' pricing pages at the time of writing
+([AG Grid](https://www.ag-grid.com/license-pricing/), [MUI X](https://mui.com/pricing/)); check
+them before deciding, they move.
+
+## Against each
+
+### TanStack Table
+
+Kadal UI is built on it (v9), so this is not a rivalry. TanStack gives you the row models, the
+state and the feature APIs; it gives you no markup, no menus, no filter UI, no editors. If you
+want to design every pixel yourself, start from TanStack and the
+[shadcn data-table recipe](https://ui.shadcn.com/docs/components/data-table). If you want the
+grid working this afternoon and still want to own the code, take Kadal UI and read the TanStack
+docs when you reach for `table.*` directly.
+
+### The shadcn data-table recipe
+
+The recipe is a page of docs that shows how to wire TanStack Table into shadcn primitives: a
+table, a sortable header, a filter input, a pager. You copy the pieces and extend them. Kadal UI
+is the extended version: the same philosophy (copied source, your theme) with the parts the
+recipe leaves to you already written, typed and tested: faceted and typed filters, grouping,
+virtualisation, editing, cell selection, export, saved views, URL state, accessibility.
+
+### AG Grid
+
+The most complete grid on the market, with a decade of edge cases handled. The Community edition
+is MIT and covers sorting, filtering, pagination, editing and column management. The features a
+power user asks for next (row grouping, aggregation, pivoting, range selection, clipboard, Excel
+export, the server-side row model) are in Enterprise, which needs a licence key per developer.
+AG Grid also brings its own component model and theming system; it looks like AG Grid unless you
+work at it. Pick AG Grid when you need pivot tables, master/detail or its server-side row model.
+Pick Kadal UI when you need the power-user basics, MIT, in your own design system.
+
+### MUI X Data Grid
+
+Excellent if your app is on Material UI. The Community grid is MIT; column pinning, tree data,
+row reordering and lazy loading are Pro, and row grouping, aggregation, Excel export, pivoting
+and cell selection are Premium. Styling follows the MUI theme, not Tailwind. If you are on
+shadcn/ui, Kadal UI fits your tokens; if you are on MUI, the X grid fits theirs.
+
+### Glide Data Grid
+
+A canvas-rendered grid that handles millions of cells and feels like a spreadsheet. The trade is
+that nothing in it is DOM: your Tailwind classes do not reach the cells, screen readers see what
+Glide draws for them, and custom cells are drawing code. Pick Glide for spreadsheet-scale data
+with custom rendering. Pick Kadal UI for DOM cells styled like the rest of your app, with tens of
+thousands of rows virtualised rather than millions drawn.
+
+### Handsontable, react-data-grid, others
+
+[Handsontable](https://handsontable.com) is a spreadsheet (formulas, cell merging, Excel-like
+editing) with a commercial licence for commercial use.
+[react-data-grid](https://github.com/adazzle/react-data-grid) is an MIT Excel-like grid with its
+own styling. Both are the right answer when the product is "a spreadsheet in the browser". Kadal
+UI is a data grid for application screens: rows are records, columns have kinds, and editing is
+a form field in place, not a formula bar.
+
+## When not to use Kadal UI
+
+- You need pivot tables, formulas or Excel-exact export.
+- You render more than a few hundred thousand rows at once and need canvas-level performance.
+- Your project is on shadcn/ui with Radix rather than Base UI and you cannot move it; see
+  [the FAQ](/docs/faq/#radix).
+- You are not on Tailwind CSS v4; the grid's styling is Tailwind utilities and shadcn tokens.
+- You want a dependency you never read. The grid is source on purpose; updates arrive as a diff.
+
+<Aside type="note" title="Measured, not marketed">
+  Every feature claimed for Kadal UI on this page has a docs page with a live example and a test
+  in the repository. If you find one that does not do what its page says,
+  [that is a bug](https://github.com/kadalcc/ui/issues/new?template=bug.yml).
+</Aside>
+
+## See also
+
+- [Data grid overview](/docs/data-grid/): one page per feature.
+- [FAQ](/docs/faq/): Radix, React versions, bundle size, updates.
+- [Installation](/docs/installation/).

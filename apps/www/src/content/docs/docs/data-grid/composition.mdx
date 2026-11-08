@@ -48,7 +48,7 @@ import {
   useDataGrid,
 } from "@/components/ui/data-grid"
 
-const grid = useDataGrid<Person>({ key: "customers", data, columns, getRowId: (r) => r.id })
+const grid = useDataGrid<Person>({ name: "customers", data, columns, getRowId: (r) => r.id })
 
 <DataGridRoot grid={grid} loading={isFetching}>
   <div className="flex items-center justify-between gap-2">
@@ -89,7 +89,7 @@ the views menu without `persist`, the pager with `pagination: false`.
 | `DataGridExportMenu` | `className`, `filename` | CSV, JSON, copy to clipboard, selected rows only. |
 | `DataGridViewsMenu` | `className` | Saved views. Nothing unless the grid persists with `savedViews`. |
 | `DataGridFullscreenToggle` | `className` | Fullscreen on and off. |
-| `DataGridTable` | `className`, `height`, `fillHeight`, `stickyHeader` (`true`), `striped`, `getRowClassName`, `onRowClick` | The table: header, body (virtualized when large), footer and the state overlays. |
+| `DataGridTable` | `className`, `height`, `fillHeight`, `stickyHeader` (`true`), `striped`, `getRowClassName`, `onRowClick` | The table: header, body (virtualised when large), footer and the state overlays. |
 | `DataGridPagination` | `className`, `showSelection`, `showGoTo` | Rows per page, page x of y, first / previous / next / last. `showGoTo` defaults to on past 5 pages, `showSelection` to whether selection is on. |
 | `DataGridBulkActions` | `className`, `children: (rows, api) => ReactNode` | The bar while rows are selected: the count, Clear selection, your actions. |
 
@@ -111,10 +111,13 @@ Lower-level exports for custom columns: `DataGridDefaultCell`, `DataGridGroupCel
 ## A part of your own
 
 Any component rendered inside `DataGridRoot` can call `useDataGridContext<TData>()` and get the
-`DataGridApi`: `table` (the TanStack instance, with `table.state`), `labels`, `locale`, `density` and
-`setDensity`, `rowHeight`, `pagination`, `isServer`, `views`, `editing`, `exportCsv`, `exportJson`,
-`copyToClipboard`, `exportTable`, `metaFor(columnId)` and `labelFor(columnId)`. It throws outside a
-grid; `useOptionalDataGridContext()` returns `null` instead, for a part that can stand alone.
+`DataGridApi`: `table` (the TanStack instance, with `table.state`), `key` (the grid's `name`),
+`labels`, `locale`, `density` and `setDensity`, `rowHeight`, `pagination`, `isServer`,
+`virtualizeRows` and `virtualizeOptions`, the feature switches (`selectionEnabled`,
+`cellSelectionEnabled`, `groupingEnabled`, `rowPinningEnabled`, `globalFilterEnabled`), `views`,
+`editing`, `exportCsv`, `exportJson`, `copyToClipboard`, `exportTable`, `metaFor(columnId)` and
+`labelFor(columnId)`. It throws outside a grid; `useOptionalDataGridContext()` returns `null`
+instead, for a part that can stand alone.
 
 Here is a toolbar part that resets every slice of state, placed in the built-in toolbar through
 `children`:
@@ -132,7 +135,7 @@ through the grid's live region. Say what your part did: `announce("Reset")`.
 
 <Aside type="tip" title="Several grids on a page">
   Give each `useDataGrid` its own `name`. It names the grid in the TanStack devtools and is the default
-  storage key for `persist`; two grids with the same key would share a saved view.
+  storage key for `persist`; two grids with the same name would share a saved view.
 </Aside>
 
 ## See also

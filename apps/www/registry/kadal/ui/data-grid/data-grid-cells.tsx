@@ -229,7 +229,7 @@ export function DataGridSelectHeader<TData extends RowData>(
   const { table } = ctx;
   const all = table.getIsAllPageRowsSelected();
   const some = table.getIsSomePageRowsSelected();
-  if (table.options.enableMultiRowSelection === false) return null;
+  if (!grid.selectionEnabled || table.options.enableMultiRowSelection === false) return null;
   return (
     <Checkbox
       checked={all}

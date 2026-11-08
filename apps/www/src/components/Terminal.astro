@@ -1,0 +1,60 @@
+---
+/**
+ * A terminal transcript: commands are highlighted as shell (Shiki, build time, both themes), ticks
+ * are green, output is muted, and URLs are links. Each line is one string:
+ *   "$ npx …"      a command
+ *   "✔ Created…"   a success line
+ *   "  file.tsx"   output (indented)
+ *   ""             a blank line
+ */
+import { codeToHtml } from "shiki";
+import Icon from "./Icon.astro";
+
+interface Props {
+  lines: string[];
+  title?: string;
+  class?: string;
+}
+const { lines, title, class: className } = Astro.props;
+
+const highlightCommand = async (command: string) => {
+  const html = await codeToHtml(command, {
+    lang: "bash",
+    themes: { light: "github-light", dark: "github-dark" },
+    defaultColor: false,
+  });
+  // Only the tokens: the block's own <pre> and <code> are rendered below.
+  return html.replace(/^<pre[^>]*><code[^>]*>/, "").replace(/<\/code><\/pre>\s*$/, "");
+};
+
+const escape = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const linkify = (s: string) =>
+  escape(s).replace(
+    /(https?:\/\/[^\s]+)/g,
+    '<a href="$1" class="text-primary underline-offset-4 hover:underline">$1</a>',
+  );
+
+const rendered = await Promise.all(
+  lines.map(async (line) => {
+    if (line.startsWith("$ ")) {
+      return `<span class="select-none text-muted-foreground">$ </span>${await highlightCommand(line.slice(2))}`;
+    }
+    if (line.startsWith("✔ ")) {
+      return `<span class="text-emerald-600 dark:text-emerald-400">✔</span> <span class="text-foreground">${escape(line.slice(2))}</span>`;
+    }
+    if (line === "") return "";
+    return `<span class="text-muted-foreground">${linkify(line)}</span>`;
+  }),
+);
+---
+
+<div class:list={["overflow-hidden rounded-2xl border border-border bg-background text-sm shadow-sm", className]}>
+  {
+    title ? (
+      <div class="flex items-center gap-2 border-b border-border px-4 py-2 font-mono text-xs text-muted-foreground">
+        <Icon name="terminal" size={14} /> {title}
+      </div>
+    ) : null
+  }
+  <pre class="code-shiki overflow-x-auto p-4 font-mono text-[13px] leading-6"><code set:html={rendered.join("\n")} /></pre>
+</div>

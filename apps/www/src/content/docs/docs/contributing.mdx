@@ -1,8 +1,109 @@
 ---
 title: Contributing
-description: Contributing in the Kadal UI data grid.
+description: "How to report a bug, propose a change and send a pull request to Kadal UI: the setup, the layout of the repository, how the registry is built, and what a good pull request includes."
 ---
 
-{/* STUB: written next; keep the frontmatter. */}
+import { Aside, Steps } from "@astrojs/starlight/components";
 
-This page is being written. In the meantime the [overview](/docs/data-grid/) and the [API reference](/docs/data-grid/api/) cover it.
+Thanks for helping. The most useful thing you can send is a bug report with a small example that
+reproduces it: a column definition and a handful of rows is usually enough. Pull requests are
+welcome too, and this page is what you need to make one that lands.
+
+## Report a bug, request a feature
+
+- [Report a bug](https://github.com/kadalcc/ui/issues/new?template=bug.yml). The template asks
+  for the registry item and version, a reproduction and what you expected.
+- [Request a feature](https://github.com/kadalcc/ui/issues/new?template=feature.yml). Say what you
+  are trying to do, not only what control you want; the right answer is often an existing option.
+- Questions and "how do I…" go to
+  [Discussions](https://github.com/kadalcc/ui/discussions/categories/q-a), so the answer helps the
+  next person. Security reports go to
+  [SECURITY.md](https://github.com/kadalcc/ui/blob/main/SECURITY.md), privately.
+
+## Set up
+
+You need [Bun](https://bun.sh) 1.3 or later (the workspace's package manager and test runner) and
+Node 20.19 or later (what the published CLI runs on).
+
+```sh
+git clone https://github.com/kadalcc/ui && cd ui
+bun install
+bun run dev            # this site, http://localhost:5400, with every docs example live
+bun run typecheck      # tsc in apps/www and packages/cli
+bun run lint           # oxlint
+bun run test           # bun test in every workspace
+bun run build          # the CLI, the registry JSON and the site
+bun run test:e2e       # Playwright (apps/www/e2e); builds and previews the site on :5410
+```
+
+## Where things are
+
+| Path | What it holds |
+| --- | --- |
+| `apps/www/registry/kadal/ui/data-grid/` | the grid's source: the truth about the API. `index.ts` and `data-grid.tsx` re-export everything |
+| `apps/www/registry/kadal/hooks/`, `lib/` | the URL-state hook and the demo data |
+| `apps/www/registry/kadal/examples/` | the live examples; `<Demo name="data-grid-sorting" />` in a page renders `data-grid-sorting.tsx` |
+| `apps/www/registry.json` | the registry manifest: each item's files, dependencies and `meta.version` |
+| `apps/www/src/content/docs/` | these pages (Starlight) |
+| `apps/www/e2e/`, `apps/www/tests/` | Playwright and Bun tests |
+| `packages/cli/` | `@kadal/ui`, the CLI on npm |
+| `skills/kadal-ui/` | the Agent Skill |
+
+## How the registry works
+
+The grid is not an npm package. `npx shadcn@latest add @kadal/data-grid` downloads
+`ui.kadal.cc/r/data-grid.json` and copies the files in it into the user's project. That JSON is
+built by `shadcn build` from `apps/www/registry.json` and the source under
+`apps/www/registry/kadal/`. So, to change the grid:
+
+<Steps>
+  1. Edit the source under `apps/www/registry/kadal/ui/data-grid/`. A new file also goes into the
+     item's `files` in `apps/www/registry.json`, or it will not ship.
+  2. For any change a user would notice, bump the item's `meta.version` (a fix is a patch, a new
+     option a minor, a changed default or a renamed prop a major).
+  3. Add an entry to the root `CHANGELOG.md` under `Data grid <version> — <date>`.
+  4. `cd apps/www && bun run registry:build`, and check `public/r/data-grid.json` carries the
+     change. CI does the same.
+</Steps>
+
+Examples import from `@/registry/kadal/...`, so they run against the source in this repository.
+The docs prose shows `@/components/ui/...`, which is where the files land in a user's project.
+Keep the two apart.
+
+## Writing a docs page
+
+`docs/writing-the-docs.md` in the repository has the shape of a page, the voice, and how a
+`<Demo>` hooks up an example. In short: plain second person, British spelling, a live example
+near the top, code before prose, options in a table, no claim the code does not back.
+
+## The CLI
+
+`packages/cli` is `@kadal/ui`. A user-facing change there gets a changeset (`bun run changeset`);
+releases are cut from `main` by the release workflow, which opens a "Version packages" pull
+request and, once that is merged, publishes to npm with provenance and makes a GitHub release.
+The registry does not use changesets: its versions are the `meta.version` fields, and its
+changelog is written by hand.
+
+## A good pull request
+
+- Focused, with a test where the behaviour can be tested: a Bun test in `apps/www/tests/` for the
+  pure modules, a Playwright spec in `apps/www/e2e/` for anything a user clicks.
+- A changeset for a user-facing CLI change; a `meta.version` bump and a changelog entry for a
+  user-facing registry change.
+- `bun run typecheck`, `bun run lint` and `bun run test` pass. Format the files you touched with
+  `bunx oxfmt <file>`.
+- Never hand-edit `apps/www/public/r` or `src/components/docs/ExampleHost.astro`; both are
+  generated.
+- The pull request template asks what changed, why, and how you checked it.
+
+<Aside type="note" title="Licence and conduct">
+  Kadal UI is MIT; by contributing you agree your contribution is licensed the same way. The
+  project follows the [Contributor Covenant](https://github.com/kadalcc/ui/blob/main/CODE_OF_CONDUCT.md).
+</Aside>
+
+## See also
+
+- [CONTRIBUTING.md](https://github.com/kadalcc/ui/blob/main/CONTRIBUTING.md) in the repository,
+  the same guide with the links.
+- [CLI reference](/docs/cli/).
+- [Sponsor](/sponsor/): the other way to help.

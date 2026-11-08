@@ -1,8 +1,155 @@
 ---
 title: CLI reference
-description: CLI reference in the Kadal UI data grid.
+description: "Every command and flag of @kadal/ui, the small CLI that wraps shadcn with the Kadal registry: init, add, list, docs, diff, info and mcp."
 ---
 
-{/* STUB: written next; keep the frontmatter. */}
+import { Aside } from "@astrojs/starlight/components";
 
-This page is being written. In the meantime the [overview](/docs/data-grid/) and the [API reference](/docs/data-grid/api/) cover it.
+`@kadal/ui` is a thin wrapper around the [shadcn CLI](https://ui.shadcn.com/docs/cli). It knows
+the `@kadal` registry, registers it in your `components.json`, picks your package manager from
+the lockfile, and hands the real work to `shadcn`. It has no dependencies and installs nothing of
+its own; everything it copies into your project comes from the registry at `ui.kadal.cc/r/`.
+
+```sh
+npx @kadal/ui add data-grid
+```
+
+You never need it: the two commands below do the same thing, once `components.json` lists the
+registry (see [Installation](/docs/installation/)).
+
+```sh
+npx @kadal/ui add data-grid
+npx shadcn@latest add @kadal/data-grid
+```
+
+## Commands
+
+### `init`
+
+Points the project at the registry. If there is no `components.json` yet, it runs
+`shadcn init -b base -y` first, so a fresh Vite or Next.js app is one command away from the grid.
+
+```sh
+npx @kadal/ui init
+```
+
+Writes `"registries": { "@kadal": "https://ui.kadal.cc/r/{name}.json" }` into `components.json`
+and leaves everything else in the file as it was.
+
+### `add <item...>`
+
+Copies one or more items into your source. Runs `init` silently first if the registry is not
+registered, then `shadcn add` with the items prefixed by `@kadal/`.
+
+```sh
+npx @kadal/ui add data-grid
+npx @kadal/ui add data-grid data-grid-url-state --overwrite
+npx @kadal/ui add data-grid-sorting            # a docs example, as components/examples/data-grid-sorting.tsx
+```
+
+Accepts the flags `shadcn add` accepts: `--yes`, `--overwrite`, `--dry-run`, `--path <dir>`,
+`--silent`. After a successful add it prints the docs page for each item.
+
+### `list`, `search`
+
+Everything in the registry, with a line about each item. Reads `ui.kadal.cc/r/registry.json`;
+if the site is unreachable it falls back to the list built into the CLI and says so.
+
+```sh
+npx @kadal/ui list
+npx @kadal/ui list --json      # { registry, live, items: [{ name, type, title, description }] }
+```
+
+### `docs [item]`
+
+The docs page for an item (`data-grid` when you give none). `--open` opens it in your browser.
+
+```sh
+npx @kadal/ui docs data-grid --open
+npx @kadal/ui docs data-grid-url-state --json    # { item, url }
+```
+
+### `diff <item...>`
+
+What a newer version of an item would change in your copy, without writing anything. This is
+`shadcn add --diff`; read the diff, then `add --overwrite` to take it, or apply the parts you want
+by hand.
+
+```sh
+npx @kadal/ui diff data-grid
+```
+
+### `info`
+
+How this project is set up: the directory, the package manager the CLI detected, whether
+`components.json` exists and whether it knows the `@kadal` registry.
+
+```sh
+npx @kadal/ui info
+npx @kadal/ui info --json
+```
+
+### `mcp [--client <name>]`
+
+Sets up the [shadcn MCP server](https://ui.shadcn.com/docs/mcp) for your AI agent, after making
+sure the registry is registered. The server serves every registry in `components.json`, the
+`@kadal` one included, so an agent can search the registry and add items itself. `--client` is
+passed to `shadcn mcp init` (`claude` by default; `cursor` and `vscode` are the others it knows).
+
+```sh
+npx @kadal/ui mcp --client cursor
+```
+
+See [AI agents and MCP](/docs/ai-agents/) for what to say to the agent afterwards.
+
+## Options
+
+| Flag | Applies to | What it does |
+| --- | --- | --- |
+| `-y`, `--yes` | `add` | Skip the confirmation prompts. |
+| `-o`, `--overwrite` | `add` | Overwrite files that already exist. |
+| `--dry-run` | `add` | Print what would change, change nothing. |
+| `--path <dir>` | `add` | Put the files under this directory instead of the alias in `components.json`. |
+| `--silent` | `add` | Quieter output from shadcn. |
+| `--cwd <dir>` | all | The project directory, when you are not in it. |
+| `--json` | `list`, `docs`, `info` | Machine-readable output. |
+| `--open` | `docs` | Open the page in the browser. |
+| `--client <name>` | `mcp` | The agent to configure. |
+| `-h`, `--help` | | This reference, shorter. |
+| `-v`, `--version` | | Print the version. |
+
+## Package managers
+
+The CLI looks for a lockfile first (`bun.lock`, `pnpm-lock.yaml`, `yarn.lock`,
+`package-lock.json`), then at the package manager that launched it, and runs shadcn the matching
+way: `npx shadcn@latest`, `pnpm dlx shadcn@latest`, `yarn dlx shadcn@latest` or
+`bunx --bun shadcn@latest`.
+
+## Items
+
+| Name | Type | What you get |
+| --- | --- | --- |
+| `data-grid` | component | The grid: 21 files under `components/ui/data-grid/`, plus the shadcn primitives it uses. |
+| `data-grid-url-state` | hook | `useDataGridUrlState`, filters, search and page in the URL. Brings `nuqs`. |
+| `data-grid-demo-data` | lib | `makePeople(n, seed)` and the option lists the examples use. |
+| `data-grid-basic`, `data-grid-sorting`, … | example | Any example from these docs, as `components/examples/<name>.tsx`. |
+
+`npx @kadal/ui list` prints the current set.
+
+<Aside type="note" title="Exit codes">
+  `0` on success; `2` for a usage mistake (an unknown command, `add` with nothing to add); otherwise
+  whatever shadcn returned, so a script can stop on the first failure.
+</Aside>
+
+## Updating the CLI
+
+`npx @kadal/ui` runs the latest published version each time. Its changelog is on
+[GitHub releases](https://github.com/kadalcc/ui/releases); the registry's own changes are on the
+[changelog](/changelog/) page, versioned separately, because the code it copies lives in your
+repository and has no version to bump.
+
+## See also
+
+- [Installation](/docs/installation/): the registry, what gets installed, and updating by diff.
+- [AI agents and MCP](/docs/ai-agents/): letting an agent add and use the grid.
+- [Contributing](/docs/contributing/): the CLI's source is `packages/cli` in the repository.

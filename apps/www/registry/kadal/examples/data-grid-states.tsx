@@ -48,7 +48,7 @@ export default function DataGridStates() {
         ))}
       </ButtonGroup>
       <DataGrid
-        key="states"
+        name="states"
         data={data}
         columns={columns}
         getRowId={(row) => row.id}

@@ -32,7 +32,7 @@ export default function DataGridVirtualized({ rows = 50_000 }: { rows?: number }
   const data = React.useMemo(() => makePeople(rows, 11), [rows]);
   return (
     <DataGrid
-      key="virtualized"
+      name="virtualized"
       data={data}
       columns={columns}
       getRowId={(row) => row.id}

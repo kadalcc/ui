@@ -38,17 +38,17 @@ const grid = useDataGrid({ data: rows, columns })
 | --- | --- | --- | --- |
 | `grid` | `DataGridApi<TData>` | — | A grid built with `useDataGrid`. Without it, the other options build one. |
 | `className` | `string` | — | Classes on the root (`flex min-h-0 flex-col gap-3`). |
-| `toolbar` | `boolean \| ReactNode \| DataGridToolbarProps` | `true` | `false` hides it, a node replaces it, an object configures it. |
+| `toolbar` | `boolean \| ReactNode \| { … }` | `true` | `false` hides it, a node replaces it, a `DataGridToolbarProps` object configures it. |
 | `toolbarActions` | `ReactNode` | — | Your controls inside the built-in toolbar, right side, before the menus. |
-| `pager` | `boolean \| DataGridPaginationProps` | `true` | `false` hides the pager (rows still page unless `pagination: false`). |
-| `bulkActions` | `(rows: TData[], api: DataGridApi<TData>) => ReactNode` | — | Rendered in a bar while rows are selected. |
+| `pager` | `boolean \| { … }` | `true` | `false` hides the pager (rows still page unless `pagination: false`); a `DataGridPaginationProps` object configures it. |
+| `bulkActions` | `(rows, api) => ReactNode` | — | Rendered in a bar while rows are selected, with `TData[]` and the `DataGridApi`. |
 | `tableClassName` | `string` | — | Classes on the table viewport (`rounded-lg border bg-background`). |
-| `height` | `number \| string` | — | Fixed height of the scroll area. Needed for virtualization unless `fillHeight`. |
-| `fillHeight` | `boolean` | `true` when virtualizing without `height` | Fill from the grid's top to the bottom of its scroll parent, console-style. |
+| `height` | `number \| string` | — | Fixed height of the scroll area. Needed for virtualisation unless `fillHeight`. |
+| `fillHeight` | `boolean` | `true` when virtualising without `height` | Fill from the grid's top to the bottom of its scroll parent, console-style. |
 | `stickyHeader` | `boolean` | `true` | Keep the header visible while the body scrolls. |
 | `striped` | `boolean` | `false` | Alternate row tint (`bg-muted/20` on odd rows). |
-| `getRowClassName` | `(row: DataGridRow<TData>) => string \| undefined` | — | Classes per row, merged after the built-in ones. |
-| `onRowClick` | `(row: DataGridRow<TData>, event: MouseEvent) => void` | — | Click on a row. Call `event.preventDefault()` to stop the row toggling its selection when there is no checkbox column and cell selection is off. |
+| `getRowClassName` | `(row) => string \| undefined` | — | Classes per row (a `DataGridRow<TData>`), merged after the built-in ones. |
+| `onRowClick` | `(row, event) => void` | — | Click on a row. Call `event.preventDefault()` to stop the row toggling its selection when there is no checkbox column and cell selection is off. |
 | `loading` | `boolean` | `false` | Progress bar (with rows) or loading state (without), plus `aria-busy`. |
 | `error` | `ReactNode` | `null` | Shows the error state with this message. |
 | `onRetry` | `() => void` | — | Adds a Retry button to the error state. |
@@ -57,7 +57,7 @@ const grid = useDataGrid({ data: rows, columns })
 | `onFullscreenChange` | `(on: boolean) => void` | — | Fullscreen toggled (toolbar button or <kbd>Esc</kbd>). |
 
 <Aside type="note">
-  A grid is named with `name`, not `name`: React keeps `name` for itself, so `<DataGrid key="…">`
+  A grid is named with `name`, never `key`: React keeps `key` for itself, so `<DataGrid key="…">`
   would never reach the grid. `name` is the devtools label and the default storage key for
   `persist`.
 </Aside>
@@ -70,30 +70,31 @@ Builds the TanStack table and everything the parts need. Returns a `DataGridApi<
 
 | Option | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `data` | `readonly TData[]` | required | The rows. A new array resets cell selection and, client-side, the page index. |
-| `columns` | `ReadonlyArray<DataGridColumnDef<TData, any>>` | required | From `createDataGridColumns`, or raw TanStack defs. |
+| `data` | `readonly TData[]` | required | The rows. A new array keeps the cell selection (ranges are by row id) and, client-side, resets the page index. |
+| `columns` | `DataGridColumnDef[]` | required | `DataGridColumnDef<TData, any>` each, from `createDataGridColumns` or raw TanStack defs. |
 | `name` | `string` | `"grid"` | Names the grid: the devtools label, the default `persist` key, the default export file stem. |
+| `key` | `string` | — | Deprecated alias of `name` for the hook only; on `<DataGrid>` React keeps it. |
 | `getRowId` | `(row, index, parent?) => string` | index path | Stable ids for selection, editing, ranges and pinning. |
-| `getSubRows` | `(row, index) => TData[] \| undefined` | — | Tree data; turns expanding on. |
-| `initialState` | `Partial<DataGridState> & { density? }` | — | Starting state for any slice. Applied after a persisted view, so it overrides it. |
-| `pagination` | `false \| { pageSize?, pageSizeOptions? }` | `{ pageSize: 10, pageSizeOptions: [10, 20, 50, 100] }` | `false` shows every row with no pager. |
+| `getSubRows` | `(row, index) => TData[]` | — | Tree data (return `undefined` for a leaf); turns expanding on. |
+| `initialState` | `Partial<DataGridState>` | — | Starting state for any slice, plus `density`. Its view slices seed the default view (what Reset view returns to); a persisted view wins over them on later loads. |
+| `pagination` | `false \| { … }` | 10 per page | `false` shows every row with no pager. `DataGridPaginationOptions`: `pageSize` (10) and `pageSizeOptions` (`[10, 20, 50, 100]`). |
 | `server` | `DataGridServerOptions` | — | The server pages, sorts and filters. See below. |
-| `virtualize` | `boolean \| "auto" \| { overscan?, threshold? }` | `"auto"` | `true` always, `"auto"` once the row model has `threshold` rows (200), `false` never. `overscan` default 8. |
+| `virtualize` | `boolean \| "auto" \| { … }` | `"auto"` | `true` always, `"auto"` once the row model has `threshold` rows (200), `false` never. `DataGridVirtualizeOptions`: `overscan` (8) and `threshold` (200). |
 | `density` | `DataGridDensity` | uncontrolled | Controlled density. |
 | `defaultDensity` | `DataGridDensity` | `"comfortable"` | Starting density (and what Reset view returns to). |
 | `onDensityChange` | `(density) => void` | — | Density changed. |
-| `persist` | `boolean \| string \| DataGridPersistOptions` | off | Remember the view. See [persistence](/docs/data-grid/persistence/). |
-| `selection` | `boolean \| DataGridSelectionOptions` | `true` | Row selection. See below. The checkbox column is `col.select()`. |
+| `persist` | `boolean \| string \| { … }` | off | Remember the view; a string is the storage key, an object is `DataGridPersistOptions`. See [persistence](/docs/data-grid/persistence/). |
+| `selection` | `boolean \| { … }` | `true` | Row selection; an object is `DataGridSelectionOptions`, below. The checkbox column is `col.select()`. |
 | `cellSelection` | `boolean` | `true` | Cell focus, ranges, copy and the body keyboard model. |
-| `editing` | `boolean \| DataGridEditingOptions` | on | `false` disables editing; `{ onCellEdit?, canEdit? }` configures it. |
-| `onCellEdit` | `(edit: DataGridCellEdit<TData, unknown>) => void \| Promise<void>` | — | Shorthand for `editing.onCellEdit`; ignored when `editing` is an object. |
+| `editing` | `boolean \| { … }` | on when a column is editable | `false` disables editing; a `DataGridEditingOptions` object (`onCellEdit?`, `canEdit?`) configures it. |
+| `onCellEdit` | `(edit) => void \| Promise<void>` | — | Shorthand for `editing.onCellEdit`, merged into an `editing` object that has none; the object's own wins when both are given. |
 | `grouping` | `boolean` | `true` | Group-by from the column menu and the toolbar. |
 | `rowPinning` | `boolean` | `false` | Pin rows to the top or bottom from the row api. |
 | `globalFilter` | `false \| "fuzzy" \| "includesString"` | `"fuzzy"` | The search box's matcher; `false` removes the search. |
 | `labels` | `Partial<DataGridLabels>` | English | Every string. See [i18n](/docs/data-grid/i18n/). |
 | `locale` | `string` | the browser's | BCP 47 tag for number and date formatting. |
 | `state` | `DataGridStateAdapter` | — | Controlled slices from elsewhere (the URL). See [URL state](/docs/data-grid/url-state/). |
-| `table` | `Partial<Omit<DataGridTableOptions<TData>, "data" \| "columns" \| "features">>` | — | Any other TanStack option, applied last. See [raw options](#raw-tanstack-options). |
+| `table` | `Partial<DataGridTableOptions>` | — | Any other TanStack option except `data`, `columns` and `features`, applied last. See [raw options](#raw-tanstack-options). |
 
 `DataGridServerOptions`:
 
@@ -119,6 +120,18 @@ Builds the TanStack table and everything the parts need. Returns a `DataGridApi<
 `canEdit?: (row: TData) => boolean`. `DataGridPersistOptions`: `key?`, `storage?`, `scope?`,
 `savedViews?` ([persistence](/docs/data-grid/persistence/#options)).
 
+### Labels
+
+`labels` is a `Partial<DataGridLabels>`; every key is optional and the defaults are on the
+[i18n page](/docs/data-grid/i18n/#every-label). Plain strings unless noted:
+
+| Area | Keys |
+| --- | --- |
+| toolbar | `search`, `clearFilters`, `filters(n)`, `view`, `viewColumns`, `searchColumns`, `noColumns`, `hidden(n)`, `showAll`, `resetView`, `density`, `densityCompact`, `densityComfortable`, `densitySpacious`, `export`, `exportCsv`, `exportJson`, `exportCopy`, `exportSelectedOnly`, `group`, `groupBy(column)`, `ungroup`, `groupedBy`, `clearGrouping`, `savedViews`, `saveView`, `saveViewPrompt`, `deleteView`, `defaultView`, `fullscreen`, `exitFullscreen` |
+| column menu and filters | `sortAsc`, `sortDesc`, `clearSort`, `pinStart`, `pinEnd`, `unpin`, `hideColumn`, `autosize`, `autosizeAll`, `columnMenu`, `moveLeft`, `moveRight`, `filter`, `filterPlaceholder`, `filterNoResults`, `filterApplied(n)`, `filterContains`, `filterNotContains`, `filterStartsWith`, `filterEndsWith`, `filterEquals`, `filterIsEmpty`, `filterIsNotEmpty`, `filterMin`, `filterMax`, `filterFrom`, `filterTo`, `filterAny`, `filterTrue`, `filterFalse`, `applied`, `dragColumn`, `resizeColumn` |
+| pagination and selection | `rowsPerPage`, `pageOf(page, pages)`, `goToPage`, `firstPage`, `previousPage`, `nextPage`, `lastPage`, `selectedOf(selected, total)`, `rowsCount(total)`, `selectAll`, `selectRow`, `clearSelection`, `selected(n)` |
+| rows, states and editing | `expand`, `collapse`, `expandAll`, `collapseAll`, `pinRowTop`, `pinRowBottom`, `unpinRow`, `rowActions`, `values(n)`, `outOfRange(min, max)`, `loading`, `empty`, `emptyFiltered`, `error`, `retry`, `copied(n)`, `copiedRows(n)`, `edit`, `save`, `cancel`, `invalid`, `keyboardHint`, `yes`, `no`, `blank` |
+
 ### `DataGridApi<TData>`
 
 What `useDataGrid` returns and every part reads from context.
@@ -126,15 +139,15 @@ What `useDataGrid` returns and every part reads from context.
 | Member | Type | What it is |
 | --- | --- | --- |
 | `table` | `DataGridReactTable<TData>` | The TanStack table. `table.state` is reactive; `table.atoms.*` are the store atoms. |
-| `name` | `string` | The grid key. |
+| `key` | `string` | The grid's `name` (`"grid"` when none was given). |
 | `labels` | `DataGridLabels` | The merged labels. |
 | `locale` | `string \| undefined` | The `locale` option. |
 | `density` / `setDensity(d)` | `DataGridDensity` | Current density and its setter. |
 | `rowHeight` | `number` | 32, 40 or 48 px by density (`DENSITY_ROW_HEIGHT`). |
 | `pagination` | `false \| { pageSize, pageSizeOptions }` | The resolved pagination option. |
 | `isServer` | `boolean` | `server` was given. |
-| `virtualizeRows` | `boolean` | Whether rows are virtualized right now (resolved from `virtualize` and the row count). |
-| `virtualizeOptions` | `{ overscan, threshold }` | Resolved virtualization options. |
+| `virtualizeRows` | `boolean` | Whether rows are virtualised right now (resolved from `virtualize` and the row count). |
+| `virtualizeOptions` | `{ overscan, threshold }` | Resolved virtualisation options. |
 | `selectionEnabled`, `cellSelectionEnabled`, `groupingEnabled`, `rowPinningEnabled`, `globalFilterEnabled` | `boolean` | Resolved feature switches. |
 | `views` | `DataGridViewsApi` | `saved`, `activeId`, `current()`, `save(name)`, `apply(id)`, `remove(id)`, `rename(id, name)`, `reset()`, `enabled`, `savedViewsEnabled`. [Details](/docs/data-grid/persistence/#saved-views). |
 | `editing` | `DataGridEditingApi<TData>` | `enabled`, `cell`, `error`, `start(rowId, columnId)`, `cancel()`, `commit(value)`, `isEditable(cell)`, `editorFor(cell)`. [Details](/docs/data-grid/editing/#the-editing-api). |
@@ -155,7 +168,7 @@ as you like ([composition](/docs/data-grid/composition/)). All accept `className
 | --- | --- | --- |
 | `DataGridRoot` | `grid`, `children`, `loading`, `error`, `onRetry`, `emptyState`, `fullscreen`, `onFullscreenChange` | The providers, the root `div` with `--dg-row-height`, fullscreen handling and the live region. |
 | `DataGridToolbar` | `start`, `children`, `search`, `filters`, `columns`, `grouping`, `density`, `export`, `views`, `fullscreen` (all `true`), `exportFilename` | Search, filter chips and grouping bar on the left; your `children` and the menus on the right. |
-| `DataGridTable` | `height`, `fillHeight`, `stickyHeader`, `striped`, `getRowClassName`, `onRowClick` | Header, body (virtualized when large), footer, overlays, keyboard and drag-to-reorder. |
+| `DataGridTable` | `height`, `fillHeight`, `stickyHeader`, `striped`, `getRowClassName`, `onRowClick` | Header, body (virtualised when large), footer, overlays, keyboard and drag-to-reorder. |
 | `DataGridPagination` | `showSelection` (default: when selection is on), `showGoTo` (default: over 5 pages) | Rows per page, “Page x of y”, first/previous/next/last. Renders nothing with `pagination: false`. |
 | `DataGridBulkActions` | `children: (rows, api) => ReactNode` | The bar shown while rows are selected: count, Clear, your actions. |
 | `DataGridSearch` | — | The search box, debounced 200 ms. Nothing with `globalFilter: false`. |
@@ -255,11 +268,11 @@ because `dataGridFeatures` registers them:
 | Kind | Names |
 | --- | --- |
 | `sortFns` | `alphanumeric`, `alphanumericCaseSensitive`, `text`, `textCaseSensitive`, `datetime`, `basic` |
-| `filterFns` | `includesString`, `equals`, `weakEquals` (TanStack's), `fuzzy` (the search box's ranked match), `facet` (multi-select), `text` (`{ op, value }`), `range` (`{ min?, max? }`), `dateRange` (`{ from?, to? }`, inclusive by day), `boolean` |
+| `filterFns` | `includesString`, `equals`, `weakEquals` (TanStack's), `fuzzy` (the search box's ranked match), `facet` (multi-select), `text` (`{ op, value }`), `range` (`{ min?, max? }`), `dateRange` (`{ from?, to? }`, inclusive by day), `boolean`, `byValue` (the `defaultColumn` filter: follows whatever shape the header's filter UI sends) |
 | `aggregationFns` | `sum`, `min`, `max`, `extent`, `mean`, `median`, `unique`, `uniqueCount`, `count`, `first`, `last` |
 
 The grid's own filter functions are exported as values too (`filterFn_fuzzy`, `filterFn_facet`,
-`filterFn_textOp`, `filterFn_range`, `filterFn_dateRange`, `filterFn_boolean`), along with
+`filterFn_textOp`, `filterFn_range`, `filterFn_dateRange`, `filterFn_boolean`, `filterFn_byValue`), along with
 `rankMatch(text, query)`, the scorer behind `fuzzy` (exact 6, prefix 5, word prefix 4, contains 3,
 acronym 2, subsequence 1, none 0).
 
@@ -275,7 +288,7 @@ useDataGrid({
   columns,
   table: {
     enableMultiCellRangeSelection: false,  // no ⌘-click ranges
-    autoResetCellSelection: false,         // keep ranges across refetches
+    autoResetCellSelection: true,          // clear ranges whenever data changes
     enableSortingRemoval: false,           // asc ↔ desc, never off
     isMultiSortEvent: (e) => (e as MouseEvent).altKey,
     debugTable: true,
@@ -289,7 +302,8 @@ What the grid sets, so you know what you are overriding: `enableSorting`, `enabl
 `getColumnCanGlobalFilter`; `manualPagination`, `rowCount`, `pageCount`, `autoResetPageIndex`;
 `enableRowSelection`, `enableMultiRowSelection`, `enableRowRangeSelection`,
 `enableSubRowSelection`, `isRowRangeSelectionEvent`; `enableCellSelection`,
-`enableCellRangeSelection`, `enableMultiCellRangeSelection`, `enableCellSelectionDrag`;
+`enableCellRangeSelection`, `enableMultiCellRangeSelection`, `enableCellSelectionDrag`,
+`autoResetCellSelection: false` (so an edit, which changes `data`, keeps the focused cell);
 `enableHiding`, `enableColumnPinning`, `enableColumnResizing`, `columnResizeMode: "onChange"`;
 `enableRowPinning`, `keepPinnedRows`, `enableExpanding`, `paginateExpandedRows: false`,
 `autoResetExpanded: false`, `manualExpanding`; `enableGrouping`, `groupedColumnMode: "reorder"`,
@@ -307,7 +321,7 @@ Small exported helpers the parts use, for your own parts:
 
 | Module | Exports |
 | --- | --- |
-| format | `formatValue(value, meta, row, locale, blank?)`, `toDate(value)`, `toInputDate(value, withTime)` |
+| format | `formatValue(value, meta, row, locale, blank?, booleans?)` (pass `grid.labels` as `booleans` so `true`/`false` read `labels.yes`/`labels.no`), `toDate(value)`, `toInputDate(value, withTime)` |
 | export | `toCsv`, `toTsv`, `toJson`, `toDelimited`, `csvCell`, `downloadFile`, `copyText`, `slugifyFilename` |
 | persist | `defaultView`, `sanitizeView`, `sanitizeState`, `localStorageStorage`, `sessionStorageStorage`, `memoryStorage()`, `storageKeyFor`, `newViewId`, `STORAGE_PREFIX` |
 | labels | `defaultLabels`, `resolveLabels` |

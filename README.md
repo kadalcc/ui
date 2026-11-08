@@ -18,7 +18,7 @@
 
 A data grid is where your users spend their day, and the one component every vendor sells you with
 a licence key. Kadal UI's grid is MIT and it lives in your repository: sorting, faceted filters,
-fuzzy search, grouping with aggregation, 50,000 virtualized rows, inline editing, spreadsheet-style
+fuzzy search, grouping with aggregation, 50,000 virtualised rows, inline editing, spreadsheet-style
 keyboard ranges and clipboard, export, saved views and URL state, typed from the row to the cell.
 It is built on TanStack Table v9 and the Base UI flavour of shadcn/ui, and it is distributed as a
 [shadcn registry](https://ui.shadcn.com/docs/registry), so you install it the way you install a
@@ -100,7 +100,7 @@ export function Orders({ orders }: { orders: Order[] }) {
 | **Sorting** ([docs](https://ui.kadal.cc/docs/data-grid/sorting/)) | Click to sort, shift-click to add a key, numbered badges, a menu for the rest. |
 | **Filtering** ([docs](https://ui.kadal.cc/docs/data-grid/filtering/)) | Facets with counts and search, text operators, number and date ranges, booleans; chips to clear; filter values that round-trip through URLs. |
 | **Search** ([docs](https://ui.kadal.cc/docs/data-grid/search/)) | Fuzzy, ranked, across every data column, debounced. |
-| **Pagination or 50,000 rows** ([docs](https://ui.kadal.cc/docs/data-grid/virtualization/)) | A pager with page size, go-to-page and counts, or virtualized rows with the sticky header and pinning intact. |
+| **Pagination or 50,000 rows** ([docs](https://ui.kadal.cc/docs/data-grid/virtualization/)) | A pager with page size, go-to-page and counts, or virtualised rows with the sticky header and pinning intact. |
 | **Selection and bulk actions** ([docs](https://ui.kadal.cc/docs/data-grid/selection/)) | Checkboxes, shift-click ranges, select all on the page, a bar for what happens next. |
 | **Pin, reorder, resize, hide** ([docs](https://ui.kadal.cc/docs/data-grid/pinning/)) | Pin to either end (logical start/end, RTL-aware), drag headers, drag edges or double-click to fit, a searchable column list. |
 | **Group and aggregate** ([docs](https://ui.kadal.cc/docs/data-grid/grouping/)) | Group by any column; sums, means, counts and ranges in group rows and footers, formatted like the column. |
@@ -130,7 +130,7 @@ since July 2026), TanStack Table v9 (tree-shaken features, store-based state, Re
 | `data-grid` | The grid: 21 files under `components/ui/data-grid/` | `npx shadcn@latest add @kadal/data-grid` |
 | `data-grid-url-state` | Filters, search and page in the URL (nuqs) | `npx shadcn@latest add @kadal/data-grid-url-state` |
 | `data-grid-demo-data` | The seeded demo rows the docs use | `npx shadcn@latest add @kadal/data-grid-demo-data` |
-| `data-grid-demo`, `-basic`, `-virtualized`, `-tree`, `-server`, `-composed`, `-url-state-example` | The examples from the docs, as files | `npx shadcn@latest add @kadal/data-grid-demo` |
+| `data-grid-basic`, `data-grid-sorting`, … (30 examples, one per docs page) | The examples from the docs, as files | `npx shadcn@latest add @kadal/data-grid-demo` |
 
 Register the namespace once in `components.json` (`"registries": { "@kadal": "https://ui.kadal.cc/r/{name}.json" }`),
 or let the CLI do it. Without a namespace: `npx shadcn@latest add kadalcc/ui/data-grid` installs

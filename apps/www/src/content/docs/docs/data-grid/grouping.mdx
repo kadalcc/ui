@@ -58,7 +58,8 @@ Or write your own. An aggregation is an object with an `aggregate` function that
 group's rows and a `getValue` for the column; `constructAggregationFn` only types it:
 
 ```tsx
-import { constructAggregationFn, type DataGridFeatures } from "@/components/ui/data-grid"
+import { constructAggregationFn } from "@tanstack/react-table"
+import type { DataGridFeatures } from "@/components/ui/data-grid"
 
 const weightedUsage = constructAggregationFn<DataGridFeatures, Person, number, number>({
   aggregate: ({ rows, getValue }) => {
@@ -106,7 +107,7 @@ The result's type is whatever the aggregation returns (`number` for `sum`, a `[m
 
 - **Group rows.** The grouped column's cell shows a chevron, the formatted group value and the number
   of leaf rows in parentheses. Click it, or press <kbd>Enter</kbd> on a focused cell of the row, to
-  open or close the group. Group rows are tinted and bold and carry `data-grouped`.
+  open or close the group. Group rows are tinted, set in a medium weight, and carry `data-grouped`.
 - **Several columns** nest: `grouping: ["team", "plan"]` groups by team, then by plan inside each
   team. The chips show the order; the Group menu toggles membership.
 - **Grouped columns move to the front** (`groupedColumnMode: "reorder"`), in grouping order, and lose
@@ -129,8 +130,8 @@ The result's type is whatever the aggregation returns (`number` for `sum`, a `[m
 
 <Aside type="note" title="Several aggregations on one column">
   `aggregationFn` also takes an array (`["sum", "mean"]`), in which case the aggregate is an object
-  keyed by name. The default `aggregatedCell` does not know how to show that, so pair it with an
-  `aggregatedCell` of your own.
+  keyed by name; an inline definition in the array needs an `id` to be keyed by. The default
+  `aggregatedCell` does not know how to show that, so pair it with an `aggregatedCell` of your own.
 </Aside>
 
 ## Options

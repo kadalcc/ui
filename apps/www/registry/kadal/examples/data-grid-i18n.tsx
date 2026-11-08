@@ -75,6 +75,20 @@ const fr: Partial<DataGridLabels> = {
   rowsCount: (n) => (n === 1 ? "1 ligne" : `${n.toLocaleString("fr-FR")} lignes`),
   selected: (n) => (n === 1 ? "1 sélectionnée" : `${n} sélectionnées`),
   copied: (n) => (n === 1 ? "1 cellule copiée" : `${n} cellules copiées`),
+  copiedRows: (n) => (n === 1 ? "1 ligne copiée" : `${n} lignes copiées`),
+  columnMenu: "Menu de la colonne",
+  rowActions: "Actions",
+  moveLeft: "Déplacer à gauche",
+  moveRight: "Déplacer à droite",
+  values: (n) => (n === 1 ? "1 valeur" : `${n} valeurs`),
+  outOfRange: (min, max) =>
+    min !== undefined && max !== undefined
+      ? `Doit être entre ${min} et ${max}`
+      : min !== undefined
+        ? `Doit être au moins ${min}`
+        : max !== undefined
+          ? `Doit être au plus ${max}`
+          : "Hors limites",
   empty: "Aucun enregistrement.",
   emptyFiltered: "Aucune ligne ne correspond aux filtres.",
   yes: "Oui",
@@ -86,7 +100,7 @@ const data = makePeople(40, 47);
 /** French labels and `fr-FR` number and date formatting. */
 export default function DataGridI18n() {
   const grid = useDataGrid<Person>({
-    key: "i18n",
+    name: "i18n",
     data,
     columns,
     getRowId: (r) => r.id,

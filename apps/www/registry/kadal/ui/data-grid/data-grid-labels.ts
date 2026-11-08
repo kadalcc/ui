@@ -96,6 +96,8 @@ export interface DataGridLabels {
   error: string;
   retry: string;
   copied: (count: number) => string;
+  /** The toolbar's "Copy to clipboard" announcement: rows, not cells. */
+  copiedRows: (count: number) => string;
   edit: string;
   save: string;
   cancel: string;
@@ -207,6 +209,7 @@ export const defaultLabels: DataGridLabels = {
   error: "Something went wrong.",
   retry: "Retry",
   copied: (n) => (n === 1 ? "Copied 1 cell" : `Copied ${n} cells`),
+  copiedRows: (n) => (n === 1 ? "Copied 1 row" : `Copied ${n} rows`),
   edit: "Edit",
   save: "Save",
   cancel: "Cancel",

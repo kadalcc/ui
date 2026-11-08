@@ -1,8 +1,127 @@
 ---
 title: FAQ
-description: FAQ in the Kadal UI data grid.
+description: "Answers about the Kadal UI data grid: licensing, why it is source and not a package, updates, Radix versus Base UI, React and Tailwind versions, Next.js, bundle size and support."
 ---
 
-{/* STUB: written next; keep the frontmatter. */}
+import { Aside } from "@astrojs/starlight/components";
 
-This page is being written. In the meantime the [overview](/docs/data-grid/) and the [API reference](/docs/data-grid/api/) cover it.
+## Is it really free?
+
+Yes. The code is MIT: use it in commercial products, change it, sell what you build with it. There
+is no paid tier, no enterprise edition and no licence key. The work is funded by
+[sponsorships](/sponsor/) and by Kadal's paid products; neither changes what you get here.
+
+## Why is it not an npm package?
+
+Because the grid is the part of an app teams always end up changing: a label, a cell, a rule
+about which rows can be selected. As a dependency every one of those is a prop to request or a
+fork to maintain. As source in your repository it is an edit. The registry model (the same one
+shadcn/ui uses) gives you that: `npx shadcn@latest add @kadal/data-grid` copies the files, and
+they are yours. The only npm package, [`@kadal/ui`](https://www.npmjs.com/package/@kadal/ui), is
+the CLI that runs that command for you.
+
+## How do updates work?
+
+They arrive as a diff you review, not a version bump. `npx @kadal/ui diff data-grid` shows what
+the registry would change in your copy; `npx shadcn@latest add @kadal/data-grid --overwrite`
+takes it. If you have edited the files, merge the parts you want. The
+[changelog](/changelog/) lists every registry change by version, and the version of what you have
+is `meta.version` in the registry item you installed from.
+
+<span id="radix" />
+
+## My shadcn project is on Radix, not Base UI. Can I use it?
+
+Not without work. The grid's menus, popovers, selects, checkboxes and tooltips are written against
+the Base UI flavour of shadcn/ui (the default since July 2026): Base UI uses a `render` prop where
+Radix uses `asChild`, the `Select` takes `items`, and the `Checkbox` has `indeterminate`. Your
+options, best first:
+
+1. Move the project to Base UI. `npx shadcn@latest init -b base` in a new project, or follow the
+   [shadcn migration notes](https://ui.shadcn.com/docs/base-ui) in an existing one; most apps are
+   a mechanical change.
+2. Install the grid and its primitives side by side. The registry brings its own copies of the
+   shadcn items it uses (`button`, `dropdown-menu`, `select`, `checkbox`, …) only when they are
+   missing, so point the grid's imports at Base UI copies under another folder (`components/base/`,
+   say) and leave your Radix ones alone.
+3. Port the grid's primitives to Radix yourself. It is a few files
+   (`data-grid-column-header.tsx`, `data-grid-filters.tsx`, `data-grid-editing.tsx`,
+   `data-grid-toolbar.tsx`); the rest of the grid does not care.
+
+## Which React, TypeScript and Tailwind versions?
+
+React 19 (the grid passes `ref` as a prop, which React 18 does not support), TypeScript 5.5 or
+later (7 is what the repository uses), Tailwind CSS v4 (the grid uses v4-only syntax such as
+`h-(--dg-row-height)` and reads shadcn's v4 tokens). Node 20.19 or later for the CLIs.
+
+## Does it work with Next.js, Remix, TanStack Start, Astro?
+
+Yes. The grid is a client component: put `"use client"` at the top of the file that renders it in
+the Next.js app router. The URL-state hook ships adapters for each router through
+[nuqs](https://nuqs.dev): see [URL state](/docs/data-grid/url-state/). The examples on this site
+run inside Astro.
+
+## How big is it?
+
+It is tree-shaken into your bundle like the rest of your code, so the number depends on what you
+use and what you already have. TanStack Table v9 only includes the features the grid registers;
+the shadcn primitives are shared with the rest of your app; `@tanstack/react-virtual` and
+`@dnd-kit/react` are small. Measure it with your bundler's analyser; and if a feature you do not
+use is costing you, delete it, which is the point of owning the source.
+
+## Can I use only parts of it?
+
+Yes. `useDataGrid` builds the table and the api; `DataGridRoot`, `DataGridToolbar`,
+`DataGridTable`, `DataGridPagination` and the toolbar parts render in any layout. See
+[Composition](/docs/data-grid/composition/). A grid with no toolbar and no pager is
+`<DataGrid toolbar={false} pager={false} />`.
+
+## Server-side data?
+
+Pass `server={{ rowCount }}` and the grid stops sorting, filtering and paging on the client; it
+hands you the state through the `table` callbacks and renders whatever rows you give it. The
+[server-side](/docs/data-grid/server-side/) page has a worked example with TanStack Query.
+
+## Is it accessible?
+
+It is a real ARIA grid: `role="grid"`, row and column indexes, `aria-sort`, roving focus with a
+full keyboard model, live announcements for sort and selection, 44 px rows on touch screens. The
+[accessibility](/docs/data-grid/accessibility/) page lists what is covered and, honestly, what is
+not yet.
+
+## Does the CLI collect anything?
+
+`@kadal/ui` has no dependencies and sends nothing anywhere. It makes one request to
+`ui.kadal.cc/r/registry.json` for `list`, and otherwise runs the shadcn CLI, which fetches the
+item JSON from the same site. This site runs no analytics; the [privacy](/privacy/) page says the
+rest.
+
+## Will there be other components?
+
+That is the plan: the grid is the first because it is the component every data-heavy app ends up
+buying. What comes next is decided in
+[Discussions](https://github.com/kadalcc/ui/discussions/categories/ideas), and sponsors' asks
+carry weight there.
+
+## Vue, Svelte, Solid?
+
+No. The grid is React, and the typed column builder leans on TypeScript features that would not
+survive a port with the same guarantees.
+
+## Where do I get help?
+
+- A bug: [open an issue](https://github.com/kadalcc/ui/issues/new?template=bug.yml) with a column
+  definition and a few rows that reproduce it.
+- A question: [Discussions](https://github.com/kadalcc/ui/discussions/categories/q-a) or the
+  `#kadal-ui` channel on the [Kadal Discord](https://discord.gg/pdWcSbxNKa).
+- A feature: [request it](https://github.com/kadalcc/ui/issues/new?template=feature.yml).
+- Anything else: [hello@kadal.cc](mailto:hello@kadal.cc).
+
+Sponsoring does not buy support, but it does buy priority: Gold sponsors' issues are looked at
+first. See the [sponsor page](/sponsor/).
+
+## See also
+
+- [Compared with other grids](/docs/compare/): when another grid is the better choice.
+- [Installation](/docs/installation/).
+- [Contributing](/docs/contributing/).

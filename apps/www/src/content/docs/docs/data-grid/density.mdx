@@ -37,8 +37,8 @@ pixel height.
 
 - **One variable.** The grid root sets `--dg-row-height` (`32px`, `40px` or `48px`) and
   `data-density="compact" | "comfortable" | "spacious"`. Header cells, body cells, footer cells, the
-  pinned-row offsets, the overlay inset and the virtualizer's size estimate all read the variable,
-  so a density change is one style write.
+  pinned-row offsets and the overlay inset all read the variable, and the virtualizer's size
+  estimate follows the same value, so a density change is one style write.
 - **Style with it.** Target the attribute for anything that should change with density, in CSS or
   with a Tailwind arbitrary variant on your own cells:
 

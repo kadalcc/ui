@@ -39,10 +39,11 @@ July 2026). Next.js, Vite, Astro, Remix, React Router and TanStack Start all wor
          npx shadcn@latest add @kadal/data-grid
          ```
 
-      3. Optional: the URL-state hook, the demo data and the examples.
+      3. Optional: the URL-state hook and the demo data. Any example on these pages installs the
+         same way, by its name (`@kadal/data-grid-sorting`, say).
 
          ```sh
-         npx shadcn@latest add @kadal/data-grid-url-state @kadal/data-grid-demo
+         npx shadcn@latest add @kadal/data-grid-url-state @kadal/data-grid-demo-data
          ```
     </Steps>
   </TabItem>
@@ -55,17 +56,19 @@ July 2026). Next.js, Vite, Astro, Remix, React Router and TanStack Start all wor
     npx @kadal/ui add data-grid
     ```
 
-    Other commands: `list`, `docs data-grid --open`, `diff data-grid`, `info`, and `mcp` to set up
-    the shadcn MCP server for your AI agent. See the [CLI reference](/docs/cli/).
+    Other commands: `init`, `list`, `docs data-grid --open`, `diff data-grid`, `info`, and `mcp`
+    to set up the shadcn MCP server for your AI agent. See the [CLI reference](/docs/cli/).
   </TabItem>
-  <TabItem label="Without a registry">
-    You can also skip the registry and install straight from the GitHub repository:
+  <TabItem label="Without a namespace">
+    You can also skip the `components.json` entry and install from the item's URL, which is what
+    the namespace expands to:
 
     ```sh
-    npx shadcn@latest add kadalcc/ui/data-grid
+    npx shadcn@latest add https://ui.kadal.cc/r/data-grid.json
     ```
 
-    Pin a release with `kadalcc/ui/data-grid#v0.1.0`.
+    The URL always serves the current version; the [changelog](/changelog/) says what each
+    version changed.
   </TabItem>
 </Tabs>
 
@@ -110,7 +113,12 @@ type Customer = { id: string; name: string; plan: "free" | "pro"; mrr: number }
 const col = createDataGridColumns<Customer>()
 const columns = col.columns([
   col.text("name", { header: "Name" }),
-  col.enum("plan", { options: [{ value: "free", label: "Free" }, { value: "pro", label: "Pro" }] }),
+  col.enum("plan", {
+    options: [
+      { value: "free", label: "Free" },
+      { value: "pro", label: "Pro" },
+    ],
+  }),
   col.currency("mrr", { header: "MRR" }),
 ])
 

@@ -38,7 +38,7 @@
   font-size: 0.85em;
 }
 
-/* Prop tables: narrower first column, code wrapping. */
+/* Prop tables: a long type union wraps at its spaces instead of pushing the last column off-screen. */
 .sl-markdown-content table code {
-  white-space: nowrap;
+  white-space: normal;
 }

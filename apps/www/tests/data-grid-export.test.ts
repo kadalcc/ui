@@ -1,8 +1,20 @@
 import { describe, expect, test } from "bun:test";
 
-import { csvCell, slugifyFilename, toCsv, toJson, toTsv } from "@/registry/kadal/ui/data-grid/data-grid-export";
+import {
+  csvCell,
+  slugifyFilename,
+  toCsv,
+  toJson,
+  toTsv,
+} from "@/registry/kadal/ui/data-grid/data-grid-export";
 
-const table = { headers: ["Name", "Note"], rows: [["Ada", "x,y"], ["Bo", 'say "hi"']] };
+const table = {
+  headers: ["Name", "Note"],
+  rows: [
+    ["Ada", "x,y"],
+    ["Bo", 'say "hi"'],
+  ],
+};
 
 describe("csvCell", () => {
   test("quotes only when it must, doubling quotes inside", () => {

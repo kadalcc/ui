@@ -28,7 +28,7 @@ const data = makePeople(50, 17);
 export default function DataGridReordering() {
   return (
     <DataGrid
-      key="reordering"
+      name="reordering"
       data={data}
       columns={columns}
       getRowId={(row) => row.id}

@@ -61,7 +61,8 @@ From code: `row.toggleExpanded()`, `row.getIsExpanded()`, `table.toggleAllRowsEx
   pass `table={{ filterFromLeafRows: true }}`.
 - **Expanded state survives data changes** (`autoResetExpanded: false`): refetching the rows does not
   fold the tree.
-- **Export** writes the rows as they are expanded. Collapsed children are not exported.
+- **Export** reaches every row of the tree, expanded or not: parents and their children in tree
+  order, after the current filters and sort.
 - **Grouping** uses the same machinery: a group row is an expandable row whose children are the
   group's members. See [Grouping and aggregation](/docs/data-grid/grouping/).
 - **Server-side trees.** With `server={{ expanding: true }}` the grid stops expanding locally and you

@@ -88,9 +88,10 @@ Copy with headers, or copy whole rows, from the [Export menu](/docs/data-grid/ex
 - A range is stored as two corner cells by row id and column id, not as positions. Sorting,
   filtering or reordering keeps the corners and recomputes what lies between them; hiding a column
   a corner sits on makes the range inert until the column returns.
-- The selection resets whenever `data` changes (TanStack's `autoResetCellSelection`), so a refetch
-  does not leave ranges pointing at rows that moved. Keep ranges across refetches with
-  `table: { autoResetCellSelection: false }`.
+- The selection survives a change of `data`: the grid sets TanStack's `autoResetCellSelection` to
+  `false`, so committing an edit (which changes `data`) leaves the focused cell where it was.
+  Ranges are stored by row id, so after a refetch they still point at the same rows; to clear them
+  on every data change, pass `table: { autoResetCellSelection: true }`.
 - While an editor is open, pointer selection on other cells and the body's keys are paused.
 - Row selection (the checkbox column) is a separate feature; <kbd>Space</kbd> toggles the focused
   row and [bulk actions](/docs/data-grid/selection/) work on rows, not cells.

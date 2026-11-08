@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { arrayMove, humanize, isCommandKey, isPlainObject } from "@/registry/kadal/ui/data-grid/data-grid-utils";
+import {
+  arrayMove,
+  humanize,
+  isCommandKey,
+  isPlainObject,
+} from "@/registry/kadal/ui/data-grid/data-grid-utils";
 
 describe("arrayMove", () => {
   test("moves an item and leaves the input alone", () => {

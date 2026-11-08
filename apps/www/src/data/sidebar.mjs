@@ -30,7 +30,7 @@ export const sidebar = [
       { label: "Column resizing", slug: "docs/data-grid/resizing" },
       { label: "Expanding and tree data", slug: "docs/data-grid/expanding" },
       { label: "Grouping and aggregation", slug: "docs/data-grid/grouping" },
-      { label: "Virtualization", slug: "docs/data-grid/virtualization" },
+      { label: "Virtualisation", slug: "docs/data-grid/virtualization" },
       { label: "Inline editing", slug: "docs/data-grid/editing" },
       { label: "Cell selection and clipboard", slug: "docs/data-grid/cell-selection" },
       { label: "Keyboard navigation", slug: "docs/data-grid/keyboard" },

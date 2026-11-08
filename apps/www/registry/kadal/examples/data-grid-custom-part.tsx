@@ -73,7 +73,7 @@ const data = makePeople(60, 43);
 
 /** The built-in toolbar with one extra part; sort, filter or pin something and the button wakes up. */
 export default function DataGridCustomPart() {
-  const grid = useDataGrid<Person>({ key: "custom-part", data, columns, getRowId: (r) => r.id });
+  const grid = useDataGrid<Person>({ name: "custom-part", data, columns, getRowId: (r) => r.id });
   return (
     <DataGridRoot grid={grid}>
       <DataGridToolbar views={false} fullscreen={false}>

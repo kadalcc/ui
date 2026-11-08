@@ -14,8 +14,11 @@ import {
 
 /** The only part of a row a filter function reads. */
 const row = (value: unknown) => ({ getValue: () => value }) as never;
-const passes = (fn: { (row: never, id: string, value: unknown): boolean }, value: unknown, filter: unknown) =>
-  fn(row(value), "c", filter);
+const passes = (
+  fn: { (row: never, id: string, value: unknown): boolean },
+  value: unknown,
+  filter: unknown,
+) => fn(row(value), "c", filter);
 
 describe("rankMatch", () => {
   test("ranks from exact to subsequence", () => {
@@ -49,7 +52,9 @@ describe("the named filter functions", () => {
     expect(passes(filterFn_textOp, "Hello World", { op: "contains", value: "world" })).toBe(true);
     expect(passes(filterFn_textOp, "Hello World", { op: "startsWith", value: "hello" })).toBe(true);
     expect(passes(filterFn_textOp, "Hello World", { op: "endsWith", value: "world" })).toBe(true);
-    expect(passes(filterFn_textOp, "Hello World", { op: "equals", value: "hello world" })).toBe(true);
+    expect(passes(filterFn_textOp, "Hello World", { op: "equals", value: "hello world" })).toBe(
+      true,
+    );
     expect(passes(filterFn_textOp, "Hello World", { op: "notContains", value: "x" })).toBe(true);
     expect(passes(filterFn_textOp, "", { op: "isEmpty", value: "" })).toBe(true);
     expect(passes(filterFn_textOp, null, { op: "isNotEmpty", value: "" })).toBe(false);
@@ -107,9 +112,20 @@ describe("filterFn_byValue", () => {
 describe("dataGridFeatures", () => {
   test("registers every name a column may use", () => {
     expect(Object.keys(dataGridFeatures.filterFns ?? {})).toEqual(
-      expect.arrayContaining(["fuzzy", "facet", "text", "range", "dateRange", "boolean", "byValue", "includesString"]),
+      expect.arrayContaining([
+        "fuzzy",
+        "facet",
+        "text",
+        "range",
+        "dateRange",
+        "boolean",
+        "byValue",
+        "includesString",
+      ]),
     );
-    expect(Object.keys(dataGridFeatures.sortFns ?? {})).toEqual(expect.arrayContaining(["alphanumeric", "basic", "datetime"]));
+    expect(Object.keys(dataGridFeatures.sortFns ?? {})).toEqual(
+      expect.arrayContaining(["alphanumeric", "basic", "datetime"]),
+    );
     expect(Object.keys(dataGridFeatures.aggregationFns ?? {})).toEqual(
       expect.arrayContaining(["sum", "mean", "extent", "count", "uniqueCount"]),
     );

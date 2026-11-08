@@ -38,8 +38,7 @@ const columns = col.columns([
     ),
   }),
   col.text("name", { header: "Name", size: 170 }),
-  // A header that spans columns. Wrap the children in `col.columns` so their value types survive,
-  // and give the group the sum of their sizes.
+  // A header that spans columns. Wrap the children in `col.columns` so their value types survive.
   col.group(
     "Billing",
     col.columns([
@@ -49,7 +48,6 @@ const columns = col.columns([
       // An accessor function needs an id; the value type still flows from what it returns.
       col.currency((row) => row.mrr * 12, { id: "arr", header: "ARR", currency: "USD", size: 110 }),
     ]),
-    { size: 440 },
   ),
   col.enum("status", { header: "Status", options: STATUS_OPTIONS, size: 120 }),
   col.link("email", { header: "Email", href: (v) => `mailto:${v}`, size: 220 }),

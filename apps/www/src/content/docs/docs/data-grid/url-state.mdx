@@ -106,7 +106,7 @@ back button is not flooded; `"push"` makes each change a history entry.
 
 ## How it behaves
 
-- Two grids on one page need different `name`s; the default is `"grid"`.
+- Two grids on one page need different `key`s; the default is `"grid"`.
 - The sort stays out of the URL unless you ask (`sorting: true`), because it is a view preference
   that [`persist`](/docs/data-grid/persistence/) already remembers. With `sorting: true` the URL
   owns the sort entirely: the stored view still records it, but no longer restores it.
@@ -128,7 +128,7 @@ const { data } = useQuery({
 
 | Option | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `name` | `string` | `"grid"` | Prefix of the query keys. |
+| `key` | `string` | `"grid"` | Prefix of the query keys. |
 | `sorting` | `boolean` | `false` | Put the sort in the URL too. |
 | `history` | `"replace" \| "push"` | `"replace"` | nuqs history mode for every key. |
 

@@ -13,14 +13,14 @@ what the keyboard just did. This page lists what it emits and, as plainly, what 
 
 | Element | Attributes |
 | --- | --- |
-| scroll container (`<div>`) | `role="grid"`, `aria-rowcount` (data rows + 1 header row), `aria-colcount` (visible leaf columns), `aria-multiselectable` when multi-row selection is on, `aria-busy` while loading. Receives the keyboard model. |
+| scroll container (`<div>`) | `role="grid"`, `aria-rowcount` (data rows plus every header row: one per header group), `aria-colcount` (visible leaf columns), `aria-multiselectable` when multi-row selection is on, `aria-busy` while loading. Receives the keyboard model. |
 | `<thead>`, `<tbody>` | `role="rowgroup"` |
-| header `<tr>` | `role="row"`, `aria-rowindex="1"` |
+| header `<tr>` | `role="row"`, `aria-rowindex` (`1` for the first header row, `2` for the next when columns are grouped) |
 | header `<th>` | `role="columnheader"`, `scope="col"`, `aria-colindex`, `aria-sort="ascending" \| "descending" \| "none"` on sortable columns (absent on the checkbox and actions columns). Group headers use `scope="colgroup"`. |
 | sort button | a `<button>` with the column title; `title` says “Drag to reorder column” when it is draggable |
 | filter and menu buttons | `aria-label` “Filter: Name” and “Name: Column menu” |
 | resize handle | `role="separator"`, `aria-orientation="vertical"`, `aria-label` “Resize column” |
-| body `<tr>` | `role="row"`, `aria-rowindex` (position in the full data set plus header rows; pinned rows count first), `aria-selected` when row selection is on, `aria-expanded` on rows that can expand, `aria-level` (tree depth + 1) |
+| body `<tr>` | `role="row"`, `aria-rowindex` (position among the rendered rows plus the header rows: the current page, or every row without a pager; top-pinned rows count first), `aria-selected` when row selection is on, `aria-expanded` on rows that can expand, `aria-level` (tree depth + 1) |
 | body `<td>` | `role="gridcell"`, `aria-colindex`, `aria-selected` when cell selection is on, `aria-readonly="true"` on cells that cannot be edited once any column is editable, `tabindex` `0` on the focused cell and `-1` elsewhere |
 | footer `<td>` | `role="gridcell"` |
 | row checkbox | `aria-label` “Select row”; the header checkbox “Select all”, `indeterminate` for a partial page |
@@ -84,7 +84,7 @@ focused cell also has `tabindex="0"` and selected rows have `aria-selected`.
   the column menu; the drag itself is pointer-only.
 - **Cell ranges** are not described to a screen reader beyond `aria-selected` per cell; the live
   region gives a count only on select-all and on copy, not while a range grows.
-- **Virtualized grids** render only the rows in view, so a screen reader's table navigation sees
+- **Virtualised grids** render only the rows in view, so a screen reader's table navigation sees
   the rendered window; `aria-rowcount` and `aria-rowindex` keep the position honest.
 
 ## See also

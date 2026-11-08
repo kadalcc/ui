@@ -78,15 +78,17 @@ without choosing cancels, and so does clicking away from an open checkbox.
 **Unchanged values.** If the committed value `Object.is` the previous one, the editor closes and no
 handler runs.
 
-**Validation.** `validate(value, row)` runs first. Return a string to reject the value: the
-editor stays open, the message appears as its tooltip, the input gets `aria-invalid` and a red
-ring. Return nothing to accept.
+**Validation.** On a number editor the `min` and `max` bounds are checked first; then
+`validate(value, row)` runs. Return a string to reject the value: the editor stays open, the
+message appears as its tooltip, the input gets `aria-invalid` and a red ring. Return nothing to
+accept.
 
 **Saving.** The column's `onEdit` runs, then the grid's `onCellEdit`, each awaited in turn. The
 editor stays open until both settle. If either throws, the message (`error.message`, or
 `labels.invalid` for anything that is not an `Error`) is shown the same way as a validation error
 and the value is not committed. Resolve normally and the editor closes and focus returns to the
-cell.
+cell. The focused cell stays where it was: an edit changes `data`, and the grid does not reset the
+cell selection for that.
 
 ```ts
 interface DataGridCellEdit<TData, TValue> {
@@ -137,8 +139,9 @@ With [server-side data](/docs/data-grid/server-side/) the second shape is the na
 - `editable: false`, or leaving it out, keeps a column read-only.
 
 <Aside type="note">
-  `onCellEdit` on the grid is shorthand for `editing: { onCellEdit }`. When both are given, the
-  one inside `editing` wins.
+  `onCellEdit` on the grid is shorthand for `editing: { onCellEdit }`, and the two merge:
+  `editing: { canEdit }` plus a top-level `onCellEdit` gives you both. When both carry an
+  `onCellEdit`, the one inside `editing` wins.
 </Aside>
 
 ## Accessibility
@@ -150,17 +153,18 @@ editable column has no such attributes. Focus returns to the grid cell when the 
 
 ## The editor spec
 
-`editable: true | DataGridEditorSpec<TValue, TData>`
+`editable: true | DataGridEditorSpec<TValue, TData>`. The callbacks receive the column's `TValue`
+and the row's `TData`.
 
 | Field | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `type` | `"text" \| "number" \| "select" \| "checkbox" \| "date" \| "datetime" \| "textarea"` | from the kind | Which editor opens. |
-| `options` | `readonly DataGridOption<TValue>[]` | the column's `options` | Choices for a select editor. |
+| `type` | `DataGridEditorType` | from the kind | Which editor opens: `text`, `number`, `select`, `checkbox`, `date`, `datetime` or `textarea`. |
+| `options` | `DataGridOption[]` | the column's `options` | Choices for a select editor. |
 | `min`, `max`, `step` | `number` | — | Attributes on a number input; `min` and `max` are enforced on commit. |
 | `placeholder` | `string` | — | Placeholder for text, number, date and textarea inputs. |
-| `validate` | `(value: TValue, row: TData) => string \| null \| undefined \| void` | — | A string rejects the value and is shown. |
-| `parse` | `(raw: string, row: TData) => TValue` | by type | Turns the input's string into the column's value. |
-| `canEdit` | `(row: TData) => boolean` | — | Per-row switch for this column. |
+| `validate` | `(value, row) => string \| void` | — | A string rejects the value and is shown; nothing, `null` or `undefined` accepts it. |
+| `parse` | `(raw, row) => TValue` | by type | Turns the input's string into the column's value. |
+| `canEdit` | `(row) => boolean` | — | Per-row switch for this column. |
 
 ## Options
 
@@ -169,14 +173,14 @@ Column options:
 | Option | Type | Default | What it does |
 | --- | --- | --- | --- |
 | `editable` | `boolean \| DataGridEditorSpec` | `false` | Lets the cells open an editor. |
-| `onEdit` | `(edit: DataGridCellEdit<TData, TValue>) => void \| Promise<void>` | — | Runs after a commit in this column, before the grid's handler. Throw to reject. |
+| `onEdit` | `(edit) => void \| Promise<void>` | — | Runs after a commit in this column, before the grid's handler, with a `DataGridCellEdit<TData, TValue>`. Throw to reject. |
 
 Grid options:
 
 | Option | Type | Default | What it does |
 | --- | --- | --- | --- |
-| `editing` | `boolean \| { onCellEdit?, canEdit? }` | on | `false` disables editing everywhere. |
-| `onCellEdit` | `(edit: DataGridCellEdit<TData, unknown>) => void \| Promise<void>` | — | Runs after any commit, after the column's `onEdit`. Throw to reject. |
+| `editing` | `boolean \| { onCellEdit?, canEdit? }` | on when a column is editable | `false` disables editing everywhere; an object adds a grid-wide handler and a per-row switch. |
+| `onCellEdit` | `(edit) => void \| Promise<void>` | — | Runs after any commit, after the column's `onEdit`, with a `DataGridCellEdit<TData, unknown>`. Throw to reject. |
 
 ## The editing api
 
@@ -184,7 +188,7 @@ Grid options:
 
 | Member | What it does |
 | --- | --- |
-| `enabled` | `false` only with `editing: false`. |
+| `enabled` | `true` when editing is not off and at least one column is `editable`; otherwise cells are plain cells, not read-only ones. |
 | `cell` | `{ rowId, columnId }` of the open editor, or `null`. |
 | `error` | The current validation or save message, or `null`. |
 | `start(rowId, columnId)` | Opens an editor. |

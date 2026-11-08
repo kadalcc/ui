@@ -8,7 +8,7 @@ export const SITE = {
   /** What it is, in the words someone would type into a search box. */
   category: "Open-source React components for power users",
   description:
-    "Kadal UI is a set of open-source React components for power users, starting with a data grid built on TanStack Table v9 and shadcn/ui: sorting, filtering, grouping, virtualization, inline editing, keyboard navigation and more. One command copies the source into your project. MIT.",
+    "Kadal UI is a set of open-source React components for power users, starting with a data grid built on TanStack Table v9 and shadcn/ui: sorting, filtering, grouping, virtualisation, inline editing, keyboard navigation and more. One command copies the source into your project. MIT.",
   repo: "https://github.com/kadalcc/ui",
   npm: "https://www.npmjs.com/package/@kadal/ui",
   issues: "https://github.com/kadalcc/ui/issues",

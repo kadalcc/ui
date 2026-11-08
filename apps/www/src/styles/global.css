@@ -131,3 +131,16 @@
     @apply font-sans;
   }
 }
+
+/* Shiki code blocks rendered at build time (Code.astro, Terminal.astro): one markup, two themes. */
+.code-shiki pre,
+.code-shiki code {
+  background: transparent !important;
+  font: inherit;
+}
+.code-shiki span {
+  color: var(--shiki-light);
+}
+.dark .code-shiki span {
+  color: var(--shiki-dark);
+}

@@ -91,7 +91,7 @@ function ServerGrid() {
 
   return (
     <DataGrid
-      key="server"
+      name="server"
       data={query.data?.rows ?? []}
       columns={columns}
       getRowId={(row) => row.id}

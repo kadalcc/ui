@@ -17,8 +17,8 @@ Press on a header's title and move. The drag starts after 6 px, so a click still
 rearrange under the pointer as you pass over them; release to keep the new order, or press
 <kbd>Escape</kbd> to put everything back where it was.
 
-From the column menu (the <kbd>⋯</kbd> button at the right of the header, or right-click),
-**Move left** and **Move right** swap the column with its visible neighbour. They are disabled at the
+From the column menu (the ⋮ button at the right of the header, or right-click), **Move left** and
+**Move right** swap the column with its visible neighbour. They are disabled at the
 first and last position.
 
 To start in an order of your own, list the ids:
@@ -42,7 +42,7 @@ grid.table.state.columnOrder // [] until someone reorders
 
 ## How it behaves
 
-- **Pointer only, header only.** Dragging uses dnd kit's pointer sensor, so it works with a mouse, a
+- **Pointer only, header only.** Dragging uses dnd-kit's pointer sensor, so it works with a mouse, a
   pen or a finger, and the dragged header cannot leave the header row. The header being dragged
   fades to 80 % and the one it would land on is tinted. Hovering a draggable title shows the hint
   **Drag to reorder column** (`labels.dragColumn`).
@@ -78,7 +78,7 @@ grid.table.state.columnOrder // [] until someone reorders
 
 | Key | Does |
 | --- | --- |
-| <kbd>Tab</kbd> to a header, then its <kbd>⋯</kbd> button, <kbd>Enter</kbd> | Opens the column menu with **Move left** and **Move right**. |
+| <kbd>Tab</kbd> to a header, then to its ⋮ button (**Column menu**), <kbd>Enter</kbd> | Opens the column menu with **Move left** and **Move right**. |
 | <kbd>Escape</kbd> while dragging | Cancels the drag and restores the order from before it. |
 
 ## Options

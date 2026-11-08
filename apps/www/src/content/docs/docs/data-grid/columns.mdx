@@ -51,7 +51,7 @@ state.
 | `enum` | A badge with the matching option's label, icon and colour. | alphanumeric | facet | unique count |
 | `tags` | Up to three badges and a "+n" tooltip for the rest. Not groupable. | alphanumeric | facet, one entry per item | unique count |
 | `link` | An anchor to `href(value, row)` or the value itself, in a new tab. | alphanumeric | text | unique count |
-| `custom` | Yours (`cell`). Set `sortFn` and `filterFn` to match. | TanStack auto | text UI, auto function | none |
+| `custom` | Yours (`cell`). Set `sortFn` and `filterFn` to match. | TanStack auto | text UI, `byValue` function | none |
 | `display` | Yours; no accessor, so no sort, filter, search or export. `id` required. | | | |
 | `group` | A header spanning its child columns. | | | |
 | `select` | The selection checkbox; the header ticks the page. 40px, fixed. | | | |
@@ -64,8 +64,9 @@ searches, groups, hides, resizes or exports them; they can be pinned. Every data
 160px wide, between 48 and 2000.
 
 Editing follows the kind as well: `number`, `currency` and `percent` open a number input, `enum` a
-select over its `options`, `boolean` a checkbox, `date` and `datetime` a date input, and everything
-else a text input. See [inline editing](/docs/data-grid/editing/).
+select over its `options`, `boolean` a checkbox, `date` a date input, `datetime` a date-and-time
+input, and everything else a text input (`editable: { type: "textarea" }` for long text). See
+[inline editing](/docs/data-grid/editing/).
 
 ### Accessor functions, ids and nested keys
 
@@ -171,7 +172,7 @@ col.group("Billing", col.columns([
   col.enum("plan", { header: "Plan", options: PLAN_OPTIONS, size: 110 }),
   col.currency("mrr", { header: "MRR", size: 110 }),
   col.number("seats", { header: "Seats", size: 110 }),
-]), { size: 330 })
+]))
 ```
 
 A group header is not sortable, filterable or draggable itself; its children are. Hiding every

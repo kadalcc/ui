@@ -26,7 +26,7 @@ function UrlStateGrid() {
   // Filters, the search and the page live in the URL (?people.filters=…&people.q=…&people.page=2).
   const urlState = useDataGridUrlState({ key: "people" });
   const grid = useDataGrid<Person>({
-    key: "url-state",
+    name: "url-state",
     data,
     columns,
     getRowId: (r) => r.id,

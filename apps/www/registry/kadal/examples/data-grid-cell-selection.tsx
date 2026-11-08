@@ -36,7 +36,7 @@ const data = makePeople(60, 27);
 /** Spreadsheet-style ranges: drag, Shift-click, ⌘-click, then copy as TSV. */
 export default function DataGridCellSelection() {
   const grid = useDataGrid<Person>({
-    key: "cell-selection",
+    name: "cell-selection",
     data,
     columns,
     getRowId: (r) => r.id,

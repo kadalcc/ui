@@ -70,7 +70,7 @@ for the Code tab automatically; hand-written snippets must use the reader's path
 - Deterministic data: `makePeople(n, seed)` with a seed unique to the example; small (40–200 rows)
   unless the page is about scale.
 - Focused: show the one thing the page is about; the kitchen sink is `data-grid-demo.tsx`.
-  Under ~80 lines. A `key` option unique to the example (`key: "sorting"`) on `useDataGrid`/`DataGrid`.
+  Under ~80 lines. A `name` unique to the example (`name: "sorting"`) on `useDataGrid`/`DataGrid`.
 - Do not use `persist` in examples (it would leak state between pages) unless the page is about persistence,
   and then use a `persist` key unique to the page.
 - Any new example must also be registered in `apps/www/registry.json` as a `registry:example` item

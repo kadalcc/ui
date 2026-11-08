@@ -51,7 +51,15 @@ describe("sanitizeState", () => {
         v: 1,
         current: { pageSize: 50 },
         activeViewId: "v1",
-        views: [{ id: "v1", name: "Mine", view: { density: "spacious" }, savedAt: "2026-01-01T00:00:00.000Z" }, { bad: true }],
+        views: [
+          {
+            id: "v1",
+            name: "Mine",
+            view: { density: "spacious" },
+            savedAt: "2026-01-01T00:00:00.000Z",
+          },
+          { bad: true },
+        ],
       },
       fallback,
     );

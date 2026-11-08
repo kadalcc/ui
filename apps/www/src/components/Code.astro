@@ -1,0 +1,38 @@
+---
+/**
+ * A highlighted code block, rendered at build time with Shiki in both themes (GitHub light and
+ * dark, the same pair the registry's code block uses). Shiki writes `--shiki-light`/`--shiki-dark`
+ * on every token; global.css picks the one for the current theme, so switching themes needs no
+ * script and no second copy of the markup.
+ */
+import { codeToHtml, type BundledLanguage } from "shiki";
+
+interface Props {
+  code: string;
+  lang: BundledLanguage;
+  /** A caption in the bar above the code, e.g. a file name. */
+  title?: string;
+  /** The icon beside the caption: an Icon.astro name. */
+  icon?: string;
+  class?: string;
+}
+import Icon from "./Icon.astro";
+
+const { code, lang, title, icon = "code", class: className } = Astro.props;
+const html = await codeToHtml(code.trim(), {
+  lang,
+  themes: { light: "github-light", dark: "github-dark" },
+  defaultColor: false,
+});
+---
+
+<div class:list={["overflow-hidden rounded-2xl border border-border bg-background text-sm shadow-sm", className]}>
+  {
+    title ? (
+      <div class="flex items-center gap-2 border-b border-border px-4 py-2 font-mono text-xs text-muted-foreground">
+        <Icon name={icon} size={14} /> {title}
+      </div>
+    ) : null
+  }
+  <div class="code-shiki overflow-x-auto p-4 font-mono text-[13px] leading-6" set:html={html} />
+</div>

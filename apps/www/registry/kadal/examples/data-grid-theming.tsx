@@ -34,7 +34,7 @@ const data = makePeople(60, 53);
 /** Striped, compact, a brand-coloured header row and a tinted selected row: all Tailwind classes. */
 export default function DataGridTheming() {
   const grid = useDataGrid<Person>({
-    key: "theming",
+    name: "theming",
     data,
     columns,
     getRowId: (r) => r.id,

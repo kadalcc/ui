@@ -14,16 +14,20 @@ describe("formatValue", () => {
 
   test("dates respect dateStyle and parse strings", () => {
     // No zone suffix: local midday, so the calendar day is the same in every time zone.
-    expect(formatValue("2026-01-05T12:00:00", { kind: "date" }, undefined, "en-US")).toBe("Jan 5, 2026");
-    expect(formatValue("2026-01-05T12:00:00", { kind: "date", dateStyle: "long" }, undefined, "en-GB")).toBe(
-      "5 January 2026",
+    expect(formatValue("2026-01-05T12:00:00", { kind: "date" }, undefined, "en-US")).toBe(
+      "Jan 5, 2026",
     );
+    expect(
+      formatValue("2026-01-05T12:00:00", { kind: "date", dateStyle: "long" }, undefined, "en-GB"),
+    ).toBe("5 January 2026");
     expect(formatValue("not a date", { kind: "date" }, undefined, "en-US", "—")).toBe("—");
   });
 
   test("booleans use the words given", () => {
     expect(formatValue(true, { kind: "boolean" }, undefined, undefined)).toBe("Yes");
-    expect(formatValue(false, { kind: "boolean" }, undefined, undefined, "—", { yes: "Oui", no: "Non" })).toBe("Non");
+    expect(
+      formatValue(false, { kind: "boolean" }, undefined, undefined, "—", { yes: "Oui", no: "Non" }),
+    ).toBe("Non");
   });
 
   test("enum and tags map values to option labels", () => {
@@ -33,14 +37,18 @@ describe("formatValue", () => {
     ];
     expect(formatValue("c", { kind: "enum", options }, undefined, undefined)).toBe("Churned");
     expect(formatValue("zzz", { kind: "enum", options }, undefined, undefined)).toBe("zzz");
-    expect(formatValue(["a", "c"], { kind: "tags", options }, undefined, undefined)).toBe("Active, Churned");
+    expect(formatValue(["a", "c"], { kind: "tags", options }, undefined, undefined)).toBe(
+      "Active, Churned",
+    );
     expect(formatValue([], { kind: "tags", options }, undefined, undefined, "—")).toBe("—");
   });
 
   test("blank values show the blank text, and a format function wins", () => {
     expect(formatValue(null, { kind: "number" }, undefined, undefined, "—")).toBe("—");
     expect(formatValue("", { kind: "text" }, undefined, undefined, "n/a")).toBe("n/a");
-    expect(formatValue(7, { kind: "number", format: (v) => `#${String(v)}` }, undefined, undefined)).toBe("#7");
+    expect(
+      formatValue(7, { kind: "number", format: (v) => `#${String(v)}` }, undefined, undefined),
+    ).toBe("#7");
   });
 });
 

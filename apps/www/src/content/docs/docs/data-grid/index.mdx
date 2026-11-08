@@ -35,7 +35,7 @@ One page per feature, each with a live example and its code.
 | [Column resizing](/docs/data-grid/resizing/) | Drag the edge; double-click to fit to content. |
 | [Expanding and tree data](/docs/data-grid/expanding/) | Nested rows from `getSubRows`, with an expander column. |
 | [Grouping and aggregation](/docs/data-grid/grouping/) | Group by any column; sums, means, counts and ranges in the group rows. |
-| [Virtualization](/docs/data-grid/virtualization/) | Only the rows in view are in the DOM, automatically past 200 rows. |
+| [Virtualisation](/docs/data-grid/virtualization/) | Only the rows in view are in the DOM, automatically past 200 rows. |
 | [Inline editing](/docs/data-grid/editing/) | Text, number, select, checkbox, date and textarea editors; validation; `onCellEdit`. |
 | [Cell selection and clipboard](/docs/data-grid/cell-selection/) | Focus a cell, drag or shift-arrow a range, copy it as TSV. |
 | [Keyboard navigation](/docs/data-grid/keyboard/) | Arrows, Home/End, PageUp/PageDown, Enter, Space, Escape. |
@@ -120,7 +120,7 @@ import {
 } from "@/components/ui/data-grid"
 
 export function Customers({ customers }: { customers: Customer[] }) {
-  const grid = useDataGrid<Customer>({ key: "customers", data: customers, columns, getRowId: (c) => c.id })
+  const grid = useDataGrid<Customer>({ name: "customers", data: customers, columns, getRowId: (c) => c.id })
   return (
     <DataGridRoot grid={grid}>
       <div className="flex items-center gap-2">
@@ -156,7 +156,7 @@ The grid turns on what a console page usually wants. Each default has an option 
 | Grouping | "Group by" in each header menu, a Group menu in the toolbar, aggregated group rows. | `grouping={false}`; `groupable: false` on one column. |
 | Fuzzy search | The toolbar search box matches by rank across every searchable column. | `globalFilter="includesString"` for plain substring matching, or `globalFilter={false}` to remove the box. |
 | Pagination, 10 rows | A pager with 10, 20, 50 and 100 as the choices. | `pagination={false}` shows every row; `pagination={{ pageSize: 25, pageSizeOptions: [25, 50] }}` changes the numbers. |
-| Virtualisation past 200 rows | Once the row model holds 200 rows or more, only the rows in view render. Needs a `height` or `fillHeight`. | `virtualize={false}`; `virtualize` for always; `virtualize={{ threshold: 500 }}` to move the line. |
+| Virtualisation past 200 rows | Once the row model holds 200 rows or more, only the rows in view render. `<DataGrid>` then fills its parent unless you give it a `height`; a composed `DataGridTable` needs `height` or `fillHeight`. | `virtualize={false}`; `virtualize={true}` for always; `virtualize={{ threshold: 500 }}` to move the line. |
 | Editing, when a column is `editable` | Enter, F2 or double-click opens the editor for that kind. | `editing={false}`. |
 | Toolbar and pager | Both render with every built-in control. | `toolbar={false}`, `toolbar={{ export: false }}`, `pager={false}`. |
 | Column hiding, pinning, resizing, reordering | All on for every data column. | Per column: `enableHiding`, `enablePinning`, `enableResizing`, `draggable`; grid-wide through `table={{ enableColumnResizing: false }}`. |
@@ -171,9 +171,10 @@ only the rows in view, dnd kit moves the headers, and Tailwind CSS v4 styles it 
 theme tokens. The [introduction](/docs/#what-it-is-built-on) has the table and the links.
 
 <Aside type="tip" title="Need a TanStack feature the grid does not use?">
-  Compose your own features object with `tableFeatures({ ...dataGridFeatures, cellSpanningFeature })`
-  and pass it as `table={{ features }}`. `grid.table` is a real TanStack table; anything in the
-  TanStack docs works on it.
+  The feature set is `dataGridFeatures` in your copy of `data-grid-features.ts`; add the feature
+  there (`cellSpanningFeature`, say) and every grid and every type picks it up. The `table` escape
+  hatch deliberately leaves `features` out. `grid.table` is a real TanStack table; anything in the
+  TanStack docs works on it. [Type safety](/docs/type-safety/#custom-features) walks through it.
 </Aside>
 
 ## Next

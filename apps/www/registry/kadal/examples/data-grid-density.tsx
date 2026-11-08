@@ -49,7 +49,7 @@ export default function DataGridDensity() {
         </ToggleGroupItem>
       </ToggleGroup>
       <DataGrid
-        key="density"
+        name="density"
         data={data}
         columns={columns}
         getRowId={(row) => row.id}

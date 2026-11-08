@@ -15,7 +15,7 @@ and the column fits its content.
 
 Move the pointer to the trailing edge of a header: a thin handle appears. Drag it, with a mouse or a
 finger. Double-click it, or choose **Fit to content** from the column menu, to size the column to
-its widest visible cell.
+its widest visible cell or its header, whichever is wider.
 
 Set the starting width and the bounds on the column:
 
@@ -44,11 +44,13 @@ grid.table.resetColumnSizing()
   the room it needs.
 - **Live.** `columnResizeMode` is `"onChange"`, so the column follows the pointer while you drag,
   and the columns after it move with it. Pinned columns update their sticky offsets as you go.
-- **Fit to content** (`autosizeColumn`) measures the rendered content of every cell in the column,
-  takes the widest, adds 24 px for the cell padding and the header's icons, and clamps the result to
-  the column's `minSize` and `maxSize`. It only sees what is in the DOM: the current page, or the
-  rows in view when [virtualized](/docs/data-grid/virtualization/). A wider value on another page is
-  not measured.
+- **Fit to content** (`autosizeColumn`) measures the text and inline content (badges, icons, links)
+  of every rendered cell in the column and of the header title, not the cells' boxes, so it shrinks
+  a column that was dragged wider than its content as readily as it grows a cramped one. It takes the
+  widest, adds 24 px for the cell padding (44 px on the header, for the sort arrow and the button's
+  own padding), and clamps the result to the column's `minSize` and `maxSize`. It only sees what is
+  in the DOM: the current page, or the rows in view when
+  [virtualised](/docs/data-grid/virtualization/). A wider value on another page is not measured.
 - **Defaults.** Every column starts at 160 px, between 48 and 2000, unless it says otherwise. The
   utility columns are fixed: the checkbox and the expander at 40 px, the row number and the actions
   menu at 56 px (minimum 48).

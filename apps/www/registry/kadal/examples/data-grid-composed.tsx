@@ -35,12 +35,12 @@ const data = makePeople(60, 5);
 
 /** Your own layout from the parts: a title row, the search beside your buttons, the pager on top. */
 export default function DataGridComposed() {
-  const grid = useDataGrid<Person>({ key: "composed", data, columns, getRowId: (r) => r.id });
+  const grid = useDataGrid<Person>({ name: "composed", data, columns, getRowId: (r) => r.id });
   return (
     <DataGridRoot grid={grid}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <h2 className="text-base font-semibold">Customers</h2>
+          <p className="text-base font-semibold">Customers</p>
           <DataGridSearch className="max-w-56" />
           <DataGridFilterChips />
         </div>
