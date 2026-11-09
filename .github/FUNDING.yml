@@ -1,3 +1,5 @@
-# The "Sponsor" button on github.com/kadalcc/ui: the maintainer's own GitHub Sponsors profile.
-# Tiers and perks: https://ui.kadal.cc/sponsor/
+# The "Sponsor" button on github.com/kadalcc/ui: the maintainer's own GitHub Sponsors profile
+# (the kadalcc organisation would need a GSTIN to receive sponsorships), plus the tiers page.
+# The button only shows while "Sponsorships" is ticked under Settings → General → Features.
 github: pmithunish
+custom: ["https://ui.kadal.cc/sponsor/"]
