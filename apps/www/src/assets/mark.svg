@@ -1,13 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Kadal"><defs>
-    <clipPath id="kc1"><rect width="512" height="512" rx="120"/></clipPath>
-    <linearGradient id="ks1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4f0ff"/><stop offset="1" stop-color="#78c4f3"/></linearGradient>
-    <linearGradient id="kd1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#238bd6"/><stop offset="1" stop-color="#082a55"/></linearGradient>
-    <linearGradient id="kg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd877"/><stop offset="1" stop-color="#ffab2e"/></linearGradient>
-  </defs>
-  <g clip-path="url(#kc1)">
-    <rect width="512" height="512" fill="url(#ks1)"/>
-    <circle cx="256" cy="262" r="104" fill="url(#kg1)"/>
-    <path d="M-4 282 Q61 248 126 282 T256.0 282 T386.0 282 T516.0 282 V520 H-4Z" fill="url(#kd1)"/>
-    <path d="M-4 282 Q61 248 126 282 T256.0 282 T386.0 282 T516.0 282" fill="none" stroke="#fff" stroke-width="24" stroke-linecap="round"/>
-    <path d="M-4 388 Q61 410 126 388 T256.0 388 T386.0 388 T516.0 388" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="14" stroke-linecap="round"/>
-  </g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-809.017 -809.017 1618.034 1618.034" role="img" aria-label="Kadal"><rect x="-809.017" y="-809.017" width="1618.034" height="1618.034" rx="361.954" fill="#0B1D33"/><path d="M-498.182 -42.604A500 500 0 0 1 498.335 -40.77A536.475 536.475 0 0 0 481.763 -31.588A463.525 463.525 0 0 1 18.237 -31.588A536.475 536.475 0 0 0 -498.182 -42.604Z" fill="#FFB02E"/><path d="M-498.335 40.77A536.475 536.475 0 0 0 -481.763 31.588A463.525 463.525 0 0 1 -18.237 31.588A536.475 536.475 0 0 0 498.182 42.604A500 500 0 0 1 384.542 319.574A463.525 463.525 0 0 1 18.237 277.429A536.475 536.475 0 0 0 -438.719 239.845A500 500 0 0 1 -498.335 40.77Z" fill="#FFFFFF"/><path d="M-397.928 302.743A463.525 463.525 0 0 1 -18.237 340.605A536.475 536.475 0 0 0 284.182 411.389A500 500 0 0 1 -397.928 302.743Z" fill="#FFFFFF"/></svg>
