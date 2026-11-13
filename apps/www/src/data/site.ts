@@ -22,6 +22,13 @@ export const SITE = {
   seller: "Mithunish Prabhakaran",
   tradingAs: "Kadal",
   location: "Chennai, Tamil Nadu, India",
+  /**
+   * Kadal's postal address: the office at Awfis OMR, as the centre's NOC and electricity bill give it.
+   * The Kadal sites in the stack read the same address from @stack/network; this repo can't import it,
+   * so keep the two the same.
+   */
+  address:
+    "Awfis OMR, No. 111 (Old No. 141), Rajiv Gandhi Road, Old Mahabalipuram Road, Kottivakkam Village, Chennai, Tamil Nadu 600041, India",
   email: "hello@kadal.cc",
   support: "support@kadal.cc",
   home: "https://kadal.cc",
@@ -60,3 +67,14 @@ export const SOCIALS: readonly { name: string; href: string; icon: string }[] = 
   { name: "DEV", href: "https://dev.to/kadalcc", icon: "brand-devto" },
   { name: "GitHub", href: "https://github.com/kadalcc", icon: "brand-github" },
 ];
+
+/** The same address as schema.org describes one, for the Organization in Base.astro's JSON-LD. */
+export const POSTAL = {
+  "@type": "PostalAddress",
+  streetAddress:
+    "Awfis OMR, No. 111 (Old No. 141), Rajiv Gandhi Road, Old Mahabalipuram Road, Kottivakkam Village",
+  addressLocality: "Chennai",
+  addressRegion: "Tamil Nadu",
+  postalCode: "600041",
+  addressCountry: "IN",
+} as const;
