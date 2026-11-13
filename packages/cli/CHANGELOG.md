@@ -1,5 +1,11 @@
 # @kadal/ui
 
+## 0.1.2
+
+### Patch Changes
+
+- 4ef2baf: The npm page says who makes Kadal UI and links to Kadal's contact page and office in Chennai.
+
 ## 0.1.1
 
 ### Patch Changes
