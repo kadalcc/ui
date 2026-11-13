@@ -229,5 +229,5 @@ The paid products that also fund this work:
 - Need a team that builds AI products end to end? **[work.kadal.cc](https://work.kadal.cc)**.
 
 <p align="center">
-  <sub>Made in Chennai by <a href="https://kadal.cc">Kadal</a> · <a href="https://ui.kadal.cc">ui.kadal.cc</a> · <a href="mailto:hello@kadal.cc">hello@kadal.cc</a></sub>
+  <sub>Made in Chennai, India by <a href="https://kadal.cc">Kadal</a> · <a href="https://ui.kadal.cc">ui.kadal.cc</a> · <a href="mailto:hello@kadal.cc">hello@kadal.cc</a> · <a href="https://work.kadal.cc/contact/">Contact and office</a></sub>
 </p>

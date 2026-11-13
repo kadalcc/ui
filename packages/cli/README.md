@@ -62,6 +62,10 @@ tiers are on [ui.kadal.cc/sponsor](https://ui.kadal.cc/sponsor/).
 
 [Kadal Deck](https://deck.kadal.cc), the AI presentation app · [Kadal Store](https://store.kadal.cc)
 
+Kadal UI is made by [Kadal](https://kadal.cc), a small AI product studio in Chennai, India.
+Write to [hello@kadal.cc](mailto:hello@kadal.cc), or see
+[our contact page and office](https://work.kadal.cc/contact/).
+
 ## Licence
 
 MIT.

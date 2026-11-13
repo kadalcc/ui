@@ -5,7 +5,7 @@ import "@fontsource/jetbrains-mono";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import KadalNetwork from "../components/KadalNetwork.astro";
-import { SITE } from "../data/site";
+import { SITE, POSTAL } from "../data/site";
 
 interface Props {
   /** Page title without the product name; omit on the home page. */
@@ -32,7 +32,14 @@ const fullTitle = pageTitle ?? (title ? `${title} · ${SITE.name}` : `${SITE.nam
 const canonical = new URL(Astro.url.pathname, SITE.url).href;
 const ogUrl = new URL(og, SITE.url).href;
 
-const kadal = { "@type": "Organization", "@id": `${SITE.home}/#org`, name: SITE.tradingAs, url: SITE.home, email: SITE.email };
+const kadal = {
+  "@type": "Organization",
+  "@id": `${SITE.home}/#org`,
+  name: SITE.tradingAs,
+  url: SITE.home,
+  email: SITE.email,
+  address: POSTAL,
+};
 const software = {
   "@context": "https://schema.org",
   "@type": "SoftwareSourceCode",

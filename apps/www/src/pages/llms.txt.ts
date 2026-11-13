@@ -33,7 +33,7 @@ ${SITE.tagline} Kadal UI is a shadcn registry, not an npm dependency: one comman
 
 Install: \`${SITE.install}\` (or \`${SITE.installCli}\`, which points components.json at the registry first). Update: \`${SITE.install} --diff\` shows what changed between your copy and the registry.
 
-Licence: MIT, no paid tier, no licence keys. Source: ${SITE.repo}. Issues: ${SITE.issues}. Discussions: ${SITE.discussions}. Discord: ${SITE.discord}. The npm package ${SITE.npm} is only the CLI; the components ship through the registry. Made by ${SITE.tradingAs} (${SITE.location}). Contact: ${SITE.email}.
+Licence: MIT, no paid tier, no licence keys. Source: ${SITE.repo}. Issues: ${SITE.issues}. Discussions: ${SITE.discussions}. Discord: ${SITE.discord}. The npm package ${SITE.npm} is only the CLI; the components ship through the registry. Made by ${SITE.tradingAs} (${SITE.location}). Postal address: ${SITE.address}. Contact: ${SITE.email}.
 
 ## Registry items (\`npx shadcn@latest add @kadal/<name>\`)
 
